@@ -2,8 +2,8 @@ package com.github.charlemaznable.httpclient.ohclient.testclient;
 
 import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.guice.GuiceFactory;
-import com.github.charlemaznable.miner.MinerConfig.DefaultValueProvider;
 import com.github.charlemaznable.core.spring.SpringFactory;
+import com.github.charlemaznable.miner.MinerConfig.DefaultValueProvider;
 
 import java.lang.reflect.Method;
 

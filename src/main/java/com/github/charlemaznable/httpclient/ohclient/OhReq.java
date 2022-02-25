@@ -59,7 +59,8 @@ public class OhReq extends CommonReq<OhReq> {
 
     private static ExecutorService futureExecutorService = newCachedThreadPool();
     private static ConnectionPool globalConnectionPool = new ConnectionPool();
-
+    private final List<Interceptor> interceptors = newArrayList();
+    private final HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
     private Proxy clientProxy;
     private SSLSocketFactory sslSocketFactory;
     private X509TrustManager x509TrustManager;
@@ -69,8 +70,6 @@ public class OhReq extends CommonReq<OhReq> {
     private long connectTimeout = DEFAULT_CONNECT_TIMEOUT; // in milliseconds
     private long readTimeout = DEFAULT_READ_TIMEOUT; // in milliseconds
     private long writeTimeout = DEFAULT_WRITE_TIMEOUT; // in milliseconds
-    private final List<Interceptor> interceptors = newArrayList();
-    private final HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
 
     public OhReq() {
         super();

@@ -1,8 +1,8 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
-import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import com.github.charlemaznable.core.spring.SpringFactoryBean;
 import com.github.charlemaznable.core.spring.SpringScannerRegistrar;
+import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import org.springframework.core.type.ClassMetadata;
 
 import static com.github.charlemaznable.httpclient.ohclient.OhFactory.springOhLoader;

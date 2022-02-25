@@ -1,11 +1,11 @@
 package com.github.charlemaznable.httpclient.ohclient.spring;
 
+import com.github.charlemaznable.core.spring.SpringContext;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestComponentSpring;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientConcrete;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientIsolated;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientNone;
-import com.github.charlemaznable.core.spring.SpringContext;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.Dispatcher;

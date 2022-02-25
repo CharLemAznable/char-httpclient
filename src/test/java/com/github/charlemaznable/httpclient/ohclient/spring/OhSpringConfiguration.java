@@ -1,17 +1,17 @@
 package com.github.charlemaznable.httpclient.ohclient.spring;
 
-import com.github.charlemaznable.miner.MinerScan;
+import com.github.charlemaznable.core.spring.ElvesImport;
+import com.github.charlemaznable.core.spring.NeoComponentScan;
 import com.github.charlemaznable.httpclient.ohclient.OhScan;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestClientScanAnchor;
-import com.github.charlemaznable.core.spring.NeoComponentScan;
-import com.github.charlemaznable.core.spring.ElvesImport;
+import com.github.charlemaznable.miner.MinerScan;
 import org.n3r.diamond.client.impl.MockDiamondServer;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import static com.github.charlemaznable.miner.MinerFactory.springMinerLoader;
 import static com.github.charlemaznable.httpclient.ohclient.OhFactory.springOhLoader;
+import static com.github.charlemaznable.miner.MinerFactory.springMinerLoader;
 import static org.joor.Reflect.on;
 
 @ElvesImport

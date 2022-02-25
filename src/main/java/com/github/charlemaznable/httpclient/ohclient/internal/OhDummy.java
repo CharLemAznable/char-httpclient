@@ -17,10 +17,10 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
 public class OhDummy {
 
     static final Logger log = LoggerFactory.getLogger("OhClient");
-    static StringSubstitutor ohMinerSubstitutor;
-    static StringSubstitutor ohClassPathSubstitutor;
     static final ExecutorService ohExecutorService;
     static final ConnectionPool ohConnectionPool;
+    static StringSubstitutor ohMinerSubstitutor;
+    static StringSubstitutor ohClassPathSubstitutor;
 
     static {
         ohExecutorService = newCachedThreadPool();
