@@ -186,7 +186,7 @@ public class OhReq extends CommonReq<OhReq> {
         } catch (Exception ignored) {
             // ignored
         }
-        for (val trustManager : trustManagers) {
+        for (TrustManager trustManager : trustManagers) {
             if (trustManager instanceof X509TrustManager) {
                 return (X509TrustManager) trustManager;
             }
