@@ -2,7 +2,6 @@ package com.github.charlemaznable.httpclient.ohclient.internal;
 
 import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.Factory;
-import com.github.charlemaznable.core.lang.LoadingCachee;
 import com.github.charlemaznable.httpclient.common.AcceptCharset;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.ContentFormat.ContentFormatter;
@@ -68,6 +67,8 @@ import static com.github.charlemaznable.core.lang.Condition.checkNotNull;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
+import static com.github.charlemaznable.core.lang.LoadingCachee.get;
+import static com.github.charlemaznable.core.lang.LoadingCachee.simpleCache;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.of;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
@@ -93,7 +94,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
     String baseUrl;
 
     LoadingCache<Method, OhMappingProxy> ohMappingProxyCache
-            = LoadingCachee.simpleCache(from(this::loadMappingProxy));
+            = simpleCache(from(this::loadMappingProxy));
 
     public OhProxy(Class ohClass, Factory factory) {
         this.ohClass = ohClass;
@@ -150,8 +151,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
             return methodProxy.invokeSuper(o, args);
         }
 
-        val mappingProxy = LoadingCachee.get(
-                this.ohMappingProxyCache, method);
+        val mappingProxy = get(this.ohMappingProxyCache, method);
         return mappingProxy.execute(args);
     }
 
