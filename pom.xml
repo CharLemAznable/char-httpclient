@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.github.charlemaznable</groupId>
+        <artifactId>char-dependencies</artifactId>
+        <version>0.0.6-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>char-httpclient</artifactId>
+    <version>0.0.6-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>Char HttpClient</name>
+    <url>https://github.com/CharLemAznable/char-httpclient</url>
+    <description>HttpClient, using okhttp/vertx.</description>
+
+    <scm>
+        <connection>scm:git:https://github.com/CharLemAznable/char-httpclient.git</connection>
+        <developerConnection>scm:git:https://github.com/CharLemAznable/char-httpclient.git</developerConnection>
+        <url>https://github.com/CharLemAznable/char-httpclient</url>
+    </scm>
+
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2/</url>
+            <layout>default</layout>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>sonatype</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+            <layout>default</layout>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <properties>
+        <sonar.projectKey>CharLemAznable_char-httpclient</sonar.projectKey>
+
+        <char-elves.version>0.0.6-SNAPSHOT</char-elves.version>
+        <char-miner.version>0.0.6-SNAPSHOT</char-miner.version>
+
+        <logback-miner.version>0.1.6-SNAPSHOT</logback-miner.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.github.charlemaznable</groupId>
+            <artifactId>char-elves</artifactId>
+            <version>${char-elves.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.charlemaznable</groupId>
+            <artifactId>char-miner</artifactId>
+            <version>${char-miner.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>logging-interceptor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.charlemaznable</groupId>
+            <artifactId>logback-miner</artifactId>
+            <version>${logback-miner.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-junit5</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>
