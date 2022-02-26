@@ -7,11 +7,11 @@
     <parent>
         <groupId>com.github.charlemaznable</groupId>
         <artifactId>char-dependencies</artifactId>
-        <version>0.0.6-SNAPSHOT</version>
+        <version>0.0.7-SNAPSHOT</version>
     </parent>
 
     <artifactId>char-httpclient</artifactId>
-    <version>0.0.6-SNAPSHOT</version>
+    <version>0.0.7-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Char HttpClient</name>
@@ -47,10 +47,10 @@
     <properties>
         <sonar.projectKey>CharLemAznable_char-httpclient</sonar.projectKey>
 
-        <char-elves.version>0.0.6-SNAPSHOT</char-elves.version>
-        <char-miner.version>0.0.6-SNAPSHOT</char-miner.version>
+        <char-elves.version>0.0.7-SNAPSHOT</char-elves.version>
+        <char-miner.version>0.0.7-SNAPSHOT</char-miner.version>
 
-        <logback-miner.version>0.1.6-SNAPSHOT</logback-miner.version>
+        <logback-miner.version>0.1.7-SNAPSHOT</logback-miner.version>
     </properties>
 
     <dependencies>
