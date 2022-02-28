@@ -80,13 +80,14 @@ import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.isBlank;
 import static com.github.charlemaznable.core.lang.Str.isNotBlank;
 import static com.github.charlemaznable.core.lang.Str.toStr;
+import static com.github.charlemaznable.core.spring.AnnotationElf.findAnnotation;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.ohExecutorService;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.substitute;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static lombok.AccessLevel.PRIVATE;
-import static org.springframework.core.annotation.AnnotatedElementUtils.findMergedRepeatableAnnotations;
-import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
+import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
+import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedRepeatableAnnotations;
 
 public final class OhMappingProxy extends OhRoot {
 
@@ -394,7 +395,7 @@ public final class OhMappingProxy extends OhRoot {
 
         static String checkRequestUrl(Class clazz, Method method,
                                       Factory factory, OhProxy proxy) {
-            val mapping = findAnnotation(method, Mapping.class);
+            val mapping = getMergedAnnotation(method, Mapping.class);
             val url = checkNull(mapping, () -> "/" + method.getName(), annotation -> {
                 Class<? extends UrlProvider> providerClass = annotation.urlProvider();
                 return substitute(UrlProvider.class == providerClass ? annotation.value()
@@ -407,7 +408,7 @@ public final class OhMappingProxy extends OhRoot {
 
         static Proxy checkClientProxy(Class clazz, Method method,
                                       Factory factory, OhProxy proxy) {
-            val clientProxy = findAnnotation(method, ClientProxy.class);
+            val clientProxy = getMergedAnnotation(method, ClientProxy.class);
             return checkNull(clientProxy, () -> proxy.clientProxy, annotation -> {
                 val providerClass = annotation.proxyProvider();
                 if (ProxyProvider.class == providerClass) {
@@ -420,7 +421,7 @@ public final class OhMappingProxy extends OhRoot {
         }
 
         static ClientSSL checkClientSSL(Method method) {
-            return findAnnotation(method, ClientSSL.class);
+            return getMergedAnnotation(method, ClientSSL.class);
         }
 
         static SSLSocketFactory checkSSLSocketFactory(Class clazz, Method method,
@@ -465,7 +466,7 @@ public final class OhMappingProxy extends OhRoot {
         }
 
         static ClientTimeout checkClientTimeout(Method method) {
-            return findAnnotation(method, ClientTimeout.class);
+            return getMergedAnnotation(method, ClientTimeout.class);
         }
 
         static long checkCallTimeout(
@@ -499,7 +500,7 @@ public final class OhMappingProxy extends OhRoot {
         static List<Interceptor> checkClientInterceptors(Class clazz, Method method, Factory factory, OhProxy proxy) {
             val cleanup = nonNull(findAnnotation(method, ClientInterceptorCleanup.class));
             val result = newArrayList(cleanup ? null : proxy.interceptors);
-            result.addAll(newArrayList(findMergedRepeatableAnnotations(method, ClientInterceptor.class))
+            result.addAll(newArrayList(getMergedRepeatableAnnotations(method, ClientInterceptor.class))
                     .stream().filter(annotation -> Interceptor.class != annotation.value()
                             || InterceptorProvider.class != annotation.provider())
                     .map(annotation -> {
@@ -513,7 +514,7 @@ public final class OhMappingProxy extends OhRoot {
         }
 
         static Level checkClientLoggingLevel(Class clazz, Method method, Factory factory, OhProxy proxy) {
-            val clientLoggingLevel = findAnnotation(method, ClientLoggingLevel.class);
+            val clientLoggingLevel = getMergedAnnotation(method, ClientLoggingLevel.class);
             if (isNull(clientLoggingLevel)) return proxy.loggingLevel;
             val providerClass = clientLoggingLevel.provider();
             return LoggingLevelProvider.class == providerClass ? clientLoggingLevel.value()
@@ -554,27 +555,27 @@ public final class OhMappingProxy extends OhRoot {
         }
 
         static Charset checkAcceptCharset(Method method, OhProxy proxy) {
-            val acceptCharset = findAnnotation(method, AcceptCharset.class);
+            val acceptCharset = getMergedAnnotation(method, AcceptCharset.class);
             return checkNull(acceptCharset, () -> proxy.acceptCharset,
                     annotation -> Charset.forName(annotation.value()));
         }
 
         static ContentFormatter checkContentFormatter(
                 Method method, Factory factory, OhProxy proxy) {
-            val contentFormat = findAnnotation(method, ContentFormat.class);
+            val contentFormat = getMergedAnnotation(method, ContentFormat.class);
             return checkNull(contentFormat, () -> proxy.contentFormatter,
                     annotation -> FactoryContext.build(factory, annotation.value()));
         }
 
         static HttpMethod checkHttpMethod(Method method, OhProxy proxy) {
-            val requestMethod = findAnnotation(method, RequestMethod.class);
+            val requestMethod = getMergedAnnotation(method, RequestMethod.class);
             return checkNull(requestMethod, () -> proxy.httpMethod, RequestMethod::value);
         }
 
         static List<Pair<String, String>> checkFixedHeaders(Class clazz, Method method,
                                                             Factory factory, OhProxy proxy) {
             val result = newArrayList(proxy.headers);
-            result.addAll(newArrayList(findMergedRepeatableAnnotations(method, FixedHeader.class))
+            result.addAll(newArrayList(getMergedRepeatableAnnotations(method, FixedHeader.class))
                     .stream().filter(an -> isNotBlank(an.name())).map(an -> {
                         val name = an.name();
                         val providerClass = an.valueProvider();
@@ -588,7 +589,7 @@ public final class OhMappingProxy extends OhRoot {
         static List<Pair<String, String>> checkFixedPathVars(Class clazz, Method method,
                                                              Factory factory, OhProxy proxy) {
             val result = newArrayList(proxy.pathVars);
-            result.addAll(newArrayList(findMergedRepeatableAnnotations(method, FixedPathVar.class))
+            result.addAll(newArrayList(getMergedRepeatableAnnotations(method, FixedPathVar.class))
                     .stream().filter(an -> isNotBlank(an.name())).map(an -> {
                         val name = an.name();
                         val providerClass = an.valueProvider();
@@ -602,7 +603,7 @@ public final class OhMappingProxy extends OhRoot {
         static List<Pair<String, Object>> checkFixedParameters(Class clazz, Method method,
                                                                Factory factory, OhProxy proxy) {
             val result = newArrayList(proxy.parameters);
-            result.addAll(newArrayList(findMergedRepeatableAnnotations(method, FixedParameter.class))
+            result.addAll(newArrayList(getMergedRepeatableAnnotations(method, FixedParameter.class))
                     .stream().filter(an -> isNotBlank(an.name())).map(an -> {
                         val name = an.name();
                         val providerClass = an.valueProvider();
@@ -616,7 +617,7 @@ public final class OhMappingProxy extends OhRoot {
         static List<Pair<String, Object>> checkFixedContexts(Class clazz, Method method,
                                                              Factory factory, OhProxy proxy) {
             val result = newArrayList(proxy.contexts);
-            result.addAll(newArrayList(findMergedRepeatableAnnotations(method, FixedContext.class))
+            result.addAll(newArrayList(getMergedRepeatableAnnotations(method, FixedContext.class))
                     .stream().filter(an -> isNotBlank(an.name())).map(an -> {
                         val name = an.name();
                         val providerClass = an.valueProvider();
@@ -630,7 +631,7 @@ public final class OhMappingProxy extends OhRoot {
         static Map<HttpStatus, Class<? extends FallbackFunction>>
         checkStatusFallbackMapping(Method method, OhProxy proxy) {
             val result = newHashMap(proxy.statusFallbackMapping);
-            result.putAll(newArrayList(findMergedRepeatableAnnotations(
+            result.putAll(newArrayList(getMergedRepeatableAnnotations(
                     method, StatusFallback.class)).stream()
                     .collect(toMap(StatusFallback::status, StatusFallback::fallback)));
             return result;
@@ -639,7 +640,7 @@ public final class OhMappingProxy extends OhRoot {
         static Map<HttpStatus.Series, Class<? extends FallbackFunction>>
         checkStatusSeriesFallbackMapping(Method method, OhProxy proxy) {
             val result = newHashMap(proxy.statusSeriesFallbackMapping);
-            result.putAll(newArrayList(findMergedRepeatableAnnotations(
+            result.putAll(newArrayList(getMergedRepeatableAnnotations(
                     method, StatusSeriesFallback.class)).stream()
                     .collect(toMap(StatusSeriesFallback::statusSeries, StatusSeriesFallback::fallback)));
             return result;
@@ -647,14 +648,14 @@ public final class OhMappingProxy extends OhRoot {
 
         static ResponseParser checkResponseParser(
                 Method method, Factory factory, OhProxy proxy) {
-            val responseParse = findAnnotation(method, ResponseParse.class);
+            val responseParse = getMergedAnnotation(method, ResponseParse.class);
             return checkNull(responseParse, () -> proxy.responseParser, annotation ->
                     FactoryContext.build(factory, annotation.value()));
         }
 
         static ExtraUrlQueryBuilder checkExtraUrlQueryBuilder(
                 Method method, Factory factory, OhProxy proxy) {
-            val extraUrlQuery = findAnnotation(method, ExtraUrlQuery.class);
+            val extraUrlQuery = getMergedAnnotation(method, ExtraUrlQuery.class);
             return checkNull(extraUrlQuery, () -> proxy.extraUrlQueryBuilder, annotation ->
                     FactoryContext.build(factory, annotation.value()));
         }

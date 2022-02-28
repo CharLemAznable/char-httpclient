@@ -6,9 +6,9 @@ import com.google.inject.Module;
 import com.google.inject.Provider;
 
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
+import static com.github.charlemaznable.core.spring.AnnotationElf.findAnnotation;
 import static com.github.charlemaznable.httpclient.ohclient.OhFactory.ohLoader;
 import static java.util.Objects.nonNull;
-import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
 
 public final class OhModular extends CommonModular<OhModular> {
 
@@ -25,7 +25,7 @@ public final class OhModular extends CommonModular<OhModular> {
 
     @Override
     public boolean isCandidateClass(Class clazz) {
-        return nonNull(getAnnotation(clazz, OhClient.class));
+        return nonNull(findAnnotation(clazz, OhClient.class));
     }
 
     @Override

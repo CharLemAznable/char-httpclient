@@ -73,6 +73,7 @@ import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.of;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.isNotBlank;
+import static com.github.charlemaznable.core.spring.AnnotationElf.findAnnotation;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONTENT_FORMATTER;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_HTTP_METHOD;
@@ -83,9 +84,8 @@ import static com.google.common.cache.CacheLoader.from;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static lombok.AccessLevel.PRIVATE;
-import static org.springframework.core.annotation.AnnotatedElementUtils.findMergedRepeatableAnnotations;
-import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
-import static org.springframework.core.annotation.AnnotationUtils.getAnnotation;
+import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
+import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedRepeatableAnnotations;
 
 public final class OhProxy extends OhRoot implements MethodInterceptor {
 
@@ -163,12 +163,12 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
     static class Elf {
 
         static void checkOhClient(Class clazz) {
-            checkNotNull(getAnnotation(clazz, OhClient.class),
+            checkNotNull(findAnnotation(clazz, OhClient.class),
                     new OhException(clazz.getName() + " has no OhClient annotation"));
         }
 
         static String checkBaseUrl(Class clazz, Factory factory) {
-            val mapping = findAnnotation(clazz, Mapping.class);
+            val mapping = getMergedAnnotation(clazz, Mapping.class);
             if (isNull(mapping)) return "";
             val providerClass = mapping.urlProvider();
             return substitute(UrlProvider.class == providerClass ? mapping.value()
@@ -176,7 +176,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         }
 
         static Proxy checkClientProxy(Class clazz, Factory factory) {
-            val clientProxy = findAnnotation(clazz, ClientProxy.class);
+            val clientProxy = getMergedAnnotation(clazz, ClientProxy.class);
             return notNullThen(clientProxy, annotation -> {
                 val providerClass = annotation.proxyProvider();
                 if (ProxyProvider.class == providerClass) {
@@ -189,7 +189,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         }
 
         static ClientSSL checkClientSSL(Class clazz) {
-            return findAnnotation(clazz, ClientSSL.class);
+            return getMergedAnnotation(clazz, ClientSSL.class);
         }
 
         static SSLSocketFactory checkSSLSocketFactory(
@@ -234,7 +234,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         }
 
         static ClientTimeout checkClientTimeout(Class clazz) {
-            return findAnnotation(clazz, ClientTimeout.class);
+            return getMergedAnnotation(clazz, ClientTimeout.class);
         }
 
         static long checkCallTimeout(
@@ -266,7 +266,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         }
 
         static List<Interceptor> checkClientInterceptors(Class clazz, Factory factory) {
-            return newArrayList(findMergedRepeatableAnnotations(clazz, ClientInterceptor.class))
+            return newArrayList(getMergedRepeatableAnnotations(clazz, ClientInterceptor.class))
                     .stream().filter(annotation -> Interceptor.class != annotation.value()
                             || InterceptorProvider.class != annotation.provider())
                     .map(annotation -> {
@@ -279,7 +279,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         }
 
         static Level checkClientLoggingLevel(Class clazz, Factory factory) {
-            val clientLoggingLevel = findAnnotation(clazz, ClientLoggingLevel.class);
+            val clientLoggingLevel = getMergedAnnotation(clazz, ClientLoggingLevel.class);
             if (isNull(clientLoggingLevel)) return DEFAULT_LOGGING_LEVEL;
             val providerClass = clientLoggingLevel.provider();
             return LoggingLevelProvider.class == providerClass ? clientLoggingLevel.value()
@@ -302,24 +302,24 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         }
 
         static Charset checkAcceptCharset(Class clazz) {
-            val acceptCharset = findAnnotation(clazz, AcceptCharset.class);
+            val acceptCharset = getMergedAnnotation(clazz, AcceptCharset.class);
             return checkNull(acceptCharset, () -> DEFAULT_ACCEPT_CHARSET,
                     annotation -> Charset.forName(annotation.value()));
         }
 
         static ContentFormatter checkContentFormatter(Class clazz, Factory factory) {
-            val contentFormat = findAnnotation(clazz, ContentFormat.class);
+            val contentFormat = getMergedAnnotation(clazz, ContentFormat.class);
             return checkNull(contentFormat, () -> DEFAULT_CONTENT_FORMATTER,
                     annotation -> FactoryContext.build(factory, annotation.value()));
         }
 
         static HttpMethod checkHttpMethod(Class clazz) {
-            val requestMethod = findAnnotation(clazz, RequestMethod.class);
+            val requestMethod = getMergedAnnotation(clazz, RequestMethod.class);
             return checkNull(requestMethod, () -> DEFAULT_HTTP_METHOD, RequestMethod::value);
         }
 
         static List<Pair<String, String>> checkFixedHeaders(Class clazz, Factory factory) {
-            return newArrayList(findMergedRepeatableAnnotations(clazz, FixedHeader.class))
+            return newArrayList(getMergedRepeatableAnnotations(clazz, FixedHeader.class))
                     .stream().filter(an -> isNotBlank(an.name())).map(an -> {
                         val name = an.name();
                         val providerClass = an.valueProvider();
@@ -330,7 +330,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         }
 
         static List<Pair<String, String>> checkFixedPathVars(Class clazz, Factory factory) {
-            return newArrayList(findMergedRepeatableAnnotations(clazz, FixedPathVar.class))
+            return newArrayList(getMergedRepeatableAnnotations(clazz, FixedPathVar.class))
                     .stream().filter(an -> isNotBlank(an.name())).map(an -> {
                         val name = an.name();
                         val providerClass = an.valueProvider();
@@ -341,7 +341,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         }
 
         static List<Pair<String, Object>> checkFixedParameters(Class clazz, Factory factory) {
-            return newArrayList(findMergedRepeatableAnnotations(clazz, FixedParameter.class))
+            return newArrayList(getMergedRepeatableAnnotations(clazz, FixedParameter.class))
                     .stream().filter(an -> isNotBlank(an.name())).map(an -> {
                         val name = an.name();
                         val providerClass = an.valueProvider();
@@ -352,7 +352,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         }
 
         static List<Pair<String, Object>> checkFixedContexts(Class clazz, Factory factory) {
-            return newArrayList(findMergedRepeatableAnnotations(clazz, FixedContext.class))
+            return newArrayList(getMergedRepeatableAnnotations(clazz, FixedContext.class))
                     .stream().filter(an -> isNotBlank(an.name())).map(an -> {
                         val name = an.name();
                         val providerClass = an.valueProvider();
@@ -364,7 +364,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
 
         static Map<HttpStatus, Class<? extends FallbackFunction>>
         checkStatusFallbackMapping(Class clazz) {
-            return newArrayList(findMergedRepeatableAnnotations(
+            return newArrayList(getMergedRepeatableAnnotations(
                     clazz, StatusFallback.class)).stream()
                     .collect(toMap(StatusFallback::status, StatusFallback::fallback));
         }
@@ -375,20 +375,20 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
             Map<HttpStatus.Series, Class<? extends FallbackFunction>> result = checkNull(
                     defaultDisabled, () -> of(HttpStatus.Series.CLIENT_ERROR, StatusErrorThrower.class,
                             HttpStatus.Series.SERVER_ERROR, StatusErrorThrower.class), x -> newHashMap());
-            result.putAll(newArrayList(findMergedRepeatableAnnotations(clazz,
+            result.putAll(newArrayList(getMergedRepeatableAnnotations(clazz,
                     StatusSeriesFallback.class)).stream()
                     .collect(toMap(StatusSeriesFallback::statusSeries, StatusSeriesFallback::fallback)));
             return result;
         }
 
         static ResponseParser checkResponseParser(Class clazz, Factory factory) {
-            val responseParse = findAnnotation(clazz, ResponseParse.class);
+            val responseParse = getMergedAnnotation(clazz, ResponseParse.class);
             return checkNull(responseParse, () -> null, annotation ->
                     FactoryContext.build(factory, annotation.value()));
         }
 
         static ExtraUrlQueryBuilder checkExtraUrlQueryBuilder(Class clazz, Factory factory) {
-            val extraUrlQuery = findAnnotation(clazz, ExtraUrlQuery.class);
+            val extraUrlQuery = getMergedAnnotation(clazz, ExtraUrlQuery.class);
             return checkNull(extraUrlQuery, () -> null, annotation ->
                     FactoryContext.build(factory, annotation.value()));
         }
