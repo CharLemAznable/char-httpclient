@@ -6,10 +6,12 @@ import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 
-import static com.github.charlemaznable.core.config.Arguments.argumentsAsSubstitutor;
-import static com.github.charlemaznable.core.lang.ClzPath.classResourceAsSubstitutor;
+import static com.github.charlemaznable.core.config.Arguments.argumentsAsProperties;
+import static com.github.charlemaznable.core.lang.ClzPath.classResourceAsProperties;
+import static com.github.charlemaznable.core.lang.Propertiess.ssMap;
 import static java.util.Objects.isNull;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 
@@ -19,7 +21,7 @@ public class OhDummy {
     static final Logger log = LoggerFactory.getLogger("OhClient");
     static final ExecutorService ohExecutorService;
     static final ConnectionPool ohConnectionPool;
-    static StringSubstitutor ohClassPathSubstitutor;
+    static Properties ohClassPathProperties;
 
     static {
         ohExecutorService = newCachedThreadPool();
@@ -27,10 +29,11 @@ public class OhDummy {
     }
 
     static String substitute(String source) {
-        if (isNull(ohClassPathSubstitutor)) {
-            ohClassPathSubstitutor = classResourceAsSubstitutor("ohclient.env.props");
+        if (isNull(ohClassPathProperties)) {
+            ohClassPathProperties = classResourceAsProperties("ohclient.env.props");
         }
-        return ohClassPathSubstitutor.replace(argumentsAsSubstitutor().replace(source));
+        return new StringSubstitutor(ssMap(argumentsAsProperties(
+                ohClassPathProperties))).replace(source);
     }
 
     @Override
