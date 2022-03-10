@@ -1,12 +1,13 @@
 package com.github.charlemaznable.httpclient.ohclient.testclient;
 
+import com.github.charlemaznable.configservice.diamond.DiamondModular;
 import com.github.charlemaznable.httpclient.common.Mapping.UrlProvider;
-import com.github.charlemaznable.miner.MinerModular;
 
 import java.lang.reflect.Method;
 
-import static com.github.charlemaznable.miner.MinerFactory.getMiner;
-import static com.github.charlemaznable.miner.MinerFactory.springMinerLoader;
+import static com.github.charlemaznable.configservice.diamond.DiamondFactory.diamondLoader;
+import static com.github.charlemaznable.configservice.diamond.DiamondFactory.getDiamond;
+import static com.github.charlemaznable.core.spring.SpringFactory.springFactory;
 
 public class TestSampleUrlProviderContext implements UrlProvider {
 
@@ -15,9 +16,9 @@ public class TestSampleUrlProviderContext implements UrlProvider {
     private TestDefaultContext guice;
 
     public TestSampleUrlProviderContext() {
-        this.current = getMiner(TestDefaultContext.class);
-        this.spring = springMinerLoader().getMiner(TestDefaultContext.class);
-        this.guice = new MinerModular().getMiner(TestDefaultContext.class);
+        this.current = getDiamond(TestDefaultContext.class);
+        this.spring = diamondLoader(springFactory()).getDiamond(TestDefaultContext.class);
+        this.guice = new DiamondModular().getDiamond(TestDefaultContext.class);
     }
 
     @Override

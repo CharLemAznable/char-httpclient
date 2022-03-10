@@ -1,12 +1,12 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.core.config.Arguments;
 import com.github.charlemaznable.httpclient.common.CncRequest;
 import com.github.charlemaznable.httpclient.common.CncResponse;
 import com.github.charlemaznable.httpclient.common.CncResponse.CncResponseImpl;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
-import com.github.charlemaznable.httpclient.ohclient.internal.OhDummy;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -16,11 +16,9 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.text.StringSubstitutor;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.n3r.diamond.client.impl.MockDiamondServer;
 
 import java.time.Duration;
 import java.util.Map;
@@ -28,9 +26,7 @@ import java.util.concurrent.Future;
 
 import static com.github.charlemaznable.core.codec.Json.json;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
-import static com.github.charlemaznable.miner.MinerElf.minerAsSubstitutor;
 import static org.awaitility.Awaitility.await;
-import static org.joor.Reflect.onClass;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,23 +38,17 @@ public class CncTest {
 
     @BeforeAll
     public static void beforeAll() {
-        MockDiamondServer.setUpMockServer();
-        MockDiamondServer.setConfigInfo("Env", "ohclient", "port=41200");
+        Arguments.initial("--port=41200");
     }
 
     @AfterAll
     public static void afterAll() {
-        MockDiamondServer.tearDownMockServer();
+        Arguments.initial();
     }
 
     @SneakyThrows
     @Test
     public void testCncClient() {
-        onClass(OhDummy.class).call("substitute", "").get();
-        StringSubstitutor ohMinerSubstitutor =
-                onClass(OhDummy.class).field("ohMinerSubstitutor").get();
-        ohMinerSubstitutor.setVariableResolver(
-                minerAsSubstitutor("Env", "ohclient").getStringLookup());
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
                 @Override

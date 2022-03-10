@@ -1,5 +1,6 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.core.config.Arguments;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
@@ -12,7 +13,6 @@ import com.github.charlemaznable.httpclient.ohclient.annotation.ClientIntercepto
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptorCleanup;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientLoggingLevel;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientLoggingLevel.LoggingLevelProvider;
-import com.github.charlemaznable.httpclient.ohclient.internal.OhDummy;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.Interceptor;
@@ -23,18 +23,14 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.apache.commons.text.StringSubstitutor;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.n3r.diamond.client.impl.MockDiamondServer;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
-import static com.github.charlemaznable.miner.MinerElf.minerAsSubstitutor;
-import static org.joor.Reflect.onClass;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -47,23 +43,17 @@ public class InterceptorTest {
 
     @BeforeAll
     public static void beforeAll() {
-        MockDiamondServer.setUpMockServer();
-        MockDiamondServer.setConfigInfo("Env", "ohclient", "port=41220");
+        Arguments.initial("--port=41220");
     }
 
     @AfterAll
     public static void afterAll() {
-        MockDiamondServer.tearDownMockServer();
+        Arguments.initial();
     }
 
     @SneakyThrows
     @Test
     public void testInterceptorClient() {
-        onClass(OhDummy.class).call("substitute", "").get();
-        StringSubstitutor ohMinerSubstitutor =
-                onClass(OhDummy.class).field("ohMinerSubstitutor").get();
-        ohMinerSubstitutor.setVariableResolver(
-                minerAsSubstitutor("Env", "ohclient").getStringLookup());
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
                 @Override

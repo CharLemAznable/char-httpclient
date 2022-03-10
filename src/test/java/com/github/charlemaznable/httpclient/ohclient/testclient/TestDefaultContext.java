@@ -1,10 +1,10 @@
 package com.github.charlemaznable.httpclient.ohclient.testclient;
 
-import com.github.charlemaznable.miner.MinerConfig;
+import com.github.charlemaznable.configservice.diamond.DiamondConfig;
 
-@MinerConfig("THREAD_DATA")
+@DiamondConfig("THREAD_DATA")
 public interface TestDefaultContext {
 
-    @MinerConfig(defaultValueProvider = TestDefaultContextProvider.class)
+    @DiamondConfig(defaultValueProvider = TestDefaultContextProvider.class)
     String thread();
 }

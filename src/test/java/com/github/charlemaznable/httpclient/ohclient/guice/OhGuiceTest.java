@@ -1,5 +1,6 @@
 package com.github.charlemaznable.httpclient.ohclient.guice;
 
+import com.github.charlemaznable.configservice.diamond.DiamondModular;
 import com.github.charlemaznable.core.guice.GuiceFactory;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.ohclient.OhException;
@@ -11,7 +12,6 @@ import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientCo
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientIsolated;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientNone;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestSampleUrlProvider;
-import com.github.charlemaznable.miner.MinerModular;
 import com.google.inject.AbstractModule;
 import com.google.inject.ConfigurationException;
 import com.google.inject.Guice;
@@ -58,9 +58,9 @@ public class OhGuiceTest {
     @SneakyThrows
     @Test
     public void testOhClient() {
-        val minerModular = new MinerModular().bindClasses(TestSampleUrlProvider.class);
-        val minerModule = minerModular.createModule();
-        val ohModular = new OhModular(minerModule).bindClasses(
+        val diamondModular = new DiamondModular().bindClasses(TestSampleUrlProvider.class);
+        val diamondModule = diamondModular.createModule();
+        val ohModular = new OhModular(diamondModule).bindClasses(
                 TestHttpClient.class, TestHttpClientIsolated.class,
                 TestHttpClientConcrete.class, TestHttpClientNone.class);
         val injector = Guice.createInjector(ohModular.createModule());
@@ -201,9 +201,9 @@ public class OhGuiceTest {
     @SneakyThrows
     @Test
     public void testOhClientScan() {
-        val minerModular = new MinerModular().bindClasses(TestSampleUrlProvider.class);
-        val minerModule = minerModular.createModule();
-        val ohModular = new OhModular(minerModule).scanPackageClasses(TestClientScanAnchor.class);
+        val diamondModular = new DiamondModular().bindClasses(TestSampleUrlProvider.class);
+        val diamondModule = diamondModular.createModule();
+        val ohModular = new OhModular(diamondModule).scanPackageClasses(TestClientScanAnchor.class);
         val injector = Guice.createInjector(ohModular.createModule());
 
         try (val mockWebServer = new MockWebServer()) {

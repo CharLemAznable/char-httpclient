@@ -47,22 +47,22 @@
     <properties>
         <sonar.projectKey>CharLemAznable_char-httpclient</sonar.projectKey>
 
+        <char-configservice.version>0.0.7-SNAPSHOT</char-configservice.version>
         <char-elves.version>0.0.7-SNAPSHOT</char-elves.version>
-        <char-miner.version>0.0.7-SNAPSHOT</char-miner.version>
 
-        <logback-miner.version>0.1.7-SNAPSHOT</logback-miner.version>
+        <logback-dendrobe.version>0.1.7-SNAPSHOT</logback-dendrobe.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.github.charlemaznable</groupId>
-            <artifactId>char-elves</artifactId>
-            <version>${char-elves.version}</version>
+            <artifactId>char-configservice</artifactId>
+            <version>${char-configservice.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.charlemaznable</groupId>
-            <artifactId>char-miner</artifactId>
-            <version>${char-miner.version}</version>
+            <artifactId>char-elves</artifactId>
+            <version>${char-elves.version}</version>
         </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
@@ -84,8 +84,8 @@
 
         <dependency>
             <groupId>com.github.charlemaznable</groupId>
-            <artifactId>logback-miner</artifactId>
-            <version>${logback-miner.version}</version>
+            <artifactId>logback-dendrobe</artifactId>
+            <version>${logback-dendrobe.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

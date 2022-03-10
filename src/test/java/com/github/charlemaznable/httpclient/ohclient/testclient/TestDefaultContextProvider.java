@@ -3,7 +3,7 @@ package com.github.charlemaznable.httpclient.ohclient.testclient;
 import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.guice.GuiceFactory;
 import com.github.charlemaznable.core.spring.SpringFactory;
-import com.github.charlemaznable.miner.MinerConfig.DefaultValueProvider;
+import com.github.charlemaznable.configservice.diamond.DiamondConfig.DefaultValueProvider;
 
 import java.lang.reflect.Method;
 
@@ -20,7 +20,7 @@ public class TestDefaultContextProvider implements DefaultValueProvider {
     }
 
     @Override
-    public String defaultValue(Class<?> minerClass, Method method) {
+    public String defaultValue(Class<?> configClass, Method method) {
         if (FactoryContext.get() instanceof SpringFactory) {
             return init + "Spring";
         } else if (FactoryContext.get() instanceof GuiceFactory) {
