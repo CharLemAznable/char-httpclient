@@ -7,11 +7,11 @@
     <parent>
         <groupId>com.github.charlemaznable</groupId>
         <artifactId>char-dependencies</artifactId>
-        <version>0.0.7-SNAPSHOT</version>
+        <version>0.0.8-SNAPSHOT</version>
     </parent>
 
     <artifactId>char-httpclient</artifactId>
-    <version>0.0.7-SNAPSHOT</version>
+    <version>0.0.8-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Char HttpClient</name>
@@ -47,10 +47,10 @@
     <properties>
         <sonar.projectKey>CharLemAznable_char-httpclient</sonar.projectKey>
 
-        <char-elves.version>0.0.7-SNAPSHOT</char-elves.version>
+        <char-elves.version>0.0.8-SNAPSHOT</char-elves.version>
 
-        <char-configservice.version>0.0.7-SNAPSHOT</char-configservice.version>
-        <logback-dendrobe.version>0.1.7-SNAPSHOT</logback-dendrobe.version>
+        <char-configservice.version>0.0.8-SNAPSHOT</char-configservice.version>
+        <logback-dendrobe.version>0.1.8-SNAPSHOT</logback-dendrobe.version>
     </properties>
 
     <dependencies>

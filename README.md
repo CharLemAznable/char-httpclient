@@ -29,7 +29,7 @@
 <dependency>
   <groupId>com.github.charlemaznable</groupId>
   <artifactId>char-httpclient</artifactId>
-  <version>0.0.6</version>
+  <version>0.0.7</version>
 </dependency>
 ```
 
@@ -39,6 +39,6 @@
 <dependency>
   <groupId>com.github.charlemaznable</groupId>
   <artifactId>char-httpclient</artifactId>
-  <version>0.0.7-SNAPSHOT</version>
+  <version>0.0.8-SNAPSHOT</version>
 </dependency>
 ```
