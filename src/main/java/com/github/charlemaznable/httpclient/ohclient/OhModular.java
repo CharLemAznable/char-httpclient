@@ -4,6 +4,7 @@ import com.github.charlemaznable.core.guice.CommonModular;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import com.google.inject.Module;
 import com.google.inject.Provider;
+import lombok.experimental.Delegate;
 
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.spring.AnnotationElf.findAnnotation;
@@ -12,6 +13,7 @@ import static java.util.Objects.nonNull;
 
 public final class OhModular extends CommonModular<OhModular> {
 
+    @Delegate
     private OhLoader ohLoader;
 
     public OhModular(Module... modules) {
@@ -31,9 +33,5 @@ public final class OhModular extends CommonModular<OhModular> {
     @Override
     public <T> Provider<T> createProvider(Class<T> clazz) {
         return () -> getClient(clazz);
-    }
-
-    public <T> T getClient(Class<T> ohClass) {
-        return this.ohLoader.getClient(ohClass);
     }
 }
