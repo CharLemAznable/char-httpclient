@@ -33,13 +33,16 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.net.Proxy;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.github.charlemaznable.core.codec.Json.desc;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
+import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
@@ -52,6 +55,7 @@ import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.log
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.joor.Reflect.on;
+import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
 public final class OhCall extends OhRoot {
 
@@ -98,16 +102,16 @@ public final class OhCall extends OhRoot {
     }
 
     private void processArguments(Method method, Object[] args) {
-        val parameterAnnotationsArray = method.getParameterAnnotations();
         val parameterTypes = method.getParameterTypes();
+        val parameters = method.getParameters();
         for (int i = 0; i < args.length; i++) {
             val argument = args[i];
-            val parameterAnnotations = parameterAnnotationsArray[i];
             val parameterType = parameterTypes[i];
+            val parameter = parameters[i];
 
             val configuredType = processParameterType(argument, parameterType);
             if (configuredType) continue;
-            processAnnotations(argument, parameterAnnotations, null);
+            processAnnotations(argument, parameter, null);
         }
     }
 
@@ -143,31 +147,35 @@ public final class OhCall extends OhRoot {
         return true;
     }
 
-    private void processAnnotations(Object argument, Annotation[] annotations,
+    private void processAnnotations(Object argument,
+                                    AnnotatedElement annotatedElement,
                                     String defaultParameterName) {
-        boolean processed = false;
-        for (Annotation annotation : annotations) {
-            if (annotation instanceof Header) {
-                processHeader(argument, (Header) annotation);
-                processed = true;
-            } else if (annotation instanceof PathVar) {
-                processPathVar(argument, (PathVar) annotation);
-                processed = true;
-            } else if (annotation instanceof Parameter) {
-                processParameter(argument, (Parameter) annotation);
-                processed = true;
-            } else if (annotation instanceof Context) {
-                processContext(argument, (Context) annotation);
-                processed = true;
-            } else if (annotation instanceof RequestBodyRaw) {
-                processRequestBodyRaw(argument);
-                processed = true;
-            } else if (annotation instanceof Bundle) {
-                processBundle(argument);
-                processed = true;
-            }
-        }
-        if (!processed && nonNull(defaultParameterName)) {
+        final AtomicBoolean processed = new AtomicBoolean(false);
+        notNullThenRun(findAnnotation(annotatedElement, Header.class), header -> {
+            processHeader(argument, header);
+            processed.set(true);
+        });
+        notNullThenRun(findAnnotation(annotatedElement, PathVar.class), pathVar -> {
+            processPathVar(argument, pathVar);
+            processed.set(true);
+        });
+        notNullThenRun(findAnnotation(annotatedElement, Parameter.class), parameter -> {
+            processParameter(argument, parameter);
+            processed.set(true);
+        });
+        notNullThenRun(findAnnotation(annotatedElement, Context.class), context -> {
+            processContext(argument, context);
+            processed.set(true);
+        });
+        notNullThenRun(findAnnotation(annotatedElement, RequestBodyRaw.class), xx -> {
+            processRequestBodyRaw(argument);
+            processed.set(true);
+        });
+        notNullThenRun(findAnnotation(annotatedElement, Bundle.class), xx -> {
+            processBundle(argument);
+            processed.set(true);
+        });
+        if (!processed.get() && nonNull(defaultParameterName)) {
             processParameter(argument, new ParameterImpl(defaultParameterName));
         }
     }
@@ -214,7 +222,7 @@ public final class OhCall extends OhRoot {
         for (val fieldEntry : fields.entrySet()) {
             val fieldName = fieldEntry.getKey();
             processAnnotations(fieldEntry.getValue().get(),
-                    Reflectt.field0(clazz, fieldName).getAnnotations(), fieldName);
+                    Reflectt.field0(clazz, fieldName), fieldName);
         }
     }
 

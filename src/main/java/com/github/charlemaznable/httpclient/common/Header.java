@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 
 @Documented
 @Inherited
-@Target({ElementType.PARAMETER, ElementType.FIELD})
+@Target({ElementType.PARAMETER, ElementType.FIELD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Header {
 
