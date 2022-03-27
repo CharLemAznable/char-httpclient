@@ -17,6 +17,7 @@ import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.val;
+import okhttp3.Headers;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -46,6 +47,7 @@ import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.CONTENT_TYPE;
+import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONTENT_FORMATTER;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.log;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -251,15 +253,17 @@ public final class OhCall extends OhRoot {
     private Request buildRequest(String url) {
         val requestBuilder = new Request.Builder();
 
+        val headersBuilder = new Headers.Builder();
         val acceptCharsetName = this.acceptCharset.name();
-        requestBuilder.header(ACCEPT_CHARSET, acceptCharsetName);
+        headersBuilder.set(ACCEPT_CHARSET, acceptCharsetName);
         val contentType = this.contentFormatter.contentType();
-        requestBuilder.header(CONTENT_TYPE, contentType);
+        headersBuilder.set(CONTENT_TYPE, contentType);
         for (val header : this.headers) {
             checkNull(header.getValue(),
-                    () -> requestBuilder.removeHeader(header.getKey()),
-                    xx -> requestBuilder.header(header.getKey(), header.getValue()));
+                    () -> headersBuilder.removeAll(header.getKey()),
+                    xx -> headersBuilder.set(header.getKey(), header.getValue()));
         }
+        requestBuilder.headers(headersBuilder.build());
 
         val pathVarMap = this.pathVars.stream().collect(toMap(Pair::getKey, Pair::getValue));
         val parameterMap = this.parameters.stream().collect(toMap(Pair::getKey, Pair::getValue));
@@ -280,8 +284,10 @@ public final class OhCall extends OhRoot {
         } else {
             val content = nullThen(this.requestBodyRaw, () ->
                     this.contentFormatter.format(parameterMap, contextMap));
+            val contentTypeHeader = nullThen(headersBuilder.get(CONTENT_TYPE),
+                    DEFAULT_CONTENT_FORMATTER::contentType);
             requestBuilder.method(requestMethod, RequestBody.create(
-                    MediaType.parse(contentType), content));
+                    MediaType.parse(contentTypeHeader), content));
             requestBuilder.url(requestUrl);
         }
         return requestBuilder.build();

@@ -199,9 +199,9 @@ public class OhReq extends CommonReq<OhReq> {
     private Request buildGetRequest() {
         val parameterMap = fetchParameterMap();
         val requestUrl = concatRequestUrl(parameterMap);
-        val headers = buildHeaders();
+        val headersBuilder = buildHeadersBuilder();
         val requestBuilder = new Request.Builder();
-        requestBuilder.headers(headers);
+        requestBuilder.headers(headersBuilder.build());
 
         requestBuilder.method(HttpMethod.GET.toString(), null);
         val query = URL_QUERY_FORMATTER.format(parameterMap, newHashMap());
@@ -212,13 +212,13 @@ public class OhReq extends CommonReq<OhReq> {
     private Request buildPostRequest() {
         val parameterMap = fetchParameterMap();
         val requestUrl = concatRequestUrl(parameterMap);
-        val headers = buildHeaders();
+        val headersBuilder = buildHeadersBuilder();
         val requestBuilder = new Request.Builder();
-        requestBuilder.headers(headers);
+        requestBuilder.headers(headersBuilder.build());
 
         val content = nullThen(this.requestBody, () ->
                 this.contentFormatter.format(parameterMap, newHashMap()));
-        val contentType = nullThen(headers.get(CONTENT_TYPE),
+        val contentType = nullThen(headersBuilder.get(CONTENT_TYPE),
                 DEFAULT_CONTENT_FORMATTER::contentType);
         requestBuilder.method(HttpMethod.POST.toString(),
                 RequestBody.create(MediaType.parse(contentType), content));
@@ -226,7 +226,7 @@ public class OhReq extends CommonReq<OhReq> {
         return requestBuilder.build();
     }
 
-    private Headers buildHeaders() {
+    private Headers.Builder buildHeadersBuilder() {
         val headersBuilder = new Headers.Builder();
         val acceptCharsetName = this.acceptCharset.name();
         headersBuilder.set(ACCEPT_CHARSET, acceptCharsetName);
@@ -237,7 +237,7 @@ public class OhReq extends CommonReq<OhReq> {
                     () -> headersBuilder.removeAll(header.getKey()),
                     xx -> headersBuilder.set(header.getKey(), header.getValue()));
         }
-        return headersBuilder.build();
+        return headersBuilder;
     }
 
     @SneakyThrows
