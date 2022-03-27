@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.ConnectionPool;
+import okhttp3.Headers;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -49,6 +50,7 @@ import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.CONTENT_TYPE;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CALL_TIMEOUT;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONNECT_TIMEOUT;
+import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONTENT_FORMATTER;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_READ_TIMEOUT;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_WRITE_TIMEOUT;
 import static java.util.Objects.nonNull;
@@ -197,7 +199,9 @@ public class OhReq extends CommonReq<OhReq> {
     private Request buildGetRequest() {
         val parameterMap = fetchParameterMap();
         val requestUrl = concatRequestUrl(parameterMap);
-        val requestBuilder = buildCommon();
+        val headers = buildHeaders();
+        val requestBuilder = new Request.Builder();
+        requestBuilder.headers(headers);
 
         requestBuilder.method(HttpMethod.GET.toString(), null);
         val query = URL_QUERY_FORMATTER.format(parameterMap, newHashMap());
@@ -208,28 +212,32 @@ public class OhReq extends CommonReq<OhReq> {
     private Request buildPostRequest() {
         val parameterMap = fetchParameterMap();
         val requestUrl = concatRequestUrl(parameterMap);
-        val requestBuilder = buildCommon();
+        val headers = buildHeaders();
+        val requestBuilder = new Request.Builder();
+        requestBuilder.headers(headers);
 
         val content = nullThen(this.requestBody, () ->
                 this.contentFormatter.format(parameterMap, newHashMap()));
-        requestBuilder.method(HttpMethod.POST.toString(), RequestBody.create(
-                MediaType.parse(this.contentFormatter.contentType()), content));
+        val contentType = nullThen(headers.get(CONTENT_TYPE),
+                DEFAULT_CONTENT_FORMATTER::contentType);
+        requestBuilder.method(HttpMethod.POST.toString(),
+                RequestBody.create(MediaType.parse(contentType), content));
         requestBuilder.url(requestUrl);
         return requestBuilder.build();
     }
 
-    private Request.Builder buildCommon() {
-        val requestBuilder = new Request.Builder();
+    private Headers buildHeaders() {
+        val headersBuilder = new Headers.Builder();
         val acceptCharsetName = this.acceptCharset.name();
-        requestBuilder.header(ACCEPT_CHARSET, acceptCharsetName);
+        headersBuilder.set(ACCEPT_CHARSET, acceptCharsetName);
         val contentType = this.contentFormatter.contentType();
-        requestBuilder.header(CONTENT_TYPE, contentType);
+        headersBuilder.set(CONTENT_TYPE, contentType);
         for (val header : this.headers) {
             checkNull(header.getValue(),
-                    () -> requestBuilder.removeHeader(header.getKey()),
-                    xx -> requestBuilder.header(header.getKey(), header.getValue()));
+                    () -> headersBuilder.removeAll(header.getKey()),
+                    xx -> headersBuilder.set(header.getKey(), header.getValue()));
         }
-        return requestBuilder;
+        return headersBuilder.build();
     }
 
     @SneakyThrows
