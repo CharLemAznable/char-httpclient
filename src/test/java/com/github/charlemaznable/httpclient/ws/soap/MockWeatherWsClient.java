@@ -3,6 +3,7 @@ package com.github.charlemaznable.httpclient.ws.soap;
 import com.github.charlemaznable.httpclient.common.FixedHeader;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.Parameter;
+import com.github.charlemaznable.httpclient.ws.WsOhClient;
 import com.github.charlemaznable.httpclient.ws.entity.GetSupportCity;
 import com.github.charlemaznable.httpclient.ws.entity.GetSupportProvince;
 

@@ -1,4 +1,4 @@
-package com.github.charlemaznable.httpclient.ws.soap12;
+package com.github.charlemaznable.httpclient.ws;
 
 import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
@@ -19,7 +19,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @OhClient
 @RequestMethod(HttpMethod.POST)
-@ContentFormat(SoapProcessor.class)
-@ResponseParse(SoapProcessor.class)
-public @interface WsOhClient {
+@ContentFormat(com.github.charlemaznable.httpclient.ws.soap12.SoapProcessor.class)
+@ResponseParse(com.github.charlemaznable.httpclient.ws.soap12.SoapProcessor.class)
+public @interface WsOhClient12 {
 }
