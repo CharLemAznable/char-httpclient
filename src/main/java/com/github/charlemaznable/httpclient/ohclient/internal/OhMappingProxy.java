@@ -396,7 +396,8 @@ public final class OhMappingProxy extends OhRoot {
         static String checkRequestUrl(Class clazz, Method method,
                                       Factory factory, OhProxy proxy) {
             val mapping = getMergedAnnotation(method, Mapping.class);
-            val url = checkNull(mapping, () -> "/" + method.getName(), annotation -> {
+            val url = checkNull(mapping, () -> proxy.mappingMethodNameDisabled
+                    ? "" : "/" + method.getName(), annotation -> {
                 Class<? extends UrlProvider> providerClass = annotation.urlProvider();
                 return substitute(UrlProvider.class == providerClass ? annotation.value()
                         : FactoryContext.apply(factory, providerClass, p -> p.url(clazz, method)));

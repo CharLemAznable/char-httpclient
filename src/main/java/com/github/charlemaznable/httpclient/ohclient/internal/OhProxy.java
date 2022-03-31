@@ -18,6 +18,7 @@ import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.Mapping.UrlProvider;
+import com.github.charlemaznable.httpclient.common.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
 import com.github.charlemaznable.httpclient.common.ResponseParse;
 import com.github.charlemaznable.httpclient.common.ResponseParse.ResponseParser;
@@ -92,6 +93,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
     Class ohClass;
     Factory factory;
     String baseUrl;
+    boolean mappingMethodNameDisabled;
 
     LoadingCache<Method, OhMappingProxy> ohMappingProxyCache
             = simpleCache(from(this::loadMappingProxy));
@@ -101,6 +103,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         this.factory = factory;
         Elf.checkOhClient(this.ohClass);
         this.baseUrl = Elf.checkBaseUrl(this.ohClass, this.factory);
+        this.mappingMethodNameDisabled = Elf.checkMappingMethodNameDisabled(this.ohClass);
 
         this.clientProxy = Elf.checkClientProxy(this.ohClass, this.factory);
         val clientSSL = Elf.checkClientSSL(this.ohClass);
@@ -173,6 +176,10 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
             val providerClass = mapping.urlProvider();
             return substitute(UrlProvider.class == providerClass ? mapping.value()
                     : FactoryContext.apply(factory, providerClass, p -> p.url(clazz)));
+        }
+
+        static boolean checkMappingMethodNameDisabled(Class clazz) {
+            return nonNull(findAnnotation(clazz, MappingMethodNameDisabled.class));
         }
 
         static Proxy checkClientProxy(Class clazz, Factory factory) {

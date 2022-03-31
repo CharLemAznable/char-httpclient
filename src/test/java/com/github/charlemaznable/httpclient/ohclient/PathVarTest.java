@@ -4,6 +4,7 @@ import com.github.charlemaznable.httpclient.common.FixedPathVar;
 import com.github.charlemaznable.httpclient.common.FixedValueProvider;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
+import com.github.charlemaznable.httpclient.common.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.common.PathVar;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import lombok.SneakyThrows;
@@ -56,18 +57,16 @@ public class PathVarTest {
     @FixedPathVar(name = "P1", value = "V1")
     @FixedPathVar(name = "P2", valueProvider = P2Provider.class)
     @Mapping("${root}:41150/{P1}/{P2}")
+    @MappingMethodNameDisabled
     @OhClient
     public interface PathVarHttpClient {
 
-        @Mapping
         String sampleDefault();
 
         @FixedPathVar(name = "P2", valueProvider = P2Provider.class)
-        @Mapping
         String sampleMapping();
 
         @FixedPathVar(name = "P2", value = "V3")
-        @Mapping
         String samplePathVars(@PathVar("P2") String v4);
     }
 
