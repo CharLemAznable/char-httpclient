@@ -9,6 +9,8 @@ import com.github.charlemaznable.httpclient.common.FixedValueProvider;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
+import com.github.charlemaznable.httpclient.common.RequestExtend;
+import com.github.charlemaznable.httpclient.common.RequestExtend.RequestExtender;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
 import com.github.charlemaznable.httpclient.common.ResponseParse;
 import com.github.charlemaznable.httpclient.common.ResponseParse.ResponseParser;
@@ -21,10 +23,12 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 
 import static com.github.charlemaznable.core.codec.Json.json;
@@ -47,6 +51,7 @@ public class ContextTest {
             mockWebServer.setDispatcher(new Dispatcher() {
                 @Override
                 public MockResponse dispatch(RecordedRequest request) {
+                    assertEquals("EH1", request.getHeader("H1"));
                     val body = unJson(request.getBody().readUtf8());
                     switch (request.getPath()) {
                         case "/sampleDefault":
@@ -90,6 +95,7 @@ public class ContextTest {
     @RequestMethod(HttpMethod.POST)
     @ContentFormat(TestContextFormatter.class)
     @ResponseParse(TestResponseParser.class)
+    @RequestExtend(TestRequestExtender.class)
     @FixedContext(name = "C1", value = "V1")
     @FixedContext(name = "C2", valueProvider = C2Provider.class)
     @Mapping("${root}:41170")
@@ -108,16 +114,19 @@ public class ContextTest {
                               @Context("C4") String v4);
 
         @ResponseParse(TestResponseParser.class)
+        @RequestExtend(TestRequestExtender.class)
         @Mapping("/sampleDefault")
         TestResponse sampleDefaultResponse();
 
         @ResponseParse(TestResponseParser.class)
+        @RequestExtend(TestRequestExtender.class)
         @Mapping("/sampleMapping")
         @FixedContext(name = "C2", valueProvider = C2Provider.class)
         @FixedContext(name = "C3", value = "V3")
         TestResponse sampleMappingResponse();
 
         @ResponseParse(TestResponseParser.class)
+        @RequestExtend(TestRequestExtender.class)
         @Mapping("/sampleContexts")
         @FixedContext(name = "C2", valueProvider = C2Provider.class)
         @FixedContext(name = "C3", value = "V3")
@@ -183,5 +192,16 @@ public class ContextTest {
     public static class TestResponse {
 
         private String response;
+    }
+
+    public static class TestRequestExtender implements RequestExtender {
+
+        @Override
+        public void extend(List<Pair<String, String>> headers,
+                           List<Pair<String, String>> pathVars,
+                           List<Pair<String, Object>> parameters,
+                           List<Pair<String, Object>> contexts) {
+            headers.add(Pair.of("H1", "EH1"));
+        }
     }
 }

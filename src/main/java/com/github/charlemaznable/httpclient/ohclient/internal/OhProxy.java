@@ -19,6 +19,8 @@ import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.Mapping.UrlProvider;
 import com.github.charlemaznable.httpclient.common.MappingMethodNameDisabled;
+import com.github.charlemaznable.httpclient.common.RequestExtend;
+import com.github.charlemaznable.httpclient.common.RequestExtend.RequestExtender;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
 import com.github.charlemaznable.httpclient.common.ResponseParse;
 import com.github.charlemaznable.httpclient.common.ResponseParse.ResponseParser;
@@ -142,6 +144,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         this.statusFallbackMapping = Elf.checkStatusFallbackMapping(this.ohClass);
         this.statusSeriesFallbackMapping = Elf.checkStatusSeriesFallbackMapping(this.ohClass);
 
+        this.requestExtender = Elf.checkRequestExtender(this.ohClass, this.factory);
         this.responseParser = Elf.checkResponseParser(this.ohClass, this.factory);
 
         this.extraUrlQueryBuilder = Elf.checkExtraUrlQueryBuilder(this.ohClass, this.factory);
@@ -386,6 +389,12 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
                     StatusSeriesFallback.class)).stream()
                     .collect(toMap(StatusSeriesFallback::statusSeries, StatusSeriesFallback::fallback)));
             return result;
+        }
+
+        static RequestExtender checkRequestExtender(Class clazz, Factory factory) {
+            val requestExtend = getMergedAnnotation(clazz, RequestExtend.class);
+            return checkNull(requestExtend, () -> null, annotation ->
+                    FactoryContext.build(factory, annotation.value()));
         }
 
         static ResponseParser checkResponseParser(Class clazz, Factory factory) {

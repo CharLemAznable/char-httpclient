@@ -98,6 +98,8 @@ public final class OhCall extends OhRoot {
         this.parameters = newArrayList(proxy.parameters);
         this.contexts = newArrayList(proxy.contexts);
 
+        this.requestExtender = proxy.requestExtender;
+
         this.extraUrlQueryBuilder = proxy.extraUrlQueryBuilder;
     }
 
@@ -260,6 +262,9 @@ public final class OhCall extends OhRoot {
 
     private Request buildRequest(String url) {
         val requestBuilder = new Request.Builder();
+
+        notNullThenRun(this.requestExtender, extender -> extender.extend(
+                this.headers, this.pathVars, this.parameters, this.contexts));
 
         val headersBuilder = new Headers.Builder();
         val acceptCharsetName = this.acceptCharset.name();
