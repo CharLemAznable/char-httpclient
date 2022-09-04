@@ -46,6 +46,9 @@
 
     <properties>
         <sonar.projectKey>CharLemAznable_char-httpclient</sonar.projectKey>
+        <sonar.exclusions>
+            src/main/java/com/github/charlemaznable/httpclient/ohclient/elf/SSLTrustAll.java
+        </sonar.exclusions>
 
         <char-elves.version>0.0.9-SNAPSHOT</char-elves.version>
 
@@ -86,6 +89,11 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.bingoohuang</groupId>
+            <artifactId>diamond-client</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.github.charlemaznable</groupId>
             <artifactId>char-configservice</artifactId>

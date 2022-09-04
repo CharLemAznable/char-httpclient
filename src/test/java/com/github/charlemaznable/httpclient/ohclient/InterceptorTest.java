@@ -1,6 +1,7 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.core.config.Arguments;
+import com.github.charlemaznable.core.lang.EverythingIsNonNull;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
@@ -17,7 +18,6 @@ import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.Interceptor;
 import okhttp3.Response;
-import okhttp3.internal.annotations.EverythingIsNonNull;
 import okhttp3.logging.HttpLoggingInterceptor.Level;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -51,6 +52,7 @@ public class InterceptorTest {
         Arguments.initial();
     }
 
+    @EverythingIsNonNull
     @SneakyThrows
     @Test
     public void testInterceptorClient() {
@@ -58,7 +60,7 @@ public class InterceptorTest {
             mockWebServer.setDispatcher(new Dispatcher() {
                 @Override
                 public MockResponse dispatch(RecordedRequest request) {
-                    switch (request.getPath()) {
+                    switch (requireNonNull(request.getPath())) {
                         case "/sample1":
                             val values1 = request.getHeaders().values(HEADER_NAME);
                             assertEquals(1, values1.size());

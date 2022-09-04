@@ -40,7 +40,7 @@ public final class ResponseBodyExtractor {
     }
 
     @SneakyThrows
-    public static String string(ResponseBody responseBody) {
+    static String string(ResponseBody responseBody) {
         return responseBody.string();
     }
 

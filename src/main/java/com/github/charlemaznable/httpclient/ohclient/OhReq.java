@@ -5,9 +5,8 @@ import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.FallbackFunction.Response;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
+import com.github.charlemaznable.httpclient.ohclient.elf.SSLTrustAll;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhResponseBody;
-import com.github.charlemaznable.httpclient.ohclient.internal.ResponseBodyExtractor;
-import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.ConnectionPool;
@@ -22,17 +21,9 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import okhttp3.logging.HttpLoggingInterceptor.Level;
 
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.net.Proxy;
-import java.net.Socket;
-import java.security.KeyStore;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -55,7 +46,6 @@ import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_WRITE_TIMEOUT;
 import static java.util.Objects.nonNull;
 import static java.util.concurrent.Executors.newCachedThreadPool;
-import static lombok.AccessLevel.PRIVATE;
 
 public class OhReq extends CommonReq<OhReq> {
 
@@ -165,7 +155,7 @@ public class OhReq extends CommonReq<OhReq> {
     public OkHttpClient buildHttpClient() {
         val httpClientBuilder = new OkHttpClient.Builder().proxy(this.clientProxy);
         notNullThen(this.sslSocketFactory, xx -> checkNull(this.x509TrustManager,
-                () -> httpClientBuilder.sslSocketFactory(this.sslSocketFactory, defaultTrustManager()),
+                () -> httpClientBuilder.sslSocketFactory(this.sslSocketFactory, SSLTrustAll.x509TrustManager()),
                 yy -> httpClientBuilder.sslSocketFactory(this.sslSocketFactory, this.x509TrustManager)));
         notNullThen(this.hostnameVerifier, httpClientBuilder::hostnameVerifier);
         httpClientBuilder.connectionPool(nullThen(this.connectionPool, () -> globalConnectionPool));
@@ -176,24 +166,6 @@ public class OhReq extends CommonReq<OhReq> {
         this.interceptors.forEach(httpClientBuilder::addInterceptor);
         httpClientBuilder.addInterceptor(this.loggingInterceptor);
         return httpClientBuilder.build();
-    }
-
-    private X509TrustManager defaultTrustManager() {
-        TrustManager[] trustManagers = new TrustManager[0];
-        try {
-            val trustManagerFactory = TrustManagerFactory
-                    .getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            trustManagerFactory.init((KeyStore) null);
-            trustManagers = trustManagerFactory.getTrustManagers();
-        } catch (Exception ignored) {
-            // ignored
-        }
-        for (TrustManager trustManager : trustManagers) {
-            if (trustManager instanceof X509TrustManager) {
-                return (X509TrustManager) trustManager;
-            }
-        }
-        return DummyX509TrustManager.INSTANCE;
     }
 
     private Request buildGetRequest() {
@@ -221,7 +193,7 @@ public class OhReq extends CommonReq<OhReq> {
         val contentType = nullThen(headersBuilder.get(CONTENT_TYPE),
                 DEFAULT_CONTENT_FORMATTER::contentType);
         requestBuilder.method(HttpMethod.POST.toString(),
-                RequestBody.create(MediaType.parse(contentType), content));
+                RequestBody.create(content, MediaType.parse(contentType)));
         requestBuilder.url(requestUrl);
         return requestBuilder.build();
     }
@@ -262,7 +234,7 @@ public class OhReq extends CommonReq<OhReq> {
                     statusCode, responseBody);
         }
 
-        return notNullThen(responseBody, ResponseBodyExtractor::string);
+        return notNullThen(responseBody, OhReq::extractResponseString);
     }
 
     private String applyFallback(Class<? extends FallbackFunction> function,
@@ -272,43 +244,13 @@ public class OhReq extends CommonReq<OhReq> {
                     @Override
                     public String responseBodyAsString() {
                         return toStr(notNullThen(getResponseBody(),
-                                ResponseBodyExtractor::string));
+                                OhReq::extractResponseString));
                     }
                 }));
     }
 
-    @NoArgsConstructor(access = PRIVATE)
-    private static class DummyX509TrustManager extends X509ExtendedTrustManager implements X509TrustManager {
-
-        private static final String EXCEPTION_MESSAGE = "No X509TrustManager implementation available";
-        private static final X509TrustManager INSTANCE = new DummyX509TrustManager();
-
-        public void checkClientTrusted(X509Certificate[] var1, String var2) throws CertificateException {
-            throw new CertificateException(EXCEPTION_MESSAGE);
-        }
-
-        public void checkServerTrusted(X509Certificate[] var1, String var2) throws CertificateException {
-            throw new CertificateException(EXCEPTION_MESSAGE);
-        }
-
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
-        }
-
-        public void checkClientTrusted(X509Certificate[] var1, String var2, Socket var3) throws CertificateException {
-            throw new CertificateException(EXCEPTION_MESSAGE);
-        }
-
-        public void checkServerTrusted(X509Certificate[] var1, String var2, Socket var3) throws CertificateException {
-            throw new CertificateException(EXCEPTION_MESSAGE);
-        }
-
-        public void checkClientTrusted(X509Certificate[] var1, String var2, SSLEngine var3) throws CertificateException {
-            throw new CertificateException(EXCEPTION_MESSAGE);
-        }
-
-        public void checkServerTrusted(X509Certificate[] var1, String var2, SSLEngine var3) throws CertificateException {
-            throw new CertificateException(EXCEPTION_MESSAGE);
-        }
+    @SneakyThrows
+    private static String extractResponseString(ResponseBody responseBody) {
+        return responseBody.string();
     }
 }

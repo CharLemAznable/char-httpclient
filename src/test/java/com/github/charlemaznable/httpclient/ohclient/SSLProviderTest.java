@@ -63,8 +63,7 @@ public class SSLProviderTest {
     public void testSSLDefParam() {
         val httpClient = ohLoader.getClient(SSLDefParamHttpClient.class);
         val sslSocketFactory = new TestSSLSocketFactory();
-        val hostnameVerifier = new TestHostnameVerifier
-                ();
+        val hostnameVerifier = new TestHostnameVerifier();
         try {
             httpClient.sample(sslSocketFactory, hostnameVerifier);
         } catch (Exception e) {

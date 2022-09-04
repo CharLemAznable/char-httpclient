@@ -300,7 +300,7 @@ public final class OhCall extends OhRoot {
             val contentTypeHeader = nullThen(headersBuilder.get(CONTENT_TYPE),
                     DEFAULT_CONTENT_FORMATTER::contentType);
             requestBuilder.method(requestMethod, RequestBody.create(
-                    MediaType.parse(contentTypeHeader), content));
+                    content, MediaType.parse(contentTypeHeader)));
             requestBuilder.url(requestUrl);
         }
         return requestBuilder.build();
