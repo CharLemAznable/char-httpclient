@@ -9,6 +9,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
+import java.util.List;
+
+import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 
 @Documented
 @Inherited
@@ -16,11 +19,11 @@ import java.lang.reflect.Method;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Mapping {
 
-    @AliasFor("url")
-    String value() default "";
+    @AliasFor("urls")
+    String[] value() default "";
 
     @AliasFor("value")
-    String url() default "";
+    String[] urls() default "";
 
     Class<? extends UrlProvider> urlProvider() default UrlProvider.class;
 
@@ -34,6 +37,14 @@ public @interface Mapping {
         default String url(Class<?> clazz, Method method) {
             throw new ProviderException(this.getClass().getName()
                     + "#url(Class<?>, Method) need be overwritten");
+        }
+
+        default List<String> urls(Class<?> clazz) {
+            return newArrayList();
+        }
+
+        default List<String> urls(Class<?> clazz, Method method) {
+            return newArrayList();
         }
     }
 }

@@ -7,6 +7,7 @@ import com.github.charlemaznable.httpclient.common.ExtraUrlQuery.ExtraUrlQueryBu
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
+import com.github.charlemaznable.httpclient.common.MappingBalance;
 import com.github.charlemaznable.httpclient.common.Parameter;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
@@ -64,6 +65,7 @@ public class ExtraQueryTest {
         }
     }
 
+    @MappingBalance(MappingBalance.RoundRobinBalancer.class)
     @ExtraUrlQuery(ExtraOnClass.class)
     @ContentFormat(JsonContentFormatter.class)
     @Mapping("${root}:41230")

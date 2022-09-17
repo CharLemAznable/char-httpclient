@@ -69,7 +69,7 @@ public final class OhCall extends OhRoot {
         initial(proxy);
         processArguments(proxy.ohMethod, args);
         this.okHttpClient = buildOkHttpClient(proxy);
-        this.request = buildRequest(proxy.requestUrl);
+        this.request = buildRequest(proxy);
     }
 
     @SneakyThrows
@@ -260,7 +260,7 @@ public final class OhCall extends OhRoot {
                 .buildHttpClient();
     }
 
-    private Request buildRequest(String url) {
+    private Request buildRequest(OhMappingProxy proxy) {
         val requestBuilder = new Request.Builder();
 
         notNullThenRun(this.requestExtender, extender -> extender.extend(
@@ -283,7 +283,8 @@ public final class OhCall extends OhRoot {
         val contextMap = this.contexts.stream().collect(toMap(Pair::getKey, Pair::getValue));
 
         val pathVarSubstitutor = new StringSubstitutor(pathVarMap, "{", "}");
-        val substitutedUrl = pathVarSubstitutor.replace(url);
+        val substitutedUrl = pathVarSubstitutor.replace(
+                proxy.mappingBalancer.choose(proxy.requestUrls));
         val extraUrlQuery = checkNull(this.extraUrlQueryBuilder, () -> "",
                 builder -> builder.build(parameterMap, contextMap));
         val requestUrl = concatUrlQuery(substitutedUrl, extraUrlQuery);

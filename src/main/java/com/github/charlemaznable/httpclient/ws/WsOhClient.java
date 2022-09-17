@@ -30,10 +30,10 @@ import java.lang.annotation.Target;
 public @interface WsOhClient {
 
     @AliasFor(annotation = Mapping.class)
-    String value() default "";
+    String[] value() default "";
 
     @AliasFor(annotation = Mapping.class)
-    String url() default "";
+    String[] urls() default "";
 
     @AliasFor(annotation = Mapping.class)
     Class<? extends UrlProvider> urlProvider() default UrlProvider.class;

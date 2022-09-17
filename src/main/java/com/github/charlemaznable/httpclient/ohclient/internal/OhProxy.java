@@ -18,6 +18,9 @@ import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.Mapping.UrlProvider;
+import com.github.charlemaznable.httpclient.common.MappingBalance;
+import com.github.charlemaznable.httpclient.common.MappingBalance.MappingBalancer;
+import com.github.charlemaznable.httpclient.common.MappingBalance.RandomBalancer;
 import com.github.charlemaznable.httpclient.common.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.common.RequestExtend;
 import com.github.charlemaznable.httpclient.common.RequestExtend.RequestExtender;
@@ -61,6 +64,7 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -68,6 +72,7 @@ import java.util.stream.Collectors;
 import static com.github.charlemaznable.core.lang.Condition.checkBlank;
 import static com.github.charlemaznable.core.lang.Condition.checkNotNull;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
+import static com.github.charlemaznable.core.lang.Condition.emptyThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.LoadingCachee.get;
@@ -82,7 +87,6 @@ import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_HTTP_METHOD;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_LOGGING_LEVEL;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.ohConnectionPool;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.substitute;
 import static com.google.common.cache.CacheLoader.from;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -94,7 +98,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
 
     Class ohClass;
     Factory factory;
-    String baseUrl;
+    List<String> baseUrls;
     boolean mappingMethodNameDisabled;
 
     LoadingCache<Method, OhMappingProxy> ohMappingProxyCache
@@ -104,7 +108,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         this.ohClass = ohClass;
         this.factory = factory;
         Elf.checkOhClient(this.ohClass);
-        this.baseUrl = Elf.checkBaseUrl(this.ohClass, this.factory);
+        this.baseUrls = Elf.checkBaseUrls(this.ohClass, this.factory);
         this.mappingMethodNameDisabled = Elf.checkMappingMethodNameDisabled(this.ohClass);
 
         this.clientProxy = Elf.checkClientProxy(this.ohClass, this.factory);
@@ -148,6 +152,8 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         this.responseParser = Elf.checkResponseParser(this.ohClass, this.factory);
 
         this.extraUrlQueryBuilder = Elf.checkExtraUrlQueryBuilder(this.ohClass, this.factory);
+
+        this.mappingBalancer = Elf.checkMappingBalancer(this.ohClass, this.factory);
     }
 
     @Override
@@ -173,12 +179,14 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
                     new OhException(clazz.getName() + " has no OhClient annotation"));
         }
 
-        static String checkBaseUrl(Class clazz, Factory factory) {
+        static List<String> checkBaseUrls(Class clazz, Factory factory) {
             val mapping = getMergedAnnotation(clazz, Mapping.class);
-            if (isNull(mapping)) return "";
+            if (isNull(mapping)) return newArrayList("");
             val providerClass = mapping.urlProvider();
-            return substitute(UrlProvider.class == providerClass ? mapping.value()
-                    : FactoryContext.apply(factory, providerClass, p -> p.url(clazz)));
+            return (UrlProvider.class == providerClass ? Arrays.asList(mapping.value())
+                    : FactoryContext.apply(factory, providerClass, p ->
+                    emptyThen(p.urls(clazz), () -> newArrayList(p.url(clazz)))))
+                    .stream().map(OhDummy::substitute).collect(Collectors.toList());
         }
 
         static boolean checkMappingMethodNameDisabled(Class clazz) {
@@ -406,6 +414,12 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         static ExtraUrlQueryBuilder checkExtraUrlQueryBuilder(Class clazz, Factory factory) {
             val extraUrlQuery = getMergedAnnotation(clazz, ExtraUrlQuery.class);
             return checkNull(extraUrlQuery, () -> null, annotation ->
+                    FactoryContext.build(factory, annotation.value()));
+        }
+
+        static MappingBalancer checkMappingBalancer(Class clazz, Factory factory) {
+            val mappingBalance = getMergedAnnotation(clazz, MappingBalance.class);
+            return checkNull(mappingBalance, RandomBalancer::new, annotation ->
                     FactoryContext.build(factory, annotation.value()));
         }
     }

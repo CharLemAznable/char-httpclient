@@ -19,6 +19,8 @@ import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.Mapping.UrlProvider;
+import com.github.charlemaznable.httpclient.common.MappingBalance;
+import com.github.charlemaznable.httpclient.common.MappingBalance.MappingBalancer;
 import com.github.charlemaznable.httpclient.common.RequestExtend;
 import com.github.charlemaznable.httpclient.common.RequestExtend.RequestExtender;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
@@ -66,15 +68,18 @@ import java.lang.reflect.TypeVariable;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static com.github.charlemaznable.core.codec.Json.desc;
 import static com.github.charlemaznable.core.lang.Condition.checkBlank;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
+import static com.github.charlemaznable.core.lang.Condition.emptyThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
@@ -84,7 +89,7 @@ import static com.github.charlemaznable.core.lang.Str.isNotBlank;
 import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.spring.AnnotationElf.findAnnotation;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.ohExecutorService;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.substitute;
+import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static lombok.AccessLevel.PRIVATE;
@@ -98,7 +103,7 @@ public final class OhMappingProxy extends OhRoot {
     Class ohClass;
     Method ohMethod;
     Factory factory;
-    String requestUrl;
+    List<String> requestUrls;
 
     boolean returnFuture; // Future<V>
     boolean returnCollection; // Collection<E>
@@ -112,7 +117,7 @@ public final class OhMappingProxy extends OhRoot {
         this.ohClass = ohClass;
         this.ohMethod = ohMethod;
         this.factory = factory;
-        this.requestUrl = Elf.checkRequestUrl(this.ohClass,
+        this.requestUrls = Elf.checkRequestUrls(this.ohClass,
                 this.ohMethod, this.factory, proxy);
 
         this.clientProxy = Elf.checkClientProxy(
@@ -173,6 +178,8 @@ public final class OhMappingProxy extends OhRoot {
         this.responseParser = Elf.checkResponseParser(this.ohMethod, this.factory, proxy);
 
         this.extraUrlQueryBuilder = Elf.checkExtraUrlQueryBuilder(this.ohMethod, this.factory, proxy);
+
+        this.mappingBalancer = Elf.checkMappingBalancer(this.ohMethod, this.factory, proxy);
 
         processReturnType(this.ohMethod);
     }
@@ -396,18 +403,32 @@ public final class OhMappingProxy extends OhRoot {
     @NoArgsConstructor(access = PRIVATE)
     static class Elf {
 
-        static String checkRequestUrl(Class clazz, Method method,
-                                      Factory factory, OhProxy proxy) {
+        static List<String> checkRequestUrls(Class clazz, Method method,
+                                             Factory factory, OhProxy proxy) {
+            val urls = checkMethodUrls(clazz, method, factory, proxy);
+            Set<String> requestUrls = newHashSet();
+            for (val url : urls) {
+                if (isBlank(url)) {
+                    requestUrls.addAll(proxy.baseUrls);
+                } else {
+                    requestUrls.addAll(proxy.baseUrls.stream()
+                            .map(base -> checkBlank(base, () -> url, b -> b + url))
+                            .collect(Collectors.toList()));
+                }
+            }
+            return requestUrls.stream().distinct().collect(Collectors.toList());
+        }
+
+        static List<String> checkMethodUrls(Class clazz, Method method,
+                                            Factory factory, OhProxy proxy) {
             val mapping = getMergedAnnotation(method, Mapping.class);
-            val url = checkNull(mapping, () -> proxy.mappingMethodNameDisabled
-                    ? "" : "/" + method.getName(), annotation -> {
-                Class<? extends UrlProvider> providerClass = annotation.urlProvider();
-                return substitute(UrlProvider.class == providerClass ? annotation.value()
-                        : FactoryContext.apply(factory, providerClass, p -> p.url(clazz, method)));
-            });
-            if (isBlank(url)) return proxy.baseUrl;
-            if (isBlank(proxy.baseUrl)) return url;
-            return proxy.baseUrl + url;
+            if (isNull(mapping)) return newArrayList(
+                    proxy.mappingMethodNameDisabled ? "" : "/" + method.getName());
+            Class<? extends UrlProvider> providerClass = mapping.urlProvider();
+            return (UrlProvider.class == providerClass ? Arrays.asList(mapping.value())
+                    : FactoryContext.apply(factory, providerClass, p ->
+                    emptyThen(p.urls(clazz, method), () -> newArrayList(p.url(clazz, method)))))
+                    .stream().map(OhDummy::substitute).collect(Collectors.toList());
         }
 
         static Proxy checkClientProxy(Class clazz, Method method,
@@ -668,6 +689,13 @@ public final class OhMappingProxy extends OhRoot {
                 Method method, Factory factory, OhProxy proxy) {
             val extraUrlQuery = getMergedAnnotation(method, ExtraUrlQuery.class);
             return checkNull(extraUrlQuery, () -> proxy.extraUrlQueryBuilder, annotation ->
+                    FactoryContext.build(factory, annotation.value()));
+        }
+
+        static MappingBalancer checkMappingBalancer(
+                Method method, Factory factory, OhProxy proxy) {
+            val mappingBalance = getMergedAnnotation(method, MappingBalance.class);
+            return checkNull(mappingBalance, () -> proxy.mappingBalancer, annotation ->
                     FactoryContext.build(factory, annotation.value()));
         }
     }
