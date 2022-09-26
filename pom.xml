@@ -58,6 +58,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.github.bingoohuang</groupId>
+            <artifactId>westcache</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>com.github.charlemaznable</groupId>
             <artifactId>char-elves</artifactId>
             <version>${char-elves.version}</version>

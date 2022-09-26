@@ -1,5 +1,8 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.bingoohuang.utils.lang.Clz;
+import com.github.bingoohuang.westcache.cglib.CglibCacheMethodInterceptor;
+import com.github.bingoohuang.westcache.utils.Anns;
 import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.EasyEnhancer;
 import com.github.charlemaznable.core.lang.Factory;
@@ -12,6 +15,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.NoOp;
 
 import javax.annotation.Nonnull;
@@ -75,19 +79,29 @@ public final class OhFactory {
         @Nonnull
         private <T> Object loadClient(@Nonnull Class<T> ohClass) {
             ensureClassIsAnInterface(ohClass);
-            return EasyEnhancer.create(OhDummy.class,
-                    new Class[]{ohClass},
-                    method -> {
-                        if (method.isDefault()) return 1;
-                        return 0;
-                    }, new Callback[]{
-                            new OhProxy(ohClass, factory),
-                            NoOp.INSTANCE}, null);
+            return wrapWestCacheable(ohClass,
+                    EasyEnhancer.create(OhDummy.class,
+                            new Class[]{ohClass},
+                            method -> {
+                                if (method.isDefault()) return 1;
+                                return 0;
+                            }, new Callback[]{
+                                    new OhProxy(ohClass, factory),
+                                    NoOp.INSTANCE}, null));
         }
 
         private <T> void ensureClassIsAnInterface(Class<T> clazz) {
             if (clazz.isInterface()) return;
             throw new OhException(clazz + " is not An Interface");
+        }
+
+        private <T> Object wrapWestCacheable(Class<T> ohClass, Object impl) {
+            if (Clz.classExists("com.github.bingoohuang.westcache.cglib.CglibCacheMethodInterceptor")
+                    && Anns.isFastWestCacheAnnotated(ohClass)) {
+                return Enhancer.create(OhDummy.class, new Class[]{ohClass},
+                        new CglibCacheMethodInterceptor(impl));
+            }
+            return impl;
         }
     }
 
