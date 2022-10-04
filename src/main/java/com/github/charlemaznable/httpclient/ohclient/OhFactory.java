@@ -1,9 +1,9 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
-import com.github.bingoohuang.utils.lang.Clz;
 import com.github.bingoohuang.westcache.cglib.CglibCacheMethodInterceptor;
 import com.github.bingoohuang.westcache.utils.Anns;
 import com.github.charlemaznable.core.context.FactoryContext;
+import com.github.charlemaznable.core.lang.ClzPath;
 import com.github.charlemaznable.core.lang.EasyEnhancer;
 import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout;
@@ -96,7 +96,7 @@ public final class OhFactory {
         }
 
         private <T> Object wrapWestCacheable(Class<T> ohClass, Object impl) {
-            if (Clz.classExists("com.github.bingoohuang.westcache.cglib.CglibCacheMethodInterceptor")
+            if (ClzPath.classExists("com.github.bingoohuang.westcache.cglib.CglibCacheMethodInterceptor")
                     && Anns.isFastWestCacheAnnotated(ohClass)) {
                 return Enhancer.create(OhDummy.class, new Class[]{ohClass},
                         new CglibCacheMethodInterceptor(impl));
