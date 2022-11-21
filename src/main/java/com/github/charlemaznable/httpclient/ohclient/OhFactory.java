@@ -6,6 +6,7 @@ import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.ClzPath;
 import com.github.charlemaznable.core.lang.EasyEnhancer;
 import com.github.charlemaznable.core.lang.Factory;
+import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhDummy;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhProxy;
@@ -81,7 +82,7 @@ public final class OhFactory {
             ensureClassIsAnInterface(ohClass);
             return wrapWestCacheable(ohClass,
                     EasyEnhancer.create(OhDummy.class,
-                            new Class[]{ohClass, OhClientReloader.class},
+                            new Class[]{ohClass, Reloadable.class},
                             method -> {
                                 if (method.isDefault()) return 1;
                                 return 0;

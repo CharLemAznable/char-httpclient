@@ -1,5 +1,6 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.Mapping.UrlProvider;
@@ -70,7 +71,7 @@ public class ReloaderTest {
 
     @Mapping(urlProvider = UrlReloader.class)
     @OhClient
-    public interface ReloadableClient extends OhClientReloader {
+    public interface ReloadableClient extends Reloadable {
 
         String sample();
     }

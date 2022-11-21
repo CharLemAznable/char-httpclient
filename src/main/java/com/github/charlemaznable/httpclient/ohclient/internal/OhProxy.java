@@ -2,6 +2,7 @@ package com.github.charlemaznable.httpclient.ohclient.internal;
 
 import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.Factory;
+import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.common.AcceptCharset;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.ContentFormat.ContentFormatter;
@@ -31,7 +32,6 @@ import com.github.charlemaznable.httpclient.common.StatusErrorThrower;
 import com.github.charlemaznable.httpclient.common.StatusFallback;
 import com.github.charlemaznable.httpclient.common.StatusSeriesFallback;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
-import com.github.charlemaznable.httpclient.ohclient.OhClientReloader;
 import com.github.charlemaznable.httpclient.ohclient.OhException;
 import com.github.charlemaznable.httpclient.ohclient.OhReq;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptor;
@@ -95,7 +95,7 @@ import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedRepeatableAnnotations;
 
-public final class OhProxy extends OhRoot implements MethodInterceptor, OhClientReloader {
+public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadable {
 
     Class ohClass;
     Factory factory;
@@ -118,7 +118,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, OhClient
             return methodProxy.invokeSuper(o, args);
         }
 
-        if (method.getDeclaringClass().equals(OhClientReloader.class)) {
+        if (method.getDeclaringClass().equals(Reloadable.class)) {
             return method.invoke(this, args);
         }
 
