@@ -81,7 +81,7 @@ public final class OhFactory {
             ensureClassIsAnInterface(ohClass);
             return wrapWestCacheable(ohClass,
                     EasyEnhancer.create(OhDummy.class,
-                            new Class[]{ohClass},
+                            new Class[]{ohClass, OhClientReloader.class},
                             method -> {
                                 if (method.isDefault()) return 1;
                                 return 0;

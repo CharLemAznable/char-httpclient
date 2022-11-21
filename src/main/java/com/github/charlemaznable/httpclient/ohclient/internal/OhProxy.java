@@ -31,6 +31,7 @@ import com.github.charlemaznable.httpclient.common.StatusErrorThrower;
 import com.github.charlemaznable.httpclient.common.StatusFallback;
 import com.github.charlemaznable.httpclient.common.StatusSeriesFallback;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
+import com.github.charlemaznable.httpclient.ohclient.OhClientReloader;
 import com.github.charlemaznable.httpclient.ohclient.OhException;
 import com.github.charlemaznable.httpclient.ohclient.OhReq;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptor;
@@ -94,7 +95,7 @@ import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedRepeatableAnnotations;
 
-public final class OhProxy extends OhRoot implements MethodInterceptor {
+public final class OhProxy extends OhRoot implements MethodInterceptor, OhClientReloader {
 
     Class ohClass;
     Factory factory;
@@ -107,6 +108,31 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
     public OhProxy(Class ohClass, Factory factory) {
         this.ohClass = ohClass;
         this.factory = factory;
+        this.initialize();
+    }
+
+    @Override
+    public Object intercept(Object o, Method method, Object[] args,
+                            MethodProxy methodProxy) throws Throwable {
+        if (method.getDeclaringClass().equals(OhDummy.class)) {
+            return methodProxy.invokeSuper(o, args);
+        }
+
+        if (method.getDeclaringClass().equals(OhClientReloader.class)) {
+            return method.invoke(this, args);
+        }
+
+        val mappingProxy = get(this.ohMappingProxyCache, method);
+        return mappingProxy.execute(args);
+    }
+
+    @Override
+    public void reload() {
+        this.initialize();
+        this.ohMappingProxyCache.invalidateAll();
+    }
+
+    private void initialize() {
         Elf.checkOhClient(this.ohClass);
         this.baseUrls = Elf.checkBaseUrls(this.ohClass, this.factory);
         this.mappingMethodNameDisabled = Elf.checkMappingMethodNameDisabled(this.ohClass);
@@ -154,17 +180,6 @@ public final class OhProxy extends OhRoot implements MethodInterceptor {
         this.extraUrlQueryBuilder = Elf.checkExtraUrlQueryBuilder(this.ohClass, this.factory);
 
         this.mappingBalancer = Elf.checkMappingBalancer(this.ohClass, this.factory);
-    }
-
-    @Override
-    public Object intercept(Object o, Method method, Object[] args,
-                            MethodProxy methodProxy) throws Throwable {
-        if (method.getDeclaringClass().equals(OhDummy.class)) {
-            return methodProxy.invokeSuper(o, args);
-        }
-
-        val mappingProxy = get(this.ohMappingProxyCache, method);
-        return mappingProxy.execute(args);
     }
 
     private OhMappingProxy loadMappingProxy(Method method) {
