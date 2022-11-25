@@ -35,7 +35,7 @@ public class OhFactoryTest {
 
     private static final String SAMPLE = "/sample";
     private static final String SAMPLE2 = "/sample2";
-    private static final String STRING_PREFIX = "OhClient@";
+    private static final String STRING_PREFIX = "OhClient:";
     private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
     @Test
@@ -72,7 +72,8 @@ public class OhFactoryTest {
             assertEquals(ISO_8859_1.name(), httpClient.sample());
             assertEquals(UTF_8.name(), httpClient.sample2());
 
-            assertEquals(STRING_PREFIX + Integer.toHexString(httpClient.hashCode()), httpClient.toString());
+            assertEquals(STRING_PREFIX + AcceptCharsetHttpClient.class.getSimpleName() + "@"
+                    + Integer.toHexString(httpClient.hashCode()), httpClient.toString());
             assertEquals(httpClient, ohLoader.getClient(AcceptCharsetHttpClient.class));
             assertEquals(httpClient.hashCode(), ohLoader.getClient(AcceptCharsetHttpClient.class).hashCode());
         }
@@ -115,7 +116,8 @@ public class OhFactoryTest {
             assertEquals("{}", httpClient.sample2());
             assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xml/>", httpClient.sample3());
 
-            assertEquals(STRING_PREFIX + Integer.toHexString(httpClient.hashCode()), httpClient.toString());
+            assertEquals(STRING_PREFIX + ContentFormatHttpClient.class.getSimpleName() + "@"
+                    + Integer.toHexString(httpClient.hashCode()), httpClient.toString());
             assertEquals(httpClient, ohLoader.getClient(ContentFormatHttpClient.class));
             assertEquals(httpClient.hashCode(), ohLoader.getClient(ContentFormatHttpClient.class).hashCode());
         }
@@ -150,7 +152,8 @@ public class OhFactoryTest {
             assertEquals("POST", httpClient.sample());
             assertEquals("GET", httpClient.sample2());
 
-            assertEquals(STRING_PREFIX + Integer.toHexString(httpClient.hashCode()), httpClient.toString());
+            assertEquals(STRING_PREFIX + RequestMethodHttpClient.class.getSimpleName() + "@"
+                    + Integer.toHexString(httpClient.hashCode()), httpClient.toString());
             assertEquals(httpClient, ohLoader.getClient(RequestMethodHttpClient.class));
             assertEquals(httpClient.hashCode(), ohLoader.getClient(RequestMethodHttpClient.class).hashCode());
         }

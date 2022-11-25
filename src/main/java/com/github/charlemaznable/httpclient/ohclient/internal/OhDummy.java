@@ -1,11 +1,12 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
-import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import okhttp3.ConnectionPool;
 import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 
@@ -15,7 +16,7 @@ import static com.github.charlemaznable.core.lang.Propertiess.ssMap;
 import static java.util.Objects.isNull;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 
-@NoArgsConstructor
+@AllArgsConstructor
 public class OhDummy {
 
     static final Logger log = LoggerFactory.getLogger("OhClient");
@@ -36,6 +37,9 @@ public class OhDummy {
                 ohClassPathProperties))).replace(source);
     }
 
+    @Nonnull
+    private Class<?> implClass;
+
     @Override
     public boolean equals(Object obj) {
         return obj instanceof OhDummy && hashCode() == obj.hashCode();
@@ -48,6 +52,6 @@ public class OhDummy {
 
     @Override
     public String toString() {
-        return "OhClient@" + Integer.toHexString(hashCode());
+        return "OhClient:" + implClass.getSimpleName() + "@" + Integer.toHexString(hashCode());
     }
 }

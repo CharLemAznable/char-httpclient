@@ -88,7 +88,8 @@ public final class OhFactory {
                                 return 0;
                             }, new Callback[]{
                                     new OhProxy(ohClass, factory),
-                                    NoOp.INSTANCE}, null));
+                                    NoOp.INSTANCE
+                            }, new Object[]{ohClass}));
         }
 
         private <T> void ensureClassIsAnInterface(Class<T> clazz) {
