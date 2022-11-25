@@ -16,7 +16,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import net.sf.cglib.proxy.Callback;
-import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.NoOp;
 
 import javax.annotation.Nonnull;
@@ -100,8 +99,10 @@ public final class OhFactory {
         private <T> Object wrapWestCacheable(Class<T> ohClass, Object impl) {
             if (ClzPath.classExists("com.github.bingoohuang.westcache.cglib.CglibCacheMethodInterceptor")
                     && Anns.isFastWestCacheAnnotated(ohClass)) {
-                return Enhancer.create(OhDummy.class, new Class[]{ohClass},
-                        new CglibCacheMethodInterceptor(impl));
+                return EasyEnhancer.create(OhDummy.class,
+                        new Class[]{ohClass, Reloadable.class},
+                        new CglibCacheMethodInterceptor(impl),
+                        new Object[]{ohClass});
             }
             return impl;
         }
