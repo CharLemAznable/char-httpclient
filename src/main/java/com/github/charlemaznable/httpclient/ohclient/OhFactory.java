@@ -1,13 +1,11 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
-import com.github.bingoohuang.westcache.cglib.CglibCacheMethodInterceptor;
-import com.github.bingoohuang.westcache.utils.Anns;
 import com.github.charlemaznable.core.context.FactoryContext;
-import com.github.charlemaznable.core.lang.ClzPath;
 import com.github.charlemaznable.core.lang.EasyEnhancer;
 import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout;
+import com.github.charlemaznable.httpclient.ohclient.enhancer.OhClientEnhancer;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhDummy;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhProxy;
 import com.google.common.cache.LoadingCache;
@@ -15,11 +13,13 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import lombok.val;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.NoOp;
 
 import javax.annotation.Nonnull;
 import java.lang.annotation.Annotation;
+import java.util.ServiceLoader;
 
 import static com.github.charlemaznable.core.lang.Condition.checkNotNull;
 import static com.github.charlemaznable.core.lang.LoadingCachee.get;
@@ -37,6 +37,11 @@ public final class OhFactory {
 
     private static LoadingCache<Factory, OhLoader> ohLoaderCache
             = simpleCache(from(OhLoader::new));
+    private static ServiceLoader<OhClientEnhancer> enhancerLoaders;
+
+    static {
+        enhancerLoaders = ServiceLoader.load(OhClientEnhancer.class);
+    }
 
     public static <T> T getClient(Class<T> ohClass) {
         return ohLoader(FactoryContext.get()).getClient(ohClass);
@@ -79,7 +84,7 @@ public final class OhFactory {
         @Nonnull
         private <T> Object loadClient(@Nonnull Class<T> ohClass) {
             ensureClassIsAnInterface(ohClass);
-            return wrapWestCacheable(ohClass,
+            return wrapWithEnhancer(ohClass,
                     EasyEnhancer.create(OhDummy.class,
                             new Class[]{ohClass, Reloadable.class},
                             method -> {
@@ -96,15 +101,17 @@ public final class OhFactory {
             throw new OhException(clazz + " is not An Interface");
         }
 
-        private <T> Object wrapWestCacheable(Class<T> ohClass, Object impl) {
-            if (ClzPath.classExists("com.github.bingoohuang.westcache.cglib.CglibCacheMethodInterceptor")
-                    && Anns.isFastWestCacheAnnotated(ohClass)) {
-                return EasyEnhancer.create(OhDummy.class,
-                        new Class[]{ohClass, Reloadable.class},
-                        new CglibCacheMethodInterceptor(impl),
-                        new Object[]{ohClass});
+        private <T> Object wrapWithEnhancer(Class<T> ohClass, Object impl) {
+            Object enhancedImpl = impl;
+            for (val enhancerLoader : enhancerLoaders) {
+                if (enhancerLoader.isEnabled(ohClass)) {
+                    enhancedImpl = EasyEnhancer.create(OhDummy.class,
+                            new Class[]{ohClass, Reloadable.class},
+                            enhancerLoader.build(ohClass, impl),
+                            new Object[]{ohClass});
+                }
             }
-            return impl;
+            return enhancedImpl;
         }
     }
 
