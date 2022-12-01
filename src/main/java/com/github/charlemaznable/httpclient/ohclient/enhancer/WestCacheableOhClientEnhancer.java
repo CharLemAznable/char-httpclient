@@ -7,7 +7,7 @@ import com.google.auto.service.AutoService;
 import net.sf.cglib.proxy.Callback;
 
 @AutoService(OhClientEnhancer.class)
-public final class WestCacheOhClientEnhancer implements OhClientEnhancer {
+public final class WestCacheableOhClientEnhancer implements OhClientEnhancer {
 
     @Override
     public boolean isEnabled(Class<?> clientClass) {
