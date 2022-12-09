@@ -19,7 +19,11 @@ import net.sf.cglib.proxy.NoOp;
 
 import javax.annotation.Nonnull;
 import java.lang.annotation.Annotation;
+import java.util.Comparator;
+import java.util.List;
 import java.util.ServiceLoader;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.github.charlemaznable.core.lang.Condition.checkNotNull;
 import static com.github.charlemaznable.core.lang.LoadingCachee.get;
@@ -37,10 +41,13 @@ public final class OhFactory {
 
     private static LoadingCache<Factory, OhLoader> ohLoaderCache
             = simpleCache(from(OhLoader::new));
-    private static ServiceLoader<OhClientEnhancer> enhancerLoaders;
+    private static List<OhClientEnhancer> enhancers;
 
     static {
-        enhancerLoaders = ServiceLoader.load(OhClientEnhancer.class);
+        enhancers = StreamSupport
+                .stream(ServiceLoader.load(OhClientEnhancer.class).spliterator(), false)
+                .sorted(Comparator.comparingInt(OhClientEnhancer::getOrder))
+                .collect(Collectors.toList());
     }
 
     public static <T> T getClient(Class<T> ohClass) {
@@ -103,11 +110,11 @@ public final class OhFactory {
 
         private <T> Object wrapWithEnhancer(Class<T> ohClass, Object impl) {
             Object enhancedImpl = impl;
-            for (val enhancerLoader : enhancerLoaders) {
-                if (enhancerLoader.isEnabled(ohClass)) {
+            for (val enhancer : enhancers) {
+                if (enhancer.isEnabled(ohClass)) {
                     enhancedImpl = EasyEnhancer.create(OhDummy.class,
                             new Class[]{ohClass, Reloadable.class},
-                            enhancerLoader.build(ohClass, impl),
+                            enhancer.build(ohClass, enhancedImpl),
                             new Object[]{ohClass});
                 }
             }
