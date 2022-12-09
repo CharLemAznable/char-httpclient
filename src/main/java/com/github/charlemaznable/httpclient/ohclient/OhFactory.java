@@ -46,7 +46,7 @@ public final class OhFactory {
     static {
         enhancers = StreamSupport
                 .stream(ServiceLoader.load(OhClientEnhancer.class).spliterator(), false)
-                .sorted(Comparator.comparingInt(OhClientEnhancer::getOrder))
+                .sorted(Comparator.comparingInt(OhClientEnhancer::getOrder).reversed())
                 .collect(Collectors.toList());
     }
 
