@@ -11,6 +11,7 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
+@SuppressWarnings("rawtypes")
 @Getter
 @Setter
 @Accessors(chain = true)
@@ -22,5 +23,5 @@ public final class RequestEntity implements Entity<RequestEntity> {
     private Header header = new Header();
 
     @XmlElement(name = "Body", namespace = NameSpace.SOAP_12_URI)
-    private Body<?> body;
+    private Body body;
 }

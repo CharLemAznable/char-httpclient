@@ -16,9 +16,9 @@ import java.io.StringWriter;
 @SuppressWarnings("rawtypes")
 public interface Entity<E extends Entity> {
 
-    Body<?> getBody();
+    Body getBody();
 
-    E setBody(Body<?> body);
+    E setBody(Body body);
 
     default <T> E withContent(T content) {
         return setBody(new Body<T>().setContent(content));
