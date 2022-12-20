@@ -49,8 +49,8 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class OhReq extends CommonReq<OhReq> {
 
-    private static ExecutorService futureExecutorService = newCachedThreadPool();
-    private static ConnectionPool globalConnectionPool = new ConnectionPool();
+    private static final ExecutorService futureExecutorService = newCachedThreadPool();
+    private static final ConnectionPool globalConnectionPool = new ConnectionPool();
     private final List<Interceptor> interceptors = newArrayList();
     private final HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
     private Proxy clientProxy;
@@ -151,7 +151,6 @@ public class OhReq extends CommonReq<OhReq> {
                 () -> execute(buildPostRequest()));
     }
 
-    @SuppressWarnings("deprecation")
     public OkHttpClient buildHttpClient() {
         val httpClientBuilder = new OkHttpClient.Builder().proxy(this.clientProxy);
         notNullThen(this.sslSocketFactory, xx -> checkNull(this.x509TrustManager,
@@ -198,6 +197,7 @@ public class OhReq extends CommonReq<OhReq> {
         return requestBuilder.build();
     }
 
+    @SuppressWarnings("DuplicatedCode")
     private Headers.Builder buildHeadersBuilder() {
         val headersBuilder = new Headers.Builder();
         val acceptCharsetName = this.acceptCharset.name();
@@ -237,10 +237,11 @@ public class OhReq extends CommonReq<OhReq> {
         return notNullThen(responseBody, OhReq::extractResponseString);
     }
 
+    @SuppressWarnings("rawtypes")
     private String applyFallback(Class<? extends FallbackFunction> function,
                                  int statusCode, ResponseBody responseBody) {
         return toStr(reflectFactory().build(function).apply(
-                new Response<ResponseBody>(statusCode, responseBody) {
+                new Response<>(statusCode, responseBody) {
                     @Override
                     public String responseBodyAsString() {
                         return toStr(notNullThen(getResponseBody(),

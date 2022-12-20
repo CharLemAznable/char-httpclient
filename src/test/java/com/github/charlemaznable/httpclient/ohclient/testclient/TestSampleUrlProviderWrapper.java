@@ -12,7 +12,7 @@ import static com.github.charlemaznable.core.lang.Condition.nullThen;
 @SuppressWarnings("SpringJavaAutowiredMembersInspection")
 public class TestSampleUrlProviderWrapper implements UrlProvider {
 
-    private TestSampleUrlProvider provider;
+    private final TestSampleUrlProvider provider;
 
     public TestSampleUrlProviderWrapper() {
         this(null);

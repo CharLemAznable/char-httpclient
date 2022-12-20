@@ -9,7 +9,7 @@ import static com.github.charlemaznable.httpclient.ohclient.OhFactory.springOhLo
 
 public final class OhScannerRegistrar extends SpringScannerRegistrar {
 
-    private static OhLoader springOhLoader = springOhLoader();
+    private static final OhLoader springOhLoader = springOhLoader();
 
     public OhScannerRegistrar() {
         super(OhScan.class, OhClientFactoryBean.class, OhClient.class);

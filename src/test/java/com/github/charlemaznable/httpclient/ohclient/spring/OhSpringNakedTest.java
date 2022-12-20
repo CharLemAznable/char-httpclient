@@ -22,13 +22,15 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import javax.annotation.Nonnull;
+
 import static com.github.charlemaznable.httpclient.ohclient.OhFactory.getClient;
+import static java.util.Objects.requireNonNull;
 import static org.joor.Reflect.onClass;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = OhSpringNakedConfiguration.class)
 public class OhSpringNakedTest {
@@ -41,18 +43,16 @@ public class OhSpringNakedTest {
     public void testOhClientNaked() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    switch (request.getPath()) {
-                        case "/sample":
-                            return new MockResponse().setBody("SampleError");
-                        case "/sampleError":
-                            return new MockResponse().setBody("SampleNoError");
-                        default:
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                    .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                    }
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    return switch (requireNonNull(request.getPath())) {
+                        case "/sample" -> new MockResponse().setBody("SampleError");
+                        case "/sampleError" -> new MockResponse().setBody("SampleNoError");
+                        default -> new MockResponse()
+                                .setResponseCode(HttpStatus.NOT_FOUND.value())
+                                .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                    };
                 }
             });
             mockWebServer.start(41102);

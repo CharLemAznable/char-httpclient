@@ -14,15 +14,16 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
-import static com.github.charlemaznable.core.lang.Condition.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BalancerTest {
 
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
     private int countSample1 = 0;
     private int countSample2 = 0;
     private int countSample3 = 0;
@@ -33,9 +34,10 @@ public class BalancerTest {
         try (val mockWebServer1 = new MockWebServer();
              val mockWebServer2 = new MockWebServer()) {
             val dispatcher = new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    val requestUrl = checkNotNull(request.getRequestUrl());
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    val requestUrl = requireNonNull(request.getRequestUrl());
                     switch (requestUrl.encodedPath()) {
                         case "/sample1":
                             countSample1++;

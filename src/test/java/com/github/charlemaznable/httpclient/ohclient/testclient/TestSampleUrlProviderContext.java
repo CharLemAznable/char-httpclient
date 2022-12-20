@@ -11,9 +11,9 @@ import static com.github.charlemaznable.core.spring.SpringFactory.springFactory;
 
 public class TestSampleUrlProviderContext implements UrlProvider {
 
-    private TestDefaultContext current;
-    private TestDefaultContext spring;
-    private TestDefaultContext guice;
+    private final TestDefaultContext current;
+    private final TestDefaultContext spring;
+    private final TestDefaultContext guice;
 
     public TestSampleUrlProviderContext() {
         this.current = getDiamond(TestDefaultContext.class);

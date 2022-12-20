@@ -16,6 +16,7 @@ import okio.BufferedSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -26,11 +27,13 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.Future;
 
 import static com.github.charlemaznable.core.codec.Bytes.string;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static java.util.Objects.requireNonNull;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -40,32 +43,29 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReturnTest {
 
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
     @SneakyThrows
     @Test
     public void testStatusCode() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    switch (request.getPath()) {
-                        case "/sampleVoid":
-                        case "/sampleFutureVoid":
-                            return new MockResponse().setResponseCode(HttpStatus.OK.value());
-                        case "/sampleStatusCode":
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                                    .setBody(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
-                        case "/sampleFutureStatusCode":
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.NOT_IMPLEMENTED.value())
-                                    .setBody(HttpStatus.NOT_IMPLEMENTED.getReasonPhrase());
-                        default:
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                    .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                    }
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    return switch (requireNonNull(request.getPath())) {
+                        case "/sampleVoid", "/sampleFutureVoid" -> new MockResponse()
+                                .setResponseCode(HttpStatus.OK.value());
+                        case "/sampleStatusCode" -> new MockResponse()
+                                .setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                .setBody(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+                        case "/sampleFutureStatusCode" -> new MockResponse()
+                                .setResponseCode(HttpStatus.NOT_IMPLEMENTED.value())
+                                .setBody(HttpStatus.NOT_IMPLEMENTED.getReasonPhrase());
+                        default -> new MockResponse()
+                                .setResponseCode(HttpStatus.NOT_FOUND.value())
+                                .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                    };
                 }
             });
             mockWebServer.start(41190);
@@ -103,8 +103,9 @@ public class ReturnTest {
     public void testResponseBody() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
                     if ("/sample".equals(request.getPath())) {
                         return new MockResponse()
                                 .setResponseCode(HttpStatus.OK.value())
@@ -124,13 +125,13 @@ public class ReturnTest {
             await().forever().pollDelay(Duration.ofMillis(100)).until(futureResponseBody::isDone);
             assertNotNull(futureResponseBody.get());
 
-            @Cleanup val isr = new InputStreamReader(httpClient.sampleInputStream(), "UTF-8");
+            @Cleanup val isr = new InputStreamReader(httpClient.sampleInputStream(), StandardCharsets.UTF_8);
             try (val bufferedReader = new BufferedReader(isr)) {
                 assertEquals("OK", bufferedReader.readLine());
             }
             val futureInputStream = httpClient.sampleFutureInputStream();
             await().forever().pollDelay(Duration.ofMillis(100)).until(futureInputStream::isDone);
-            @Cleanup val isr2 = new InputStreamReader(futureInputStream.get(), "UTF-8");
+            @Cleanup val isr2 = new InputStreamReader(futureInputStream.get(), StandardCharsets.UTF_8);
             try (val bufferedReader = new BufferedReader(isr2)) {
                 assertEquals("OK", bufferedReader.readLine());
             }

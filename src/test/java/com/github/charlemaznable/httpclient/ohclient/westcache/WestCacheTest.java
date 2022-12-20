@@ -14,8 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static com.github.charlemaznable.core.lang.Condition.checkNotNull;
+import javax.annotation.Nonnull;
+
 import static com.github.charlemaznable.core.lang.Str.toStr;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
@@ -34,17 +36,16 @@ public class WestCacheTest {
     public void testWestCache() {
         try (val mockWebServer1 = new MockWebServer()) {
             mockWebServer1.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    val requestUrl = checkNotNull(request.getRequestUrl());
-                    switch (requestUrl.encodedPath()) {
-                        case "/sample":
-                            return new MockResponse().setBody(toStr(System.currentTimeMillis()));
-                        default:
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                    .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    val requestUrl = requireNonNull(request.getRequestUrl());
+                    if ("/sample".equals(requestUrl.encodedPath())) {
+                        return new MockResponse().setBody(toStr(System.currentTimeMillis()));
                     }
+                    return new MockResponse()
+                            .setResponseCode(HttpStatus.NOT_FOUND.value())
+                            .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
                 }
             });
             mockWebServer1.start(41260);

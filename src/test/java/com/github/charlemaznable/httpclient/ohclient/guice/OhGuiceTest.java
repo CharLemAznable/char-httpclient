@@ -27,7 +27,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.n3r.diamond.client.impl.MockDiamondServer;
 
+import javax.annotation.Nonnull;
+
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -67,18 +70,16 @@ public class OhGuiceTest {
 
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    switch (request.getPath()) {
-                        case SAMPLE:
-                            return new MockResponse().setBody(SAMPLE_RESULT);
-                        case CONTEXT:
-                            return new MockResponse().setBody(CONTEXT_RESULT);
-                        default:
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                    .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                    }
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    return switch (requireNonNull(request.getPath())) {
+                        case SAMPLE -> new MockResponse().setBody(SAMPLE_RESULT);
+                        case CONTEXT -> new MockResponse().setBody(CONTEXT_RESULT);
+                        default -> new MockResponse()
+                                .setResponseCode(HttpStatus.NOT_FOUND.value())
+                                .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                    };
                 }
             });
             mockWebServer.start(41102);
@@ -114,18 +115,16 @@ public class OhGuiceTest {
 
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    switch (request.getPath()) {
-                        case SAMPLE:
-                            return new MockResponse().setBody(SAMPLE_ERROR_RESULT);
-                        case SAMPLE_ERROR:
-                            return new MockResponse().setBody(SAMPLE_RESULT);
-                        default:
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                    .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                    }
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    return switch (requireNonNull(request.getPath())) {
+                        case SAMPLE -> new MockResponse().setBody(SAMPLE_ERROR_RESULT);
+                        case SAMPLE_ERROR -> new MockResponse().setBody(SAMPLE_RESULT);
+                        default -> new MockResponse()
+                                .setResponseCode(HttpStatus.NOT_FOUND.value())
+                                .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                    };
                 }
             });
             mockWebServer.start(41102);
@@ -153,18 +152,16 @@ public class OhGuiceTest {
 
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    switch (request.getPath()) {
-                        case SAMPLE:
-                            return new MockResponse().setBody(SAMPLE_ERROR_RESULT);
-                        case SAMPLE_ERROR:
-                            return new MockResponse().setBody(SAMPLE_NO_ERROR_RESULT);
-                        default:
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                                    .setBody(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
-                    }
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    return switch (requireNonNull(request.getPath())) {
+                        case SAMPLE -> new MockResponse().setBody(SAMPLE_ERROR_RESULT);
+                        case SAMPLE_ERROR -> new MockResponse().setBody(SAMPLE_NO_ERROR_RESULT);
+                        default -> new MockResponse()
+                                .setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                .setBody(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+                    };
                 }
             });
             mockWebServer.start(41102);
@@ -208,8 +205,9 @@ public class OhGuiceTest {
 
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
                     return new MockResponse().setBody(SAMPLE_RESULT);
                 }
             });

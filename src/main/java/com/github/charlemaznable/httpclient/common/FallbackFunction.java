@@ -6,6 +6,7 @@ import lombok.Getter;
 
 import java.util.function.Function;
 
+@SuppressWarnings("rawtypes")
 public interface FallbackFunction<R>
         extends Function<Response, R> {
 

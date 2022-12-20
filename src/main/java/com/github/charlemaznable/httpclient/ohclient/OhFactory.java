@@ -1,7 +1,7 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.core.context.FactoryContext;
-import com.github.charlemaznable.core.lang.EasyEnhancer;
+import com.github.charlemaznable.core.lang.BuddyEnhancer;
 import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout;
@@ -14,8 +14,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import lombok.val;
-import net.sf.cglib.proxy.Callback;
-import net.sf.cglib.proxy.NoOp;
 
 import javax.annotation.Nonnull;
 import java.lang.annotation.Annotation;
@@ -39,9 +37,9 @@ import static lombok.AccessLevel.PRIVATE;
 @NoArgsConstructor(access = PRIVATE)
 public final class OhFactory {
 
-    private static LoadingCache<Factory, OhLoader> ohLoaderCache
-            = simpleCache(from(OhLoader::new));
-    private static List<OhClientEnhancer> enhancers;
+    private static final LoadingCache<Factory, OhLoader>
+            ohLoaderCache = simpleCache(from(OhLoader::new));
+    private static final List<OhClientEnhancer> enhancers;
 
     static {
         enhancers = StreamSupport
@@ -76,8 +74,8 @@ public final class OhFactory {
     @SuppressWarnings("unchecked")
     public static class OhLoader {
 
-        private Factory factory;
-        private LoadingCache<Class, Object> ohCache
+        private final Factory factory;
+        private final LoadingCache<Class<?>, Object> ohCache
                 = simpleCache(from(this::loadClient));
 
         OhLoader(Factory factory) {
@@ -92,14 +90,14 @@ public final class OhFactory {
         private <T> Object loadClient(@Nonnull Class<T> ohClass) {
             ensureClassIsAnInterface(ohClass);
             return wrapWithEnhancer(ohClass,
-                    EasyEnhancer.create(OhDummy.class,
+                    BuddyEnhancer.create(OhDummy.class,
                             new Class[]{ohClass, Reloadable.class},
                             method -> {
                                 if (method.isDefault()) return 1;
                                 return 0;
-                            }, new Callback[]{
+                            }, new BuddyEnhancer.Delegate[]{
                                     new OhProxy(ohClass, factory),
-                                    NoOp.INSTANCE
+                                    BuddyEnhancer.CallSuper
                             }, new Object[]{ohClass}));
         }
 
@@ -112,10 +110,11 @@ public final class OhFactory {
             Object enhancedImpl = impl;
             for (val enhancer : enhancers) {
                 if (enhancer.isEnabled(ohClass)) {
-                    enhancedImpl = EasyEnhancer.create(OhDummy.class,
-                            new Class[]{ohClass, Reloadable.class},
-                            enhancer.build(ohClass, enhancedImpl),
-                            new Object[]{ohClass});
+                    val enhanced = enhancer.build(ohClass, enhancedImpl);
+                    enhancedImpl = (enhanced instanceof BuddyEnhancer.Delegate delegate) ?
+                            BuddyEnhancer.create(OhDummy.class,
+                                    new Class[]{ohClass, Reloadable.class},
+                                    delegate, new Object[]{ohClass}) : enhanced;
                 }
             }
             return enhancedImpl;

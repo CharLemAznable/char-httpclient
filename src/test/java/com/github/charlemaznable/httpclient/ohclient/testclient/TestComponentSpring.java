@@ -12,11 +12,12 @@ import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.httpclient.ohclient.OhFactory.getClient;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @Component
 public class TestComponentSpring {
 
     @Getter
-    private TestHttpClient testHttpClient;
+    private final TestHttpClient testHttpClient;
 
     @Autowired
     public TestComponentSpring(@Nullable TestHttpClient testHttpClient) {

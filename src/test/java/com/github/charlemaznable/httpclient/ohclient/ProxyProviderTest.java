@@ -25,19 +25,20 @@ import java.net.Proxy.Type;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static com.github.charlemaznable.core.lang.Condition.checkNotNull;
 import static org.joor.Reflect.on;
-import static org.junit.Assert.assertEquals;
+import static org.joor.Reflect.onClass;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("UnusedReturnValue")
 public class ProxyProviderTest {
 
     private static final String LOCAL_HOST = "127.0.0.1";
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
     @Test
     public void testProxyPlain() {
         val httpClient = ohLoader.getClient(ProxyPlainHttpClient.class);
-        val callback = on(httpClient).field("CGLIB$CALLBACK_0").get();
+        val callback = onClass(httpClient.getClass()).field("BUDDY$DELEGATE_0").get();
         OkHttpClient okHttpClient = on(callback).field("okHttpClient").get();
         val address = (InetSocketAddress) checkNotNull(okHttpClient.proxy()).address();
         assertEquals(LOCAL_HOST, address.getAddress().getHostAddress());
@@ -47,7 +48,7 @@ public class ProxyProviderTest {
     @Test
     public void testProxyProvider() {
         val httpClient = ohLoader.getClient(ProxyProviderHttpClient.class);
-        val callback = on(httpClient).field("CGLIB$CALLBACK_0").get();
+        val callback = onClass(httpClient.getClass()).field("BUDDY$DELEGATE_0").get();
         OkHttpClient okHttpClient = on(callback).field("okHttpClient").get();
         val address = (InetSocketAddress) checkNotNull(okHttpClient.proxy()).address();
         assertEquals(LOCAL_HOST, address.getAddress().getHostAddress());

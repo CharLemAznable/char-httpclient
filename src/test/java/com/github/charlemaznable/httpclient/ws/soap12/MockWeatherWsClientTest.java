@@ -11,26 +11,30 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
-import javax.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBContext;
+
+import javax.annotation.Nonnull;
 import java.io.StringReader;
 
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.httpclient.ohclient.OhFactory.getClient;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MockWeatherWsClientTest {
 
-    private MockWeatherWsClient client = getClient(MockWeatherWsClient.class);
+    private final MockWeatherWsClient client = getClient(MockWeatherWsClient.class);
 
     @SneakyThrows
     @Test
     public void testMockWeatherWsClient() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @SneakyThrows
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    val requestUrl = request.getRequestUrl();
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    val requestUrl = requireNonNull(request.getRequestUrl());
                     assertEquals("/ws", requestUrl.encodedPath());
                     val body = request.getBody().readUtf8();
                     val context = JAXBContext.newInstance(RequestEntity.class,
@@ -45,9 +49,7 @@ public class MockWeatherWsClientTest {
                         return new MockResponse().setBody(new ResponseEntity()
                                 .withContent(provinceResponse).toXml());
 
-                    } else if (content instanceof GetSupportCity.Request) {
-                        val cityRequest = (GetSupportCity.Request) content;
-
+                    } else if (content instanceof GetSupportCity.Request cityRequest) {
                         if ("".equals(cityRequest.getProvinceName())) {
                             val cityResponse = new GetSupportCity.Response();
                             cityResponse.setResult(newArrayList("北京", "济南"));

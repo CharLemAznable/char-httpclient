@@ -20,6 +20,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -34,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class CncTest {
 
     private static final String CONTENT = "content";
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
     @BeforeAll
     public static void beforeAll() {
@@ -51,8 +52,9 @@ public class CncTest {
     public void testCncClient() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
                     val testResponse = new TestResponse();
                     testResponse.setContent(CONTENT);
                     return new MockResponse().setBody(json(testResponse));
@@ -101,6 +103,7 @@ public class CncTest {
         <T extends CncResponse> Future<Pair<HttpStatus, T>> sample4(CncRequest<T> request);
     }
 
+    @SuppressWarnings({"UnusedReturnValue", "rawtypes"})
     @OhClient
     @Mapping("${root}:${port}")
     public interface CncErrorClient {

@@ -14,9 +14,11 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -24,7 +26,7 @@ public class UrlConcatTest {
 
     private static final String ROOT = "Root";
     private static final String SAMPLE = "Sample";
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
     @SneakyThrows
     @Test
@@ -68,18 +70,16 @@ public class UrlConcatTest {
     private MockWebServer startMockWebServer(int port) {
         val mockWebServer = new MockWebServer();
         mockWebServer.setDispatcher(new Dispatcher() {
+            @Nonnull
             @Override
-            public MockResponse dispatch(RecordedRequest request) {
-                switch (request.getPath()) {
-                    case "/":
-                        return new MockResponse().setBody(ROOT);
-                    case "/sample":
-                        return new MockResponse().setBody(SAMPLE);
-                    default:
-                        return new MockResponse()
-                                .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                }
+            public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                return switch (requireNonNull(request.getPath())) {
+                    case "/" -> new MockResponse().setBody(ROOT);
+                    case "/sample" -> new MockResponse().setBody(SAMPLE);
+                    default -> new MockResponse()
+                            .setResponseCode(HttpStatus.NOT_FOUND.value())
+                            .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                };
             }
         });
         mockWebServer.start(port);

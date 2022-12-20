@@ -14,6 +14,7 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -22,37 +23,38 @@ import static com.github.charlemaznable.core.codec.Json.json;
 import static com.github.charlemaznable.core.codec.Xml.xml;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static com.github.charlemaznable.core.lang.Mapp.of;
+import static java.util.Objects.requireNonNull;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ReturnMapTest {
 
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
+    @SuppressWarnings("rawtypes")
     @SneakyThrows
     @Test
     public void testMap() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    switch (request.getPath()) {
-                        case "/sampleMap":
-                            return new MockResponse().setResponseCode(HttpStatus.OK.value())
-                                    .setBody(json(of("John", of("name", "Doe"))));
-                        case "/sampleFutureMap":
-                            return new MockResponse().setResponseCode(HttpStatus.OK.value())
-                                    .setBody(xml(of("John", of("name", "Doe"))));
-                        case "/sampleMapNull":
-                        case "/sampleFutureMapNull":
-                            return new MockResponse().setResponseCode(HttpStatus.OK.value())
-                                    .setBody("");
-                        default:
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                    .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                    }
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    return switch (requireNonNull(request.getPath())) {
+                        case "/sampleMap" -> new MockResponse()
+                                .setResponseCode(HttpStatus.OK.value())
+                                .setBody(json(of("John", of("name", "Doe"))));
+                        case "/sampleFutureMap" -> new MockResponse()
+                                .setResponseCode(HttpStatus.OK.value())
+                                .setBody(xml(of("John", of("name", "Doe"))));
+                        case "/sampleMapNull", "/sampleFutureMapNull" -> new MockResponse()
+                                .setResponseCode(HttpStatus.OK.value())
+                                .setBody("");
+                        default -> new MockResponse()
+                                .setResponseCode(HttpStatus.NOT_FOUND.value())
+                                .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                    };
                 }
             });
             mockWebServer.start(41193);

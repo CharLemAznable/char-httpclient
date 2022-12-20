@@ -1,23 +1,24 @@
 package com.github.charlemaznable.httpclient.ws.common;
 
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlAnyElement;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
 import lombok.val;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAnyElement;
 import java.io.StringReader;
 import java.io.StringWriter;
 
+@SuppressWarnings("rawtypes")
 public interface Entity<E extends Entity> {
 
-    Body getBody();
+    Body<?> getBody();
 
-    E setBody(Body body);
+    E setBody(Body<?> body);
 
     default <T> E withContent(T content) {
         return setBody(new Body<T>().setContent(content));

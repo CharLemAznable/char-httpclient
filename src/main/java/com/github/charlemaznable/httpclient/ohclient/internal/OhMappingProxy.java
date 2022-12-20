@@ -96,6 +96,7 @@ import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedRepeatableAnnotations;
 
+@SuppressWarnings("rawtypes")
 public final class OhMappingProxy extends OhRoot {
 
     private static final String RETURN_GENERIC_ERROR = "Method return type generic Error";
@@ -192,7 +193,6 @@ public final class OhMappingProxy extends OhRoot {
         return internalExecute(args);
     }
 
-    @SuppressWarnings("unchecked")
     private void processReturnType(Method method) {
         Class<?> returnType = method.getReturnType();
         this.returnFuture = Future.class == returnType;
@@ -202,7 +202,7 @@ public final class OhMappingProxy extends OhRoot {
         this.returnTriple = Triple.class.isAssignableFrom(returnType);
 
         val genericReturnType = method.getGenericReturnType();
-        if (!(genericReturnType instanceof ParameterizedType)) {
+        if (!(genericReturnType instanceof ParameterizedType parameterizedType)) {
             // 错误的泛型时
             if (this.returnFuture || this.returnCollection ||
                     this.returnPair || this.returnTriple) {
@@ -224,7 +224,6 @@ public final class OhMappingProxy extends OhRoot {
         }
 
         // 方法返回泛型时
-        ParameterizedType parameterizedType = (ParameterizedType) genericReturnType;
         Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
         if (this.returnFuture) {
             // 返回Future类型, 则多处理一层泛型
@@ -332,7 +331,7 @@ public final class OhMappingProxy extends OhRoot {
     private Object applyFallback(Class<? extends FallbackFunction> function,
                                  int statusCode, ResponseBody responseBody) {
         return FactoryContext.apply(factory, function,
-                f -> f.apply(new Response<ResponseBody>(statusCode, responseBody) {
+                f -> f.apply(new Response<>(statusCode, responseBody) {
                     @Override
                     public String responseBodyAsString() {
                         return toStr(notNullThen(getResponseBody(),
@@ -412,8 +411,7 @@ public final class OhMappingProxy extends OhRoot {
                     requestUrls.addAll(proxy.baseUrls);
                 } else {
                     requestUrls.addAll(proxy.baseUrls.stream()
-                            .map(base -> checkBlank(base, () -> url, b -> b + url))
-                            .collect(Collectors.toList()));
+                            .map(base -> checkBlank(base, () -> url, b -> b + url)).toList());
                 }
             }
             return requestUrls.stream().distinct().collect(Collectors.toList());
@@ -534,7 +532,7 @@ public final class OhMappingProxy extends OhRoot {
                             return FactoryContext.build(factory, annotation.value());
                         }
                         return FactoryContext.apply(factory, providerClass, p -> p.interceptor(clazz, method));
-                    }).collect(Collectors.toList()));
+                    }).toList());
             return result;
         }
 
@@ -546,7 +544,6 @@ public final class OhMappingProxy extends OhRoot {
                     : FactoryContext.apply(factory, providerClass, p -> p.level(clazz, method));
         }
 
-        @SuppressWarnings("ConstantConditions")
         static OkHttpClient buildOkHttpClient(OhMappingProxy mappingProxy, OhProxy proxy) {
             val sameClientProxy = mappingProxy.clientProxy == proxy.clientProxy;
             val sameSSLSocketFactory = mappingProxy.sslSocketFactory == proxy.sslSocketFactory;
@@ -607,7 +604,7 @@ public final class OhMappingProxy extends OhRoot {
                         return Pair.of(name, FixedValueProvider.class == providerClass
                                 ? an.value() : FactoryContext.apply(factory,
                                 providerClass, p -> p.value(clazz, method, name)));
-                    }).collect(Collectors.toList()));
+                    }).toList());
             return result;
         }
 
@@ -621,7 +618,7 @@ public final class OhMappingProxy extends OhRoot {
                         return Pair.of(name, FixedValueProvider.class == providerClass
                                 ? an.value() : FactoryContext.apply(factory,
                                 providerClass, p -> p.value(clazz, method, name)));
-                    }).collect(Collectors.toList()));
+                    }).toList());
             return result;
         }
 
@@ -635,7 +632,7 @@ public final class OhMappingProxy extends OhRoot {
                         return Pair.of(name, (Object) (FixedValueProvider.class == providerClass
                                 ? an.value() : FactoryContext.apply(factory,
                                 providerClass, p -> p.value(clazz, method, name))));
-                    }).collect(Collectors.toList()));
+                    }).toList());
             return result;
         }
 
@@ -649,7 +646,7 @@ public final class OhMappingProxy extends OhRoot {
                         return Pair.of(name, (Object) (FixedValueProvider.class == providerClass
                                 ? an.value() : FactoryContext.apply(factory,
                                 providerClass, p -> p.value(clazz, method, name))));
-                    }).collect(Collectors.toList()));
+                    }).toList());
             return result;
         }
 

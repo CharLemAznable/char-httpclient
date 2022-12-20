@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class WeatherWsClientTest {
 
-    private WeatherWsClient client = getClient(WeatherWsClient.class);
+    private final WeatherWsClient client = getClient(WeatherWsClient.class);
 
     @Test
     public void testWeatherWsClient() {

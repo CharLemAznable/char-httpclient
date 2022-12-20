@@ -7,11 +7,14 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
+import javax.annotation.Nonnull;
+
 import static com.github.charlemaznable.core.lang.Str.isNull;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.CONTENT_TYPE;
 import static com.google.common.net.MediaType.FORM_DATA;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,14 +27,15 @@ public abstract class CommonReqTest {
     protected void startMockWebServer(int port) {
         mockWebServer = new MockWebServer();
         mockWebServer.setDispatcher(new Dispatcher() {
+            @Nonnull
             @Override
-            public MockResponse dispatch(RecordedRequest request) {
-                val requestUrl = request.getRequestUrl();
+            public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                val requestUrl = requireNonNull(request.getRequestUrl());
                 switch (requestUrl.encodedPath()) {
                     case "/sample1":
                         val acceptCharset = request.getHeader(ACCEPT_CHARSET);
                         assertEquals(ISO_8859_1.name(), acceptCharset);
-                        val contentType = request.getHeader(CONTENT_TYPE);
+                        val contentType = requireNonNull(request.getHeader(CONTENT_TYPE));
                         assertTrue(contentType.startsWith(FORM_DATA.toString()));
                         assertNull(request.getHeader("AAA"));
                         assertEquals("bbb", request.getHeader("BBB"));

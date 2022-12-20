@@ -1,36 +1,17 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
 import com.github.charlemaznable.core.context.FactoryContext;
+import com.github.charlemaznable.core.lang.BuddyEnhancer;
 import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.core.lang.Reloadable;
-import com.github.charlemaznable.httpclient.common.AcceptCharset;
-import com.github.charlemaznable.httpclient.common.ContentFormat;
+import com.github.charlemaznable.httpclient.common.*;
 import com.github.charlemaznable.httpclient.common.ContentFormat.ContentFormatter;
-import com.github.charlemaznable.httpclient.common.DefaultFallbackDisabled;
-import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery.ExtraUrlQueryBuilder;
-import com.github.charlemaznable.httpclient.common.FallbackFunction;
-import com.github.charlemaznable.httpclient.common.FixedContext;
-import com.github.charlemaznable.httpclient.common.FixedHeader;
-import com.github.charlemaznable.httpclient.common.FixedParameter;
-import com.github.charlemaznable.httpclient.common.FixedPathVar;
-import com.github.charlemaznable.httpclient.common.FixedValueProvider;
-import com.github.charlemaznable.httpclient.common.HttpMethod;
-import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.Mapping.UrlProvider;
-import com.github.charlemaznable.httpclient.common.MappingBalance;
 import com.github.charlemaznable.httpclient.common.MappingBalance.MappingBalancer;
 import com.github.charlemaznable.httpclient.common.MappingBalance.RandomBalancer;
-import com.github.charlemaznable.httpclient.common.MappingMethodNameDisabled;
-import com.github.charlemaznable.httpclient.common.RequestExtend;
 import com.github.charlemaznable.httpclient.common.RequestExtend.RequestExtender;
-import com.github.charlemaznable.httpclient.common.RequestMethod;
-import com.github.charlemaznable.httpclient.common.ResponseParse;
 import com.github.charlemaznable.httpclient.common.ResponseParse.ResponseParser;
-import com.github.charlemaznable.httpclient.common.StatusErrorThrower;
-import com.github.charlemaznable.httpclient.common.StatusFallback;
-import com.github.charlemaznable.httpclient.common.StatusSeriesFallback;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.ohclient.OhException;
 import com.github.charlemaznable.httpclient.ohclient.OhReq;
@@ -50,8 +31,6 @@ import com.github.charlemaznable.httpclient.ohclient.annotation.IsolatedConnecti
 import com.google.common.cache.LoadingCache;
 import lombok.NoArgsConstructor;
 import lombok.val;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
 import okhttp3.ConnectionPool;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -68,6 +47,7 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import static com.github.charlemaznable.core.lang.Condition.checkBlank;
@@ -95,7 +75,8 @@ import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedRepeatableAnnotations;
 
-public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadable {
+@SuppressWarnings("rawtypes")
+public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Reloadable {
 
     Class ohClass;
     Factory factory;
@@ -112,10 +93,10 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
     }
 
     @Override
-    public Object intercept(Object o, Method method, Object[] args,
-                            MethodProxy methodProxy) throws Throwable {
+    public Object invoke(Method method, Object[] args,
+                         Callable<Object> superCall) throws Exception {
         if (method.getDeclaringClass().equals(OhDummy.class)) {
-            return methodProxy.invokeSuper(o, args);
+            return superCall.call();
         }
 
         if (method.getDeclaringClass().equals(Reloadable.class)) {

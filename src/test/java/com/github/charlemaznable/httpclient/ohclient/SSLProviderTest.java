@@ -30,6 +30,7 @@ import java.security.cert.X509Certificate;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static org.joor.Reflect.on;
+import static org.joor.Reflect.onClass;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -38,12 +39,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class SSLProviderTest {
 
     private static final String FAILED = "Failed to connect to /127.0.0.1:41124";
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
     @Test
     public void testSSLDef() {
         val httpClient = ohLoader.getClient(SSLDefHttpClient.class);
-        val callback = on(httpClient).field("CGLIB$CALLBACK_0").get();
+        val callback = onClass(httpClient.getClass()).field("BUDDY$DELEGATE_0").get();
         OkHttpClient okHttpClient = on(callback).field("okHttpClient").get();
         assertTrue(okHttpClient.sslSocketFactory() instanceof TestSSLSocketFactory);
         assertTrue(okHttpClient.hostnameVerifier() instanceof TestHostnameVerifier);
@@ -52,7 +53,7 @@ public class SSLProviderTest {
     @Test
     public void testSSLAll() {
         val httpClient = ohLoader.getClient(SSLAllHttpClient.class);
-        val callback = on(httpClient).field("CGLIB$CALLBACK_0").get();
+        val callback = onClass(httpClient.getClass()).field("BUDDY$DELEGATE_0").get();
         OkHttpClient okHttpClient = on(callback).field("okHttpClient").get();
         assertTrue(okHttpClient.sslSocketFactory() instanceof TestSSLSocketFactory);
         assertTrue(okHttpClient.hostnameVerifier() instanceof TestHostnameVerifier);

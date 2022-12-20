@@ -27,6 +27,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.reflect.Method;
 
@@ -40,7 +41,7 @@ public class InterceptorTest {
     private static final String BODY = "BODY";
     private static final String CONTENT = "OK";
     private static final String HEADER_NAME = "intercept";
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
     @BeforeAll
     public static void beforeAll() {
@@ -58,8 +59,9 @@ public class InterceptorTest {
     public void testInterceptorClient() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
                     switch (requireNonNull(request.getPath())) {
                         case "/sample1":
                             val values1 = request.getHeaders().values(HEADER_NAME);
@@ -203,8 +205,9 @@ public class InterceptorTest {
     @EverythingIsNonNull
     public static class ClassInterceptor implements Interceptor {
 
+        @Nonnull
         @Override
-        public Response intercept(Chain chain) throws IOException {
+        public Response intercept(@Nonnull Chain chain) throws IOException {
             val requestBuilder = chain.request().newBuilder();
             requestBuilder.addHeader(HEADER_NAME, "class");
             return chain.proceed(requestBuilder.build());
@@ -227,8 +230,9 @@ public class InterceptorTest {
     @EverythingIsNonNull
     public static class MethodInterceptor implements Interceptor {
 
+        @Nonnull
         @Override
-        public Response intercept(Chain chain) throws IOException {
+        public Response intercept(@Nonnull Chain chain) throws IOException {
             val requestBuilder = chain.request().newBuilder();
             requestBuilder.addHeader(HEADER_NAME, "method");
             return chain.proceed(requestBuilder.build());
@@ -238,8 +242,9 @@ public class InterceptorTest {
     @EverythingIsNonNull
     public static class ParamInterceptor implements Interceptor {
 
+        @Nonnull
         @Override
-        public Response intercept(Chain chain) throws IOException {
+        public Response intercept(@Nonnull Chain chain) throws IOException {
             val requestBuilder = chain.request().newBuilder();
             requestBuilder.addHeader(HEADER_NAME, "parameter");
             return chain.proceed(requestBuilder.build());

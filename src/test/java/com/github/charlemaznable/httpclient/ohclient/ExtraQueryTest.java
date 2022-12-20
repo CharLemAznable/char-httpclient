@@ -24,20 +24,22 @@ import java.util.Map;
 
 import static com.github.charlemaznable.core.codec.Json.unJson;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ExtraQueryTest {
 
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
     @SneakyThrows
     @Test
     public void testExtraQuery() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    val requestUrl = request.getRequestUrl();
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    val requestUrl = requireNonNull(request.getRequestUrl());
                     switch (requestUrl.encodedPath()) {
                         case "/sampleGet":
                             assertEquals("GET", request.getMethod());

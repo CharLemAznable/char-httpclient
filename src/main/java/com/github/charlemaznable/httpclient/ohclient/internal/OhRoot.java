@@ -27,6 +27,7 @@ import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_READ_TIMEOUT;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_WRITE_TIMEOUT;
 
+@SuppressWarnings("rawtypes")
 class OhRoot {
 
     Proxy clientProxy;

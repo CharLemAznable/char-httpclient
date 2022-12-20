@@ -16,45 +16,37 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
+
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class OhResponseMappingTest {
 
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
     @SneakyThrows
     @Test
     public void testOhResponseMapping() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    switch (request.getPath()) {
-                        case "/sampleNotFound":
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                    .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                        case "/sampleClientError":
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.FORBIDDEN.value())
-                                    .setBody(HttpStatus.FORBIDDEN.getReasonPhrase());
-                        case "/sampleMappingNotFound":
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                    .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                        case "/sampleMappingClientError":
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.FORBIDDEN.value())
-                                    .setBody(HttpStatus.FORBIDDEN.getReasonPhrase());
-                        case "/sampleServerError":
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                                    .setBody(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
-                        default:
-                            return new MockResponse().setBody("OK");
-                    }
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    return switch (requireNonNull(request.getPath())) {
+                        case "/sampleNotFound", "/sampleMappingNotFound" -> new MockResponse()
+                                .setResponseCode(HttpStatus.NOT_FOUND.value())
+                                .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                        case "/sampleClientError", "/sampleMappingClientError" -> new MockResponse()
+                                .setResponseCode(HttpStatus.FORBIDDEN.value())
+                                .setBody(HttpStatus.FORBIDDEN.getReasonPhrase());
+                        case "/sampleServerError" -> new MockResponse()
+                                .setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                .setBody(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+                        default -> new MockResponse().setBody("OK");
+                    };
                 }
             });
             mockWebServer.start(41180);
@@ -135,6 +127,7 @@ public class OhResponseMappingTest {
         @StatusSeriesFallback(statusSeries = HttpStatus.Series.CLIENT_ERROR, fallback = ClientError2.class)
         String sampleMappingClientError();
 
+        @SuppressWarnings("UnusedReturnValue")
         String sampleServerError();
     }
 
