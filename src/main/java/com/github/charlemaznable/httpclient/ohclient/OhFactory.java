@@ -91,14 +91,18 @@ public final class OhFactory {
             ensureClassIsAnInterface(ohClass);
             return wrapWithEnhancer(ohClass,
                     BuddyEnhancer.create(OhDummy.class,
+                            new Object[]{ohClass},
                             new Class[]{ohClass, Reloadable.class},
-                            method -> {
-                                if (method.isDefault()) return 1;
+                            invocation -> {
+                                if (invocation.getMethod().isDefault() ||
+                                        invocation.getMethod().getDeclaringClass()
+                                                .equals(OhDummy.class)) return 1;
                                 return 0;
-                            }, new BuddyEnhancer.Delegate[]{
+                            },
+                            new BuddyEnhancer.Delegate[]{
                                     new OhProxy(ohClass, factory),
-                                    BuddyEnhancer.CallSuper
-                            }, new Object[]{ohClass}));
+                                    BuddyEnhancer.CALL_SUPER
+                            }));
         }
 
         private <T> void ensureClassIsAnInterface(Class<T> clazz) {
@@ -110,11 +114,7 @@ public final class OhFactory {
             Object enhancedImpl = impl;
             for (val enhancer : enhancers) {
                 if (enhancer.isEnabled(ohClass)) {
-                    val enhanced = enhancer.build(ohClass, enhancedImpl);
-                    enhancedImpl = (enhanced instanceof BuddyEnhancer.Delegate delegate) ?
-                            BuddyEnhancer.create(OhDummy.class,
-                                    new Class[]{ohClass, Reloadable.class},
-                                    delegate, new Object[]{ohClass}) : enhanced;
+                    enhancedImpl = enhancer.build(ohClass, enhancedImpl);
                 }
             }
             return enhancedImpl;

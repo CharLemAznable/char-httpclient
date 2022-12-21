@@ -47,7 +47,6 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import static com.github.charlemaznable.core.lang.Condition.checkBlank;
@@ -93,12 +92,9 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
     }
 
     @Override
-    public Object invoke(Method method, Object[] args,
-                         Callable<Object> superCall) throws Exception {
-        if (method.getDeclaringClass().equals(OhDummy.class)) {
-            return superCall.call();
-        }
-
+    public Object invoke(BuddyEnhancer.Invocation invocation) throws Exception {
+        val method = invocation.getMethod();
+        val args = invocation.getArguments();
         if (method.getDeclaringClass().equals(Reloadable.class)) {
             return method.invoke(this, args);
         }
