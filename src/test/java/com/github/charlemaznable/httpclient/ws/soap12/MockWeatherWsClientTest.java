@@ -3,6 +3,7 @@ package com.github.charlemaznable.httpclient.ws.soap12;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.ws.entity.GetSupportCity;
 import com.github.charlemaznable.httpclient.ws.entity.GetSupportProvince;
+import jakarta.xml.bind.JAXBContext;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.Dispatcher;
@@ -10,8 +11,6 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
-
-import jakarta.xml.bind.JAXBContext;
 
 import javax.annotation.Nonnull;
 import java.io.StringReader;
