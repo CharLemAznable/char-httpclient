@@ -37,23 +37,25 @@ import static com.github.charlemaznable.core.context.FactoryContext.ReflectFacto
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ContextTest {
 
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
     @SneakyThrows
     @Test
     public void testOhContext() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
                     assertEquals("EH1", request.getHeader("H1"));
                     val body = unJson(request.getBody().readUtf8());
-                    switch (request.getPath()) {
+                    switch (requireNonNull(request.getPath())) {
                         case "/sampleDefault":
                             assertEquals("CV1", body.get("C1"));
                             assertEquals("CV2", body.get("C2"));
@@ -149,7 +151,7 @@ public class ContextTest {
 
     public static class TestContextFormatter implements ContentFormatter {
 
-        private Map<String, String> contextValue = Mapp.of(
+        private final Map<String, String> contextValue = Mapp.of(
                 "V1", "CV1",
                 "V2", "CV2",
                 "V3", "CV3",

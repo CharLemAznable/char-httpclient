@@ -13,7 +13,8 @@ import javax.xml.bind.annotation.XmlAnyElement;
 import java.io.StringReader;
 import java.io.StringWriter;
 
-public interface Entity<E extends Entity> {
+@SuppressWarnings("rawtypes")
+public interface Entity<E extends Entity<E>> {
 
     Body getBody();
 

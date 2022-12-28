@@ -12,9 +12,9 @@ import javax.annotation.Nullable;
 
 public final class OhResponseBody extends ResponseBody {
 
-    private MediaType contentType;
-    private long contentLength;
-    private Buffer buffer;
+    private final MediaType contentType;
+    private final long contentLength;
+    private final Buffer buffer;
 
     @SneakyThrows
     public OhResponseBody(ResponseBody responseBody) {

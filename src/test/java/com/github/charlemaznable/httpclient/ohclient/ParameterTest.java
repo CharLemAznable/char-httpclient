@@ -27,6 +27,7 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -34,21 +35,23 @@ import static com.github.charlemaznable.core.codec.Json.unJson;
 import static com.github.charlemaznable.core.codec.Xml.unXml;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static com.github.charlemaznable.core.lang.Mapp.of;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ParameterTest {
 
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
     @SneakyThrows
     @Test
     public void testOhParameterGet() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    val requestUrl = request.getRequestUrl();
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    val requestUrl = requireNonNull(request.getRequestUrl());
                     switch (requestUrl.encodedPath()) {
                         case "/sampleDefault":
                             assertNull(requestUrl.queryParameter("T0"));
@@ -116,11 +119,14 @@ public class ParameterTest {
     public void testOhParameterPost() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
                     val body = request.getBody().readUtf8();
-                    switch (request.getPath()) {
+                    switch (requireNonNull(request.getPath())) {
                         case "/sampleDefault":
+                        case "/sampleBundle2":
+                        case "/sampleRawError":
                             val defaultMap = Splitter.on("&")
                                     .withKeyValueSeparator("=").split(body);
                             assertEquals("V1", defaultMap.get("T1"));
@@ -152,14 +158,6 @@ public class ParameterTest {
                             assertEquals("V5", bundleMap.get("t5"));
                             assertEquals("V6", bundleMap.get("t6"));
                             return new MockResponse().setBody("OK");
-                        case "/sampleBundle2":
-                            val bundleMap2 = Splitter.on("&")
-                                    .withKeyValueSeparator("=").split(body);
-                            assertEquals("V1", bundleMap2.get("T1"));
-                            assertEquals("V2", bundleMap2.get("T2"));
-                            assertNull(bundleMap2.get("T3"));
-                            assertNull(bundleMap2.get("T4"));
-                            return new MockResponse().setBody("OK");
                         case "/sampleBundle3":
                             val bundleMap3 = Splitter.on("&")
                                     .withKeyValueSeparator("=").split(body);
@@ -176,14 +174,6 @@ public class ParameterTest {
                             assertNull(rawMap.get("T2"));
                             assertEquals("V3", rawMap.get("T3"));
                             assertEquals("V4", rawMap.get("T4"));
-                            return new MockResponse().setBody("OK");
-                        case "/sampleRawError":
-                            val rawErrorMap = Splitter.on("&")
-                                    .withKeyValueSeparator("=").split(body);
-                            assertEquals("V1", rawErrorMap.get("T1"));
-                            assertEquals("V2", rawErrorMap.get("T2"));
-                            assertNull(rawErrorMap.get("T3"));
-                            assertNull(rawErrorMap.get("T4"));
                             return new MockResponse().setBody("OK");
                         default:
                             return new MockResponse()

@@ -36,8 +36,8 @@ import static java.util.Objects.nonNull;
 
 public class VxReq extends CommonReq<VxReq> {
 
-    private Vertx vertx;
-    private WebClientOptions webClientOptions = new WebClientOptions();
+    private final Vertx vertx;
+    private final WebClientOptions webClientOptions = new WebClientOptions();
 
     public VxReq(Vertx vertx) {
         super();
@@ -159,6 +159,7 @@ public class VxReq extends CommonReq<VxReq> {
         };
     }
 
+    @SuppressWarnings("rawtypes")
     private String applyFallback(Class<? extends FallbackFunction> function,
                                  int statusCode, String responseBody) {
         return toStr(reflectFactory().build(function).apply(

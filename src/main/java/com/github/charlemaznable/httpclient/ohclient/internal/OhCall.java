@@ -57,6 +57,7 @@ import static java.util.Objects.nonNull;
 import static org.joor.Reflect.on;
 import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
+@SuppressWarnings("rawtypes")
 public final class OhCall extends OhRoot {
 
     private static final ContentFormatter URL_QUERY_FORMATTER = new FormContentFormatter();
@@ -228,7 +229,6 @@ public final class OhCall extends OhRoot {
         }
     }
 
-    @SuppressWarnings("ConstantConditions")
     private OkHttpClient buildOkHttpClient(OhMappingProxy proxy) {
         val sameClientProxy = this.clientProxy == proxy.clientProxy;
         val sameSSLSocketFactory = this.sslSocketFactory == proxy.sslSocketFactory;
@@ -260,6 +260,7 @@ public final class OhCall extends OhRoot {
                 .buildHttpClient();
     }
 
+    @SuppressWarnings("DuplicatedCode")
     private Request buildRequest(OhMappingProxy proxy) {
         val requestBuilder = new Request.Builder();
 

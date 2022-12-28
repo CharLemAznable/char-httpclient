@@ -11,24 +11,28 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
+
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.httpclient.ohclient.OhFactory.getClient;
 import static com.github.charlemaznable.httpclient.ws.common.Constants.SOAP_ACTION_KEY;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MockWeatherWsClientTest {
 
-    private MockWeatherWsClient client = getClient(MockWeatherWsClient.class);
+    private final MockWeatherWsClient client = getClient(MockWeatherWsClient.class);
 
     @SneakyThrows
     @Test
     public void testMockWeatherWsClient() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    val requestUrl = request.getRequestUrl();
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    val requestUrl = requireNonNull(request.getRequestUrl());
                     assertEquals("/ws", requestUrl.encodedPath());
                     val body = request.getBody().readUtf8();
                     if (GetSupportProvince.SOAP_ACTION.equals(request.getHeader(SOAP_ACTION_KEY))) {

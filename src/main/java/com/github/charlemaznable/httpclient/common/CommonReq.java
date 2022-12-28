@@ -20,8 +20,8 @@ import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONTENT_FORMATTER;
 
-@SuppressWarnings("unchecked")
-public abstract class CommonReq<T extends CommonReq> {
+@SuppressWarnings({"unchecked", "rawtypes"})
+public abstract class CommonReq<T extends CommonReq<T>> {
 
     protected static final ContentFormatter URL_QUERY_FORMATTER = new FormContentFormatter();
 

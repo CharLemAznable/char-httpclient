@@ -14,7 +14,7 @@ import static java.util.Objects.nonNull;
 public final class OhModular extends CommonModular<OhModular> {
 
     @Delegate
-    private OhLoader ohLoader;
+    private final OhLoader ohLoader;
 
     public OhModular(Module... modules) {
         this(newArrayList(modules));
@@ -26,7 +26,7 @@ public final class OhModular extends CommonModular<OhModular> {
     }
 
     @Override
-    public boolean isCandidateClass(Class clazz) {
+    public boolean isCandidateClass(Class<?> clazz) {
         return nonNull(findAnnotation(clazz, OhClient.class));
     }
 

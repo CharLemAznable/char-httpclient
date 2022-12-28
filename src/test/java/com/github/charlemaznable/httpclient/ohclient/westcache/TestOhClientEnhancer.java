@@ -2,7 +2,6 @@ package com.github.charlemaznable.httpclient.ohclient.westcache;
 
 import com.github.charlemaznable.httpclient.ohclient.enhancer.OhClientEnhancer;
 import com.google.auto.service.AutoService;
-import net.sf.cglib.proxy.Callback;
 
 @AutoService(OhClientEnhancer.class)
 public class TestOhClientEnhancer implements OhClientEnhancer {
@@ -13,7 +12,7 @@ public class TestOhClientEnhancer implements OhClientEnhancer {
     }
 
     @Override
-    public Callback build(Class<?> clientClass, Object clientImpl) {
+    public Object build(Class<?> clientClass, Object clientImpl) {
         return null;
     }
 }

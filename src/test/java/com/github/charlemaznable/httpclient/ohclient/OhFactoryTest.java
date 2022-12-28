@@ -18,6 +18,8 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
+
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.CONTENT_TYPE;
@@ -26,6 +28,7 @@ import static com.google.common.net.MediaType.FORM_DATA;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,7 +39,7 @@ public class OhFactoryTest {
     private static final String SAMPLE = "/sample";
     private static final String SAMPLE2 = "/sample2";
     private static final String STRING_PREFIX = "OhClient:";
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
     @Test
     public void testOhFactory() {
@@ -48,17 +51,17 @@ public class OhFactoryTest {
     public void testAcceptCharset() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    switch (request.getPath()) {
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    val acceptCharset = requireNonNull(request.getHeader(ACCEPT_CHARSET));
+                    switch (requireNonNull(request.getPath())) {
                         case SAMPLE:
-                            val acceptCharset = request.getHeader(ACCEPT_CHARSET);
                             assertEquals(ISO_8859_1.name(), acceptCharset);
                             return new MockResponse().setBody(acceptCharset);
                         case SAMPLE2:
-                            val acceptCharset2 = request.getHeader(ACCEPT_CHARSET);
-                            assertEquals(UTF_8.name(), acceptCharset2);
-                            return new MockResponse().setBody(acceptCharset2);
+                            assertEquals(UTF_8.name(), acceptCharset);
+                            return new MockResponse().setBody(acceptCharset);
                         default:
                             return new MockResponse()
                                     .setResponseCode(HttpStatus.NOT_FOUND.value())
@@ -84,24 +87,21 @@ public class OhFactoryTest {
     public void testContentFormat() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    switch (request.getPath()) {
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    val contentType = requireNonNull(request.getHeader(CONTENT_TYPE));
+                    val bodyString = request.getBody().readUtf8();
+                    switch (requireNonNull(request.getPath())) {
                         case SAMPLE:
-                            val contentType = request.getHeader(CONTENT_TYPE);
                             assertTrue(contentType.startsWith(FORM_DATA.toString()));
-                            val bodyString = request.getBody().readUtf8();
                             return new MockResponse().setBody(bodyString);
                         case SAMPLE2:
-                            val contentType2 = request.getHeader(CONTENT_TYPE);
-                            assertTrue(contentType2.startsWith(JSON_UTF_8.toString()));
-                            val bodyString2 = request.getBody().readUtf8();
-                            return new MockResponse().setBody(bodyString2);
+                            assertTrue(contentType.startsWith(JSON_UTF_8.toString()));
+                            return new MockResponse().setBody(bodyString);
                         case "/sample3":
-                            val contentType3 = request.getHeader(CONTENT_TYPE);
-                            assertTrue(contentType3.startsWith(APPLICATION_XML_UTF_8.toString()));
-                            val bodyString3 = request.getBody().readUtf8();
-                            return new MockResponse().setBody(bodyString3);
+                            assertTrue(contentType.startsWith(APPLICATION_XML_UTF_8.toString()));
+                            return new MockResponse().setBody(bodyString);
                         default:
                             return new MockResponse()
                                     .setResponseCode(HttpStatus.NOT_FOUND.value())
@@ -128,17 +128,17 @@ public class OhFactoryTest {
     public void testRequestMethod() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    switch (request.getPath()) {
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    val method = requireNonNull(request.getMethod());
+                    switch (requireNonNull(request.getPath())) {
                         case SAMPLE:
-                            val method = request.getMethod();
                             assertEquals("POST", method);
                             return new MockResponse().setBody(method);
                         case SAMPLE2:
-                            val method2 = request.getMethod();
-                            assertEquals("GET", method2);
-                            return new MockResponse().setBody(method2);
+                            assertEquals("GET", method);
+                            return new MockResponse().setBody(method);
                         default:
                             return new MockResponse()
                                     .setResponseCode(HttpStatus.NOT_FOUND.value())
@@ -164,8 +164,9 @@ public class OhFactoryTest {
     public void testExtendInterface() {
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
                     if (SAMPLE.equals(request.getPath())) {
                         return new MockResponse().setBody("OK");
                     } else {
@@ -223,9 +224,11 @@ public class OhFactoryTest {
 
     @Mapping("${root}:41133")
     @OhClient
-    public interface BaseHttpClient {}
+    public interface BaseHttpClient {
+    }
 
-    public interface SubHttpClient extends BaseHttpClient {}
+    public interface SubHttpClient extends BaseHttpClient {
+    }
 
     public static class TestNotInterface {
 

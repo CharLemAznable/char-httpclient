@@ -39,9 +39,9 @@ import static lombok.AccessLevel.PRIVATE;
 @NoArgsConstructor(access = PRIVATE)
 public final class OhFactory {
 
-    private static LoadingCache<Factory, OhLoader> ohLoaderCache
-            = simpleCache(from(OhLoader::new));
-    private static List<OhClientEnhancer> enhancers;
+    private static final LoadingCache<Factory, OhLoader>
+            ohLoaderCache = simpleCache(from(OhLoader::new));
+    private static final List<OhClientEnhancer> enhancers;
 
     static {
         enhancers = StreamSupport
@@ -76,8 +76,8 @@ public final class OhFactory {
     @SuppressWarnings("unchecked")
     public static class OhLoader {
 
-        private Factory factory;
-        private LoadingCache<Class, Object> ohCache
+        private final Factory factory;
+        private final LoadingCache<Class<?>, Object> ohCache
                 = simpleCache(from(this::loadClient));
 
         OhLoader(Factory factory) {
@@ -95,7 +95,8 @@ public final class OhFactory {
                     EasyEnhancer.create(OhDummy.class,
                             new Class[]{ohClass, Reloadable.class},
                             method -> {
-                                if (method.isDefault()) return 1;
+                                if (method.isDefault() || method.getDeclaringClass()
+                                        .equals(OhDummy.class)) return 1;
                                 return 0;
                             }, new Callback[]{
                                     new OhProxy(ohClass, factory),
@@ -112,10 +113,7 @@ public final class OhFactory {
             Object enhancedImpl = impl;
             for (val enhancer : enhancers) {
                 if (enhancer.isEnabled(ohClass)) {
-                    enhancedImpl = EasyEnhancer.create(OhDummy.class,
-                            new Class[]{ohClass, Reloadable.class},
-                            enhancer.build(ohClass, enhancedImpl),
-                            new Object[]{ohClass});
+                    enhancedImpl = enhancer.build(ohClass, enhancedImpl);
                 }
             }
             return enhancedImpl;

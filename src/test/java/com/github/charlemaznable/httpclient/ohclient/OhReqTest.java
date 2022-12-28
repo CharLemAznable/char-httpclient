@@ -17,6 +17,7 @@ import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor.Level;
 import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.time.Duration;
 
@@ -114,8 +115,9 @@ public class OhReqTest extends CommonReqTest {
     @Slf4j
     public static class TestLoggingInterceptor implements Interceptor {
 
+        @Nonnull
         @Override
-        public Response intercept(Chain chain) throws IOException {
+        public Response intercept(@Nonnull Chain chain) throws IOException {
             Request request = chain.request();
 
             long t1 = System.nanoTime();

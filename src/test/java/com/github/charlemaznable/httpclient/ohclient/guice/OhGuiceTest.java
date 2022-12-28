@@ -27,7 +27,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.n3r.diamond.client.impl.MockDiamondServer;
 
+import javax.annotation.Nonnull;
+
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -67,9 +70,10 @@ public class OhGuiceTest {
 
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    switch (request.getPath()) {
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    switch (requireNonNull(request.getPath())) {
                         case SAMPLE:
                             return new MockResponse().setBody(SAMPLE_RESULT);
                         case CONTEXT:
@@ -114,9 +118,10 @@ public class OhGuiceTest {
 
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    switch (request.getPath()) {
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    switch (requireNonNull(request.getPath())) {
                         case SAMPLE:
                             return new MockResponse().setBody(SAMPLE_ERROR_RESULT);
                         case SAMPLE_ERROR:
@@ -153,9 +158,10 @@ public class OhGuiceTest {
 
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
-                    switch (request.getPath()) {
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
+                    switch (requireNonNull(request.getPath())) {
                         case SAMPLE:
                             return new MockResponse().setBody(SAMPLE_ERROR_RESULT);
                         case SAMPLE_ERROR:
@@ -208,8 +214,9 @@ public class OhGuiceTest {
 
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
+                @Nonnull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
+                public MockResponse dispatch(@Nonnull RecordedRequest request) {
                     return new MockResponse().setBody(SAMPLE_RESULT);
                 }
             });

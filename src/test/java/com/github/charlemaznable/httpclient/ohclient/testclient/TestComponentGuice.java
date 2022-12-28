@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class TestComponentGuice {
 
     @Getter
-    private TestHttpClient testHttpClient;
+    private final TestHttpClient testHttpClient;
 
     @Inject
     public TestComponentGuice(@Nullable TestHttpClient testHttpClient) {

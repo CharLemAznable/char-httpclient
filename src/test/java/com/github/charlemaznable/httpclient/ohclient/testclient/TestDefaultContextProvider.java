@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
 
 public class TestDefaultContextProvider implements DefaultValueProvider {
 
-    private String init;
+    private final String init;
 
     public TestDefaultContextProvider() {
         if (FactoryContext.get() instanceof SpringFactory) {

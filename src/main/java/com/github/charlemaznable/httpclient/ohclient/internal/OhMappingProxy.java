@@ -96,6 +96,7 @@ import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedRepeatableAnnotations;
 
+@SuppressWarnings("rawtypes")
 public final class OhMappingProxy extends OhRoot {
 
     private static final String RETURN_GENERIC_ERROR = "Method return type generic Error";
@@ -192,7 +193,6 @@ public final class OhMappingProxy extends OhRoot {
         return internalExecute(args);
     }
 
-    @SuppressWarnings("unchecked")
     private void processReturnType(Method method) {
         Class<?> returnType = method.getReturnType();
         this.returnFuture = Future.class == returnType;
@@ -546,7 +546,6 @@ public final class OhMappingProxy extends OhRoot {
                     : FactoryContext.apply(factory, providerClass, p -> p.level(clazz, method));
         }
 
-        @SuppressWarnings("ConstantConditions")
         static OkHttpClient buildOkHttpClient(OhMappingProxy mappingProxy, OhProxy proxy) {
             val sameClientProxy = mappingProxy.clientProxy == proxy.clientProxy;
             val sameSSLSocketFactory = mappingProxy.sslSocketFactory == proxy.sslSocketFactory;

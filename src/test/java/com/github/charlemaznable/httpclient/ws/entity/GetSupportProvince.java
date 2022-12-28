@@ -23,7 +23,8 @@ public final class GetSupportProvince {
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlRootElement(name = "getSupportProvince", namespace = WebNameSpace.WEB_URI)
     @XmlType(name = "getSupportProvince", namespace = WebNameSpace.WEB_URI) // used in unmarshal type matching
-    public static final class Request {}
+    public static final class Request {
+    }
 
     @Getter
     @Setter

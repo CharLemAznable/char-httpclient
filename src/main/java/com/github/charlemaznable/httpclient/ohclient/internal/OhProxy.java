@@ -95,6 +95,7 @@ import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedRepeatableAnnotations;
 
+@SuppressWarnings("rawtypes")
 public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadable {
 
     Class ohClass;
@@ -114,10 +115,6 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
     @Override
     public Object intercept(Object o, Method method, Object[] args,
                             MethodProxy methodProxy) throws Throwable {
-        if (method.getDeclaringClass().equals(OhDummy.class)) {
-            return methodProxy.invokeSuper(o, args);
-        }
-
         if (method.getDeclaringClass().equals(Reloadable.class)) {
             return method.invoke(this, args);
         }

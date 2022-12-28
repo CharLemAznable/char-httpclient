@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class SSLProviderTest {
 
     private static final String FAILED = "Failed to connect to /127.0.0.1:41124";
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
     @Test
     public void testSSLDef() {

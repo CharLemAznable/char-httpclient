@@ -25,14 +25,14 @@ import java.net.Proxy.Type;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static com.github.charlemaznable.core.lang.Condition.checkNotNull;
 import static org.joor.Reflect.on;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("UnusedReturnValue")
 public class ProxyProviderTest {
 
     private static final String LOCAL_HOST = "127.0.0.1";
-    private static OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
 
     @Test
     public void testProxyPlain() {
