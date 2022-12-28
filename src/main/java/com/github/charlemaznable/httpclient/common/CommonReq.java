@@ -21,7 +21,7 @@ import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONTENT_FORMATTER;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
-public abstract class CommonReq<T extends CommonReq> {
+public abstract class CommonReq<T extends CommonReq<T>> {
 
     protected static final ContentFormatter URL_QUERY_FORMATTER = new FormContentFormatter();
 

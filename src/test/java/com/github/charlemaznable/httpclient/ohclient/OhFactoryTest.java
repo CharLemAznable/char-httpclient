@@ -91,19 +91,17 @@ public class OhFactoryTest {
                 @Override
                 public MockResponse dispatch(@Nonnull RecordedRequest request) {
                     val contentType = requireNonNull(request.getHeader(CONTENT_TYPE));
+                    val bodyString = request.getBody().readUtf8();
                     switch (requireNonNull(request.getPath())) {
                         case SAMPLE:
                             assertTrue(contentType.startsWith(FORM_DATA.toString()));
-                            val bodyString = request.getBody().readUtf8();
                             return new MockResponse().setBody(bodyString);
                         case SAMPLE2:
                             assertTrue(contentType.startsWith(JSON_UTF_8.toString()));
-                            val bodyString2 = request.getBody().readUtf8();
-                            return new MockResponse().setBody(bodyString2);
+                            return new MockResponse().setBody(bodyString);
                         case "/sample3":
                             assertTrue(contentType.startsWith(APPLICATION_XML_UTF_8.toString()));
-                            val bodyString3 = request.getBody().readUtf8();
-                            return new MockResponse().setBody(bodyString3);
+                            return new MockResponse().setBody(bodyString);
                         default:
                             return new MockResponse()
                                     .setResponseCode(HttpStatus.NOT_FOUND.value())

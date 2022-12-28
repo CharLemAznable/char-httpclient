@@ -14,7 +14,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 
 @SuppressWarnings("rawtypes")
-public interface Entity<E extends Entity> {
+public interface Entity<E extends Entity<E>> {
 
     Body getBody();
 
