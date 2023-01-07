@@ -71,7 +71,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.github.charlemaznable.core.lang.Condition.checkBlank;
-import static com.github.charlemaznable.core.lang.Condition.checkNotNull;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.emptyThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
@@ -82,7 +81,6 @@ import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.of;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.isNotBlank;
-import static com.github.charlemaznable.core.spring.AnnotationElf.findAnnotation;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONTENT_FORMATTER;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_HTTP_METHOD;
@@ -94,6 +92,7 @@ import static java.util.Objects.nonNull;
 import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedRepeatableAnnotations;
+import static org.springframework.core.annotation.AnnotatedElementUtils.isAnnotated;
 
 @SuppressWarnings("rawtypes")
 public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadable {
@@ -187,8 +186,8 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
     static class Elf {
 
         static void checkOhClient(Class clazz) {
-            checkNotNull(findAnnotation(clazz, OhClient.class),
-                    new OhException(clazz.getName() + " has no OhClient annotation"));
+            if (isAnnotated(clazz, OhClient.class)) return;
+            throw new OhException(clazz.getName() + " has no OhClient annotation");
         }
 
         static List<String> checkBaseUrls(Class clazz, Factory factory) {
@@ -202,7 +201,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
         }
 
         static boolean checkMappingMethodNameDisabled(Class clazz) {
-            return nonNull(findAnnotation(clazz, MappingMethodNameDisabled.class));
+            return isAnnotated(clazz, MappingMethodNameDisabled.class);
         }
 
         static Proxy checkClientProxy(Class clazz, Factory factory) {
@@ -259,8 +258,8 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
         }
 
         static ConnectionPool checkConnectionPool(Class clazz) {
-            val isolated = findAnnotation(clazz, IsolatedConnectionPool.class);
-            return checkNull(isolated, () -> ohConnectionPool, x -> new ConnectionPool());
+            return isAnnotated(clazz, IsolatedConnectionPool.class)
+                    ? new ConnectionPool() : ohConnectionPool;
         }
 
         static ClientTimeout checkClientTimeout(Class clazz) {
@@ -401,10 +400,10 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
 
         static Map<HttpStatus.Series, Class<? extends FallbackFunction>>
         checkStatusSeriesFallbackMapping(Class clazz) {
-            val defaultDisabled = findAnnotation(clazz, DefaultFallbackDisabled.class);
-            Map<HttpStatus.Series, Class<? extends FallbackFunction>> result = checkNull(
-                    defaultDisabled, () -> of(HttpStatus.Series.CLIENT_ERROR, StatusErrorThrower.class,
-                            HttpStatus.Series.SERVER_ERROR, StatusErrorThrower.class), x -> newHashMap());
+            Map<HttpStatus.Series, Class<? extends FallbackFunction>> result =
+                    isAnnotated(clazz, DefaultFallbackDisabled.class) ? newHashMap()
+                            : of(HttpStatus.Series.CLIENT_ERROR, StatusErrorThrower.class,
+                            HttpStatus.Series.SERVER_ERROR, StatusErrorThrower.class);
             result.putAll(newArrayList(getMergedRepeatableAnnotations(clazz,
                     StatusSeriesFallback.class)).stream()
                     .collect(toMap(StatusSeriesFallback::statusSeries, StatusSeriesFallback::fallback)));

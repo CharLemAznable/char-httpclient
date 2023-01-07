@@ -87,7 +87,6 @@ import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.isBlank;
 import static com.github.charlemaznable.core.lang.Str.isNotBlank;
 import static com.github.charlemaznable.core.lang.Str.toStr;
-import static com.github.charlemaznable.core.spring.AnnotationElf.findAnnotation;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.ohExecutorService;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Objects.isNull;
@@ -95,6 +94,7 @@ import static java.util.Objects.nonNull;
 import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedRepeatableAnnotations;
+import static org.springframework.core.annotation.AnnotatedElementUtils.isAnnotated;
 
 @SuppressWarnings("rawtypes")
 public final class OhMappingProxy extends OhRoot {
@@ -345,8 +345,8 @@ public final class OhMappingProxy extends OhRoot {
                                              ResponseBody responseBody,
                                              Class responseClass) {
         return this.returnTypes.stream().map(returnType ->
-                processReturnTypeValue(statusCode, responseBody,
-                        CncResponse.class == returnType ? responseClass : returnType))
+                        processReturnTypeValue(statusCode, responseBody,
+                                CncResponse.class == returnType ? responseClass : returnType))
                 .collect(Collectors.toList());
     }
 
@@ -486,8 +486,8 @@ public final class OhMappingProxy extends OhRoot {
         }
 
         static ConnectionPool checkConnectionPool(Method method, OhProxy proxy) {
-            val isolated = findAnnotation(method, IsolatedConnectionPool.class);
-            return checkNull(isolated, () -> proxy.connectionPool, x -> new ConnectionPool());
+            return isAnnotated(method, IsolatedConnectionPool.class)
+                    ? new ConnectionPool() : proxy.connectionPool;
         }
 
         static ClientTimeout checkClientTimeout(Method method) {
@@ -523,7 +523,7 @@ public final class OhMappingProxy extends OhRoot {
         }
 
         static List<Interceptor> checkClientInterceptors(Class clazz, Method method, Factory factory, OhProxy proxy) {
-            val cleanup = nonNull(findAnnotation(method, ClientInterceptorCleanup.class));
+            val cleanup = isAnnotated(method, ClientInterceptorCleanup.class);
             val result = newArrayList(cleanup ? null : proxy.interceptors);
             result.addAll(newArrayList(getMergedRepeatableAnnotations(method, ClientInterceptor.class))
                     .stream().filter(annotation -> Interceptor.class != annotation.value()

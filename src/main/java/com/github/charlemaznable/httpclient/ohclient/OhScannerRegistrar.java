@@ -22,8 +22,9 @@ public final class OhScannerRegistrar extends SpringScannerRegistrar {
 
     public static class OhClientFactoryBean extends SpringFactoryBean {
 
-        public OhClientFactoryBean() {
-            super(springOhLoader::getClient);
+        @Override
+        public Object buildObject(Class<?> xyzInterface) {
+            return springOhLoader.getClient(xyzInterface);
         }
     }
 }
