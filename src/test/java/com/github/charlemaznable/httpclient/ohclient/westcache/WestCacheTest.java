@@ -9,10 +9,8 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import javax.annotation.Nonnull;
 
@@ -22,8 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = WestCacheConfiguration.class)
+@SpringJUnitConfig(WestCacheConfiguration.class)
 public class WestCacheTest {
 
     @Autowired
