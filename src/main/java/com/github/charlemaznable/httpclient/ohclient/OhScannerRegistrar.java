@@ -19,14 +19,14 @@ public final class OhScannerRegistrar extends SpringScannerRegistrar {
     }
 
     @Override
-    protected void postProcessBeanDefinition(BeanDefinition beanDefinition) {
-        super.postProcessBeanDefinition(beanDefinition);
-        beanDefinition.getPropertyValues().add("ohLoader", ohLoader);
+    protected boolean isCandidateClass(ClassMetadata classMetadata) {
+        return classMetadata.isInterface();
     }
 
     @Override
-    protected boolean isCandidateClass(ClassMetadata classMetadata) {
-        return classMetadata.isInterface();
+    protected void postProcessBeanDefinition(BeanDefinition beanDefinition) {
+        super.postProcessBeanDefinition(beanDefinition);
+        beanDefinition.getPropertyValues().add("ohLoader", ohLoader);
     }
 
     public static class OhClientFactoryBean extends SpringFactoryBean {
