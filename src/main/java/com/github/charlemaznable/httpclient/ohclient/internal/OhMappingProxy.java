@@ -1,11 +1,9 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
-import com.github.charlemaznable.configservice.ConfigFactory;
 import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.httpclient.common.AcceptCharset;
 import com.github.charlemaznable.httpclient.common.CncResponse;
-import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.ContentFormat.ContentFormatter;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
@@ -111,7 +109,6 @@ import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.isBlank;
 import static com.github.charlemaznable.core.lang.Str.isNotBlank;
 import static com.github.charlemaznable.core.lang.Str.toStr;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.log;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.ohExecutorService;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Objects.isNull;
@@ -144,7 +141,7 @@ public final class OhMappingProxy extends OhRoot {
         this.ohClass = ohClass;
         this.ohMethod = ohMethod;
         this.factory = factory;
-        this.configurer = Elf.checkConfigurer(this.ohMethod, this.factory);
+        this.configurer = checkConfigurer(this.ohMethod, this.factory);
         this.requestUrls = Elf.checkRequestUrls(this.configurer,
                 this.ohClass, this.ohMethod, this.factory, proxy);
 
@@ -441,21 +438,6 @@ public final class OhMappingProxy extends OhRoot {
 
     @NoArgsConstructor(access = PRIVATE)
     static class Elf {
-
-        @SuppressWarnings("DuplicatedCode")
-        static Configurer checkConfigurer(Method method, Factory factory) {
-            val configureWith = getMergedAnnotation(method, ConfigureWith.class);
-            if (isNull(configureWith)) return null;
-            val configurerClass = configureWith.value();
-            val configurer = FactoryContext.build(factory, configurerClass);
-            if (nonNull(configurer)) return configurer;
-            try {
-                return ConfigFactory.configLoader(factory).getConfig(configurerClass);
-            } catch (Exception e) {
-                log.warn("Load Configurer by ConfigService with exception: ", e);
-                return null;
-            }
-        }
 
         static List<String> checkRequestUrls(Configurer configurer,
                                              Class clazz, Method method,

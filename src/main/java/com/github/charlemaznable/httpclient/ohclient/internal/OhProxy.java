@@ -1,12 +1,10 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
-import com.github.charlemaznable.configservice.ConfigFactory;
 import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.BuddyEnhancer;
 import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.common.AcceptCharset;
-import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.ContentFormat.ContentFormatter;
 import com.github.charlemaznable.httpclient.common.DefaultFallbackDisabled;
@@ -109,7 +107,6 @@ import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONTENT_FORMATTER;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_HTTP_METHOD;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_LOGGING_LEVEL;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.log;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.ohConnectionPool;
 import static com.google.common.cache.CacheLoader.from;
 import static java.util.Objects.isNull;
@@ -157,7 +154,7 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
     private void initialize() {
         Elf.checkOhClient(this.ohClass);
-        this.configurer = Elf.checkConfigurer(this.ohClass, this.factory);
+        this.configurer = checkConfigurer(this.ohClass, this.factory);
         this.baseUrls = Elf.checkBaseUrls(this.configurer, this.ohClass, this.factory);
         this.mappingMethodNameDisabled = Elf.checkMappingMethodNameDisabled(this.configurer, this.ohClass);
 
@@ -229,21 +226,6 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
         static void checkOhClient(Class clazz) {
             if (isAnnotated(clazz, OhClient.class)) return;
             throw new OhException(clazz.getName() + " has no OhClient annotation");
-        }
-
-        @SuppressWarnings("DuplicatedCode")
-        static Configurer checkConfigurer(Class clazz, Factory factory) {
-            val configureWith = getMergedAnnotation(clazz, ConfigureWith.class);
-            if (isNull(configureWith)) return null;
-            val configurerClass = configureWith.value();
-            val configurer = FactoryContext.build(factory, configurerClass);
-            if (nonNull(configurer)) return configurer;
-            try {
-                return ConfigFactory.configLoader(factory).getConfig(configurerClass);
-            } catch (Exception e) {
-                log.warn("Load Configurer by ConfigService with exception: ", e);
-                return null;
-            }
         }
 
         static List<String> checkBaseUrls(Configurer configurer, Class clazz, Factory factory) {
