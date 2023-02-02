@@ -1,6 +1,7 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.httpclient.common.AcceptCharset;
+import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.ContentFormat.ApplicationXmlContentFormatter;
 import com.github.charlemaznable.httpclient.common.ContentFormat.FormContentFormatter;
@@ -9,6 +10,9 @@ import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
+import com.github.charlemaznable.httpclient.configurer.AcceptCharsetConfigurer;
+import com.github.charlemaznable.httpclient.configurer.ContentFormatConfigurer;
+import com.github.charlemaznable.httpclient.configurer.RequestMethodConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -19,6 +23,7 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
+import java.nio.charset.Charset;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.ACCEPT_CHARSET;
@@ -79,6 +84,15 @@ public class OhFactoryTest {
                     + Integer.toHexString(httpClient.hashCode()), httpClient.toString());
             assertEquals(httpClient, ohLoader.getClient(AcceptCharsetHttpClient.class));
             assertEquals(httpClient.hashCode(), ohLoader.getClient(AcceptCharsetHttpClient.class).hashCode());
+
+            val httpClientNeo = ohLoader.getClient(AcceptCharsetHttpClientNeo.class);
+            assertEquals(ISO_8859_1.name(), httpClientNeo.sample());
+            assertEquals(UTF_8.name(), httpClientNeo.sample2());
+
+            assertEquals(STRING_PREFIX + AcceptCharsetHttpClientNeo.class.getSimpleName() + "@"
+                    + Integer.toHexString(httpClientNeo.hashCode()), httpClientNeo.toString());
+            assertEquals(httpClientNeo, ohLoader.getClient(AcceptCharsetHttpClientNeo.class));
+            assertEquals(httpClientNeo.hashCode(), ohLoader.getClient(AcceptCharsetHttpClientNeo.class).hashCode());
         }
     }
 
@@ -120,6 +134,16 @@ public class OhFactoryTest {
                     + Integer.toHexString(httpClient.hashCode()), httpClient.toString());
             assertEquals(httpClient, ohLoader.getClient(ContentFormatHttpClient.class));
             assertEquals(httpClient.hashCode(), ohLoader.getClient(ContentFormatHttpClient.class).hashCode());
+
+            val httpClientNeo = ohLoader.getClient(ContentFormatHttpClientNeo.class);
+            assertEquals("", httpClientNeo.sample());
+            assertEquals("{}", httpClientNeo.sample2());
+            assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xml/>", httpClientNeo.sample3());
+
+            assertEquals(STRING_PREFIX + ContentFormatHttpClientNeo.class.getSimpleName() + "@"
+                    + Integer.toHexString(httpClientNeo.hashCode()), httpClientNeo.toString());
+            assertEquals(httpClientNeo, ohLoader.getClient(ContentFormatHttpClientNeo.class));
+            assertEquals(httpClientNeo.hashCode(), ohLoader.getClient(ContentFormatHttpClientNeo.class).hashCode());
         }
     }
 
@@ -156,6 +180,15 @@ public class OhFactoryTest {
                     + Integer.toHexString(httpClient.hashCode()), httpClient.toString());
             assertEquals(httpClient, ohLoader.getClient(RequestMethodHttpClient.class));
             assertEquals(httpClient.hashCode(), ohLoader.getClient(RequestMethodHttpClient.class).hashCode());
+
+            val httpClientNeo = ohLoader.getClient(RequestMethodHttpClientNeo.class);
+            assertEquals("POST", httpClientNeo.sample());
+            assertEquals("GET", httpClientNeo.sample2());
+
+            assertEquals(STRING_PREFIX + RequestMethodHttpClientNeo.class.getSimpleName() + "@"
+                    + Integer.toHexString(httpClientNeo.hashCode()), httpClientNeo.toString());
+            assertEquals(httpClientNeo, ohLoader.getClient(RequestMethodHttpClientNeo.class));
+            assertEquals(httpClientNeo.hashCode(), ohLoader.getClient(RequestMethodHttpClientNeo.class).hashCode());
         }
     }
 
@@ -234,6 +267,99 @@ public class OhFactoryTest {
 
         public void test() {
             // empty
+        }
+    }
+
+    @Mapping("${root}:41130")
+    @OhClient
+    @ConfigureWith(AcceptCharsetHttpClientConfig.class)
+    public interface AcceptCharsetHttpClientNeo {
+
+        String sample();
+
+        @ConfigureWith(AcceptCharsetHttpClientSample2Config.class)
+        String sample2();
+    }
+
+    public static class AcceptCharsetHttpClientConfig implements AcceptCharsetConfigurer {
+
+        @Override
+        public Charset acceptCharset() {
+            return ISO_8859_1;
+        }
+    }
+
+    public static class AcceptCharsetHttpClientSample2Config implements AcceptCharsetConfigurer {
+
+        @Override
+        public Charset acceptCharset() {
+            return UTF_8;
+        }
+    }
+
+    @RequestMethod(HttpMethod.POST)
+    @Mapping("${root}:41131")
+    @OhClient
+    @ConfigureWith(ContentFormatHttpClientConfig.class)
+    public interface ContentFormatHttpClientNeo {
+
+        String sample();
+
+        @ConfigureWith(ContentFormatHttpClientSample2Config.class)
+        String sample2();
+
+        @ConfigureWith(ContentFormatHttpClientSample3Config.class)
+        String sample3();
+    }
+
+    public static class ContentFormatHttpClientConfig implements ContentFormatConfigurer {
+
+        @Override
+        public ContentFormat.ContentFormatter contentFormatter() {
+            return new FormContentFormatter();
+        }
+    }
+
+    public static class ContentFormatHttpClientSample2Config implements ContentFormatConfigurer {
+
+        @Override
+        public ContentFormat.ContentFormatter contentFormatter() {
+            return new JsonContentFormatter();
+        }
+    }
+
+    public static class ContentFormatHttpClientSample3Config implements ContentFormatConfigurer {
+
+        @Override
+        public ContentFormat.ContentFormatter contentFormatter() {
+            return new ApplicationXmlContentFormatter();
+        }
+    }
+
+    @Mapping("${root}:41132")
+    @OhClient
+    @ConfigureWith(RequestMethodHttpClientConfig.class)
+    public interface RequestMethodHttpClientNeo {
+
+        String sample();
+
+        @ConfigureWith(RequestMethodHttpClientSample2Config.class)
+        String sample2();
+    }
+
+    public static class RequestMethodHttpClientConfig implements RequestMethodConfigurer {
+
+        @Override
+        public HttpMethod requestMethod() {
+            return HttpMethod.POST;
+        }
+    }
+
+    public static class RequestMethodHttpClientSample2Config implements RequestMethodConfigurer {
+
+        @Override
+        public HttpMethod requestMethod() {
+            return HttpMethod.GET;
         }
     }
 }

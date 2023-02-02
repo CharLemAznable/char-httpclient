@@ -1,5 +1,6 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.ContentFormat.JsonContentFormatter;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
@@ -10,6 +11,7 @@ import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.MappingBalance;
 import com.github.charlemaznable.httpclient.common.Parameter;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
+import com.github.charlemaznable.httpclient.configurer.ExtraUrlQueryConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -64,6 +66,10 @@ public class ExtraQueryTest {
             val httpClient = ohLoader.getClient(ExtraHttpClient.class);
             assertEquals("OK", httpClient.sampleGet("PV1"));
             assertEquals("OK", httpClient.samplePost("PV1"));
+
+            val httpClientNeo = ohLoader.getClient(ExtraHttpClientNeo.class);
+            assertEquals("OK", httpClientNeo.sampleGet("PV1"));
+            assertEquals("OK", httpClientNeo.samplePost("PV1"));
         }
     }
 
@@ -96,6 +102,36 @@ public class ExtraQueryTest {
         public String build(@Nonnull Map<String, Object> parameterMap,
                             @Nonnull Map<String, Object> contextMap) {
             return "EQ1=EQV2";
+        }
+    }
+
+    @MappingBalance(MappingBalance.RoundRobinBalancer.class)
+    @ContentFormat(JsonContentFormatter.class)
+    @Mapping("${root}:41230")
+    @OhClient
+    @ConfigureWith(ExtraOnClassConfig.class)
+    public interface ExtraHttpClientNeo {
+
+        String sampleGet(@Parameter("P1") String p);
+
+        @RequestMethod(HttpMethod.POST)
+        @ConfigureWith(ExtraOnMethodConfig.class)
+        String samplePost(@Parameter("P1") String p);
+    }
+
+    public static class ExtraOnClassConfig implements ExtraUrlQueryConfigurer {
+
+        @Override
+        public ExtraUrlQueryBuilder extraUrlQueryBuilder() {
+            return new ExtraOnClass();
+        }
+    }
+
+    public static class ExtraOnMethodConfig implements ExtraUrlQueryConfigurer {
+
+        @Override
+        public ExtraUrlQueryBuilder extraUrlQueryBuilder() {
+            return new ExtraOnMethod();
         }
     }
 }

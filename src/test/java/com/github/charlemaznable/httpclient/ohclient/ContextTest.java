@@ -1,6 +1,7 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.core.lang.Mapp;
+import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.ContentFormat.ContentFormatter;
 import com.github.charlemaznable.httpclient.common.Context;
@@ -14,6 +15,12 @@ import com.github.charlemaznable.httpclient.common.RequestExtend.RequestExtender
 import com.github.charlemaznable.httpclient.common.RequestMethod;
 import com.github.charlemaznable.httpclient.common.ResponseParse;
 import com.github.charlemaznable.httpclient.common.ResponseParse.ResponseParser;
+import com.github.charlemaznable.httpclient.configurer.ContentFormatConfigurer;
+import com.github.charlemaznable.httpclient.configurer.FixedContextsConfigurer;
+import com.github.charlemaznable.httpclient.configurer.MappingConfigurer;
+import com.github.charlemaznable.httpclient.configurer.RequestExtendConfigurer;
+import com.github.charlemaznable.httpclient.configurer.RequestMethodConfigurer;
+import com.github.charlemaznable.httpclient.configurer.ResponseParseConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import lombok.Getter;
 import lombok.Setter;
@@ -34,6 +41,7 @@ import java.util.Map;
 import static com.github.charlemaznable.core.codec.Json.json;
 import static com.github.charlemaznable.core.codec.Json.unJson;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.google.common.net.MediaType.JSON_UTF_8;
@@ -91,6 +99,15 @@ public class ContextTest {
             assertEquals("OK", httpClient.sampleDefaultResponse().getResponse());
             assertEquals("OK", httpClient.sampleMappingResponse().getResponse());
             assertEquals("OK", httpClient.sampleContextsResponse(null, "V4").getResponse());
+
+            val httpClientNeo = ohLoader.getClient(ContextHttpClientNeo.class);
+            assertEquals("OK", httpClientNeo.sampleDefault());
+            assertEquals("OK", httpClientNeo.sampleMapping());
+            assertEquals("OK", httpClientNeo.sampleContexts(null, "V4"));
+
+            assertEquals("OK", httpClientNeo.sampleDefaultResponse().getResponse());
+            assertEquals("OK", httpClientNeo.sampleMappingResponse().getResponse());
+            assertEquals("OK", httpClientNeo.sampleContextsResponse(null, "V4").getResponse());
         }
     }
 
@@ -204,6 +221,89 @@ public class ContextTest {
                            List<Pair<String, Object>> parameters,
                            List<Pair<String, Object>> contexts) {
             headers.add(Pair.of("H1", "EH1"));
+        }
+    }
+
+    @OhClient
+    @ConfigureWith(ContextHttpClientConfig.class)
+    public interface ContextHttpClientNeo {
+
+        String sampleDefault();
+
+        @ConfigureWith(SampleMappingConfig.class)
+        String sampleMapping();
+
+        @ConfigureWith(SampleMappingConfig.class)
+        String sampleContexts(@Context("C3") String v3,
+                              @Context("C4") String v4);
+
+        @ResponseParse(TestResponseParser.class)
+        @RequestExtend(TestRequestExtender.class)
+        @Mapping("/sampleDefault")
+        TestResponse sampleDefaultResponse();
+
+        @Mapping("/sampleMapping")
+        @ConfigureWith(SampleMappingConfig2.class)
+        TestResponse sampleMappingResponse();
+
+        @Mapping("/sampleContexts")
+        @ConfigureWith(SampleMappingConfig2.class)
+        TestResponse sampleContextsResponse(@Context("C3") String v3,
+                                            @Context("C4") String v4);
+    }
+
+    public static class ContextHttpClientConfig implements MappingConfigurer, RequestMethodConfigurer,
+            ContentFormatConfigurer, ResponseParseConfigurer, RequestExtendConfigurer, FixedContextsConfigurer {
+
+        @Override
+        public List<String> urls() {
+            return newArrayList("${root}:41170");
+        }
+
+        @Override
+        public HttpMethod requestMethod() {
+            return HttpMethod.POST;
+        }
+
+        @Override
+        public ContentFormatter contentFormatter() {
+            return new TestContextFormatter();
+        }
+
+        @Override
+        public ResponseParser responseParser() {
+            return new TestResponseParser();
+        }
+
+        @Override
+        public RequestExtender requestExtender() {
+            return new TestRequestExtender();
+        }
+
+        @Override
+        public List<Pair<String, Object>> fixedContexts() {
+            return newArrayList(Pair.of("C1", "V1"), Pair.of("C2", "V2"));
+        }
+    }
+
+    public static class SampleMappingConfig implements FixedContextsConfigurer {
+
+        @Override
+        public List<Pair<String, Object>> fixedContexts() {
+            return newArrayList(Pair.of("C2", null), Pair.of("C3", "V3"));
+        }
+    }
+
+    public static class SampleMappingConfig2 extends SampleMappingConfig implements ResponseParseConfigurer, RequestExtendConfigurer {
+
+        @Override
+        public ResponseParser responseParser() {
+            return new TestResponseParser();
+        }
+
+        @Override
+        public RequestExtender requestExtender() {
+            return new TestRequestExtender();
         }
     }
 }

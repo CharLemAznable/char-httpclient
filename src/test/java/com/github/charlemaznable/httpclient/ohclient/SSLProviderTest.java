@@ -1,5 +1,6 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.ProviderException;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
@@ -8,6 +9,7 @@ import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL.Hostna
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL.SSLSocketFactoryProvider;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL.X509TrustManagerProvider;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSLDisabled;
+import com.github.charlemaznable.httpclient.ohclient.configurer.ClientSSLConfigurer;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.OkHttpClient;
@@ -136,6 +138,18 @@ public class SSLProviderTest {
         } catch (Exception e) {
             assertEquals(FAILED, e.getMessage());
         }
+
+        val httpClientNeo = ohLoader.getClient(DisableSSLHttpClientNeo.class);
+        try {
+            httpClientNeo.sample();
+        } catch (Exception e) {
+            assertEquals(FAILED, e.getMessage());
+        }
+        try {
+            httpClientNeo.sampleDisabled();
+        } catch (Exception e) {
+            assertEquals(FAILED, e.getMessage());
+        }
     }
 
     @SneakyThrows
@@ -239,6 +253,37 @@ public class SSLProviderTest {
         @Disabled
         String sampleDisabled();
     }
+
+    @OhClient
+    @Mapping("${root}:41124")
+    @ConfigureWith(DisableSSLHttpClientConfig.class)
+    public interface DisableSSLHttpClientNeo {
+
+        String sample();
+
+        @ConfigureWith(SampleConfig.class)
+        String sampleDisabled();
+    }
+
+    public static class DisableSSLHttpClientConfig implements ClientSSLConfigurer {
+
+        @Override
+        public SSLSocketFactory sslSocketFactory() {
+            return new TestSSLSocketFactory();
+        }
+
+        @Override
+        public X509TrustManager x509TrustManager() {
+            return new TestX509TrustManager();
+        }
+
+        @Override
+        public HostnameVerifier hostnameVerifier() {
+            return new TestHostnameVerifier();
+        }
+    }
+
+    public static class SampleConfig implements ClientSSLConfigurer {}
 
     @OhClient
     @Mapping("${root}:41125")

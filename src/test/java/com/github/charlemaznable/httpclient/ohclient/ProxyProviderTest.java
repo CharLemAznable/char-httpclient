@@ -1,11 +1,13 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.ProviderException;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientProxy;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientProxy.ProxyProvider;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientProxyDisabled;
+import com.github.charlemaznable.httpclient.ohclient.configurer.ClientProxyConfigurer;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.OkHttpClient;
@@ -93,6 +95,28 @@ public class ProxyProviderTest {
         }
         try {
             httpClient.sampleDisabled();
+        } catch (Exception e) {
+            assertEquals("Failed to connect to /127.0.0.1:41116", e.getMessage());
+        }
+
+        val httpClientNeo = ohLoader.getClient(MethodProxyHttpClientNeo.class);
+        try {
+            httpClientNeo.sampleDefault();
+        } catch (Exception e) {
+            assertEquals("Failed to connect to /127.0.0.1:41117", e.getMessage());
+        }
+        try {
+            httpClientNeo.samplePlain();
+        } catch (Exception e) {
+            assertEquals("Failed to connect to /127.0.0.1:41118", e.getMessage());
+        }
+        try {
+            httpClientNeo.sampleProvider();
+        } catch (Exception e) {
+            assertEquals("Failed to connect to /127.0.0.1:41118", e.getMessage());
+        }
+        try {
+            httpClientNeo.sampleDisabled();
         } catch (Exception e) {
             assertEquals("Failed to connect to /127.0.0.1:41116", e.getMessage());
         }
@@ -198,6 +222,47 @@ public class ProxyProviderTest {
         @Override
         public Proxy proxy(Class<?> clazz) {
             return new Proxy(Type.HTTP, new InetSocketAddress("192.168.0.11", 41110));
+        }
+    }
+
+    @OhClient
+    @Mapping("${root}:41116")
+    @ConfigureWith(MethodProxyHttpClientConfig.class)
+    public interface MethodProxyHttpClientNeo {
+
+        String sampleDefault();
+
+        @ConfigureWith(SampleConfig.class)
+        String samplePlain();
+
+        @ConfigureWith(SampleConfig.class)
+        String sampleProvider();
+
+        @ConfigureWith(SampleDisabledConfig.class)
+        String sampleDisabled();
+    }
+
+    public static class MethodProxyHttpClientConfig implements ClientProxyConfigurer {
+
+        @Override
+        public Proxy proxy() {
+            return new Proxy(Type.HTTP, new InetSocketAddress(LOCAL_HOST, 41117));
+        }
+    }
+
+    public static class SampleConfig implements ClientProxyConfigurer {
+
+        @Override
+        public Proxy proxy() {
+            return new Proxy(Type.HTTP, new InetSocketAddress(LOCAL_HOST, 41118));
+        }
+    }
+
+    public static class SampleDisabledConfig implements ClientProxyConfigurer {
+
+        @Override
+        public Proxy proxy() {
+            return null;
         }
     }
 }

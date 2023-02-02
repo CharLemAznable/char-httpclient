@@ -1,11 +1,13 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.FixedHeader;
 import com.github.charlemaznable.httpclient.common.FixedValueProvider;
 import com.github.charlemaznable.httpclient.common.Header;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.ProviderException;
+import com.github.charlemaznable.httpclient.configurer.FixedHeadersConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -13,12 +15,15 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -68,6 +73,11 @@ public class HeaderTest {
             assertEquals("OK", httpClient.sampleDefault());
             assertEquals("OK", httpClient.sampleMapping());
             assertEquals("OK", httpClient.sampleHeaders(null, "V4"));
+
+            val httpClientNeo = ohLoader.getClient(HeaderHttpClientNeo.class);
+            assertEquals("OK", httpClientNeo.sampleDefault());
+            assertEquals("OK", httpClientNeo.sampleMapping());
+            assertEquals("OK", httpClientNeo.sampleHeaders(null, "V4"));
         }
     }
 
@@ -133,6 +143,37 @@ public class HeaderTest {
         @Override
         public String value(Class<?> clazz, String name) {
             return "V2";
+        }
+    }
+
+    @Mapping("${root}:41140")
+    @OhClient
+    @ConfigureWith(HeaderHttpClientConfig.class)
+    public interface HeaderHttpClientNeo {
+
+        String sampleDefault();
+
+        @ConfigureWith(SampleMappingConfig.class)
+        String sampleMapping();
+
+        @ConfigureWith(SampleMappingConfig.class)
+        String sampleHeaders(@Header("H3") String v3,
+                             @Header("H4") String v4);
+    }
+
+    public static class HeaderHttpClientConfig implements FixedHeadersConfigurer {
+
+        @Override
+        public List<Pair<String, String>> fixedHeaders() {
+            return newArrayList(Pair.of("H1", "V1"), Pair.of("H2", "V2"));
+        }
+    }
+
+    public static class SampleMappingConfig implements FixedHeadersConfigurer {
+
+        @Override
+        public List<Pair<String, String>> fixedHeaders() {
+            return newArrayList(Pair.of("H2", null), Pair.of("H3", "V3"));
         }
     }
 }

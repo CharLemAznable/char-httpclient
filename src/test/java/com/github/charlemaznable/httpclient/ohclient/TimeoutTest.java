@@ -1,11 +1,14 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.ProviderException;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout.TimeoutProvider;
+import com.github.charlemaznable.httpclient.ohclient.configurer.ClientTimeoutConfigurer;
+import com.github.charlemaznable.httpclient.ohclient.configurer.IsolatedConnectionPoolConfigurer;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.Dispatcher;
@@ -74,6 +77,9 @@ public class TimeoutTest {
             assertEquals(TimeoutProvider.class, timeout2.readTimeoutProvider());
             assertEquals(TimeoutProvider.class, timeout2.writeTimeoutProvider());
             assertEquals(ClientTimeout.class, timeout2.annotationType());
+
+            val clientNeo = ohLoader.getClient(TimeoutHttpClientNeo.class);
+            assertEquals(SAMPLE, clientNeo.sample());
         }
     }
 
@@ -190,4 +196,15 @@ public class TimeoutTest {
             return 60_000;
         }
     }
+
+    @OhClient
+    @Mapping("${root}:41210")
+    @ConfigureWith(TimeoutHttpClientConfig.class)
+    public interface TimeoutHttpClientNeo {
+
+        @ConfigureWith(TimeoutHttpClientConfig.class)
+        String sample();
+    }
+
+    public static class TimeoutHttpClientConfig implements ClientTimeoutConfigurer, IsolatedConnectionPoolConfigurer {}
 }

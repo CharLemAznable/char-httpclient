@@ -2,18 +2,23 @@ package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.core.config.Arguments;
 import com.github.charlemaznable.core.lang.EverythingIsNonNull;
+import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.ProviderException;
 import com.github.charlemaznable.httpclient.common.RequestBodyRaw;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
+import com.github.charlemaznable.httpclient.configurer.RequestMethodConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptor;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptor.InterceptorProvider;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptorCleanup;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientLoggingLevel;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientLoggingLevel.LoggingLevelProvider;
+import com.github.charlemaznable.httpclient.ohclient.configurer.ClientInterceptorsCleanupConfigurer;
+import com.github.charlemaznable.httpclient.ohclient.configurer.ClientInterceptorsConfigurer;
+import com.github.charlemaznable.httpclient.ohclient.configurer.ClientLoggingLevelConfigurer;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.Interceptor;
@@ -30,8 +35,10 @@ import org.junit.jupiter.api.Test;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -104,6 +111,12 @@ public class InterceptorTest {
             assertEquals(CONTENT, providerClient.sample2());
             assertEquals(CONTENT, providerClient.sample3(new ParamInterceptor(), Level.BODY, BODY));
             assertEquals(CONTENT, providerClient.sample3(null, Level.BODY, BODY));
+
+            val clientNeo = ohLoader.getClient(InterceptorClientNeo.class);
+            assertEquals(CONTENT, clientNeo.sample1());
+            assertEquals(CONTENT, clientNeo.sample2());
+            assertEquals(CONTENT, clientNeo.sample3(new ParamInterceptor(), Level.BODY, BODY));
+            assertEquals(CONTENT, clientNeo.sample3(null, Level.BODY, BODY));
         }
     }
 
@@ -268,6 +281,54 @@ public class InterceptorTest {
         @Override
         public Interceptor interceptor(Class<?> clazz) {
             return new ClassInterceptor();
+        }
+    }
+
+    @OhClient
+    @Mapping("${root}:${port}")
+    @ConfigureWith(InterceptorClientConfig.class)
+    public interface InterceptorClientNeo {
+
+        String sample1();
+
+        @ConfigureWith(Sample2Config.class)
+        String sample2();
+
+        @ConfigureWith(Sample3Config.class)
+        String sample3(ParamInterceptor interceptor, Level level, @RequestBodyRaw String body);
+    }
+
+    public static class InterceptorClientConfig implements ClientInterceptorsConfigurer, ClientLoggingLevelConfigurer {
+
+        @Override
+        public List<Interceptor> interceptors() {
+            return newArrayList(new ClassInterceptor());
+        }
+
+        @Override
+        public Level loggingLevel() {
+            return Level.BASIC;
+        }
+    }
+
+    public static class Sample2Config implements ClientInterceptorsConfigurer, ClientLoggingLevelConfigurer {
+
+        @Override
+        public List<Interceptor> interceptors() {
+            return newArrayList(new MethodInterceptor());
+        }
+
+        @Override
+        public Level loggingLevel() {
+            return Level.HEADERS;
+        }
+    }
+
+    public static class Sample3Config extends Sample2Config implements RequestMethodConfigurer, ClientInterceptorsCleanupConfigurer {
+
+        @Override
+        public HttpMethod requestMethod() {
+            return HttpMethod.POST;
         }
     }
 }

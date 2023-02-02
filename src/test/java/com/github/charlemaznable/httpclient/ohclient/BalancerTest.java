@@ -1,10 +1,13 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.MappingBalance;
 import com.github.charlemaznable.httpclient.common.MappingBalance.RandomBalancer;
 import com.github.charlemaznable.httpclient.common.MappingBalance.RoundRobinBalancer;
+import com.github.charlemaznable.httpclient.configurer.MappingBalanceConfigurer;
+import com.github.charlemaznable.httpclient.configurer.MappingConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -18,6 +21,7 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -79,6 +83,30 @@ public class BalancerTest {
             assertEquals(2, countSample3);
 
             httpClient.cover();
+
+            countSample1 = 0;
+            countSample2 = 0;
+            countSample3 = 0;
+
+            val httpClientNeo = ohLoader.getClient(BalancerClientNeo.class);
+
+            httpClientNeo.get();
+            httpClientNeo.get();
+            httpClientNeo.get();
+            httpClientNeo.get();
+            assertEquals(2, countSample1);
+            assertEquals(2, countSample2);
+            assertEquals(0, countSample3);
+
+            httpClientNeo.get2();
+            httpClientNeo.get2();
+            httpClientNeo.get2();
+            httpClientNeo.get2();
+            assertEquals(4, countSample1);
+            assertEquals(2, countSample2);
+            assertEquals(2, countSample3);
+
+            httpClientNeo.cover();
         }
     }
 
@@ -104,6 +132,59 @@ public class BalancerTest {
         @Override
         public String choose(List<String> urls) {
             return super.choose(urls).replace("sample2", "sample3");
+        }
+    }
+
+    @OhClient
+    @ConfigureWith(RoundRobinBalancerConfig.class)
+    public interface BalancerClientNeo {
+
+        @Mapping({"/sample1", "/sample2"})
+        void get();
+
+        @ConfigureWith(MyBalancerConfig.class)
+        void get2();
+
+        @ConfigureWith(RandomBalancerConfig.class)
+        void cover();
+    }
+
+    public static class RoundRobinBalancerConfig implements MappingConfigurer, MappingBalanceConfigurer {
+
+        @Override
+        public List<String> urls() {
+            return newArrayList("${root}:41240", "${root}:41250");
+        }
+
+        @Override
+        public MappingBalance.MappingBalancer mappingBalancer() {
+            return new RoundRobinBalancer();
+        }
+    }
+
+    public static class MyBalancerConfig implements MappingConfigurer, MappingBalanceConfigurer {
+
+        @Override
+        public List<String> urls() {
+            return newArrayList("/sample1", "/sample2");
+        }
+
+        @Override
+        public MappingBalance.MappingBalancer mappingBalancer() {
+            return new MyBalancer();
+        }
+    }
+
+    public static class RandomBalancerConfig implements MappingConfigurer, MappingBalanceConfigurer {
+
+        @Override
+        public List<String> urls() {
+            return newArrayList("/sample1", "/sample2", "/sample3");
+        }
+
+        @Override
+        public MappingBalance.MappingBalancer mappingBalancer() {
+            return new RandomBalancer();
         }
     }
 }
