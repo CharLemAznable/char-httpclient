@@ -1,5 +1,6 @@
 package com.github.charlemaznable.httpclient.configurer;
 
+import com.github.charlemaznable.configservice.ConfigGetter;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
@@ -15,101 +16,87 @@ import java.util.Optional;
 
 import static com.github.charlemaznable.core.lang.Clz.isAssignable;
 import static com.github.charlemaznable.core.lang.ClzPath.findClass;
+import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.intOf;
-import static com.github.charlemaznable.core.lang.Str.toStr;
-import static com.github.charlemaznable.httpclient.configurer.ConfigurerElf.parseStringToPairList;
 import static java.util.Objects.nonNull;
 
-public interface CommonAbstractConfigurer extends
+public interface CommonAbstractConfigurer extends ConfigGetter,
         AcceptCharsetConfigurer, ContentFormatConfigurer, RequestMethodConfigurer,
         FixedHeadersConfigurer, FixedPathVarsConfigurer, FixedParametersConfigurer, FixedContextsConfigurer,
         StatusFallbacksConfigurer, StatusSeriesFallbacksConfigurer,
         RequestExtendConfigurer, ResponseParseConfigurer, ExtraUrlQueryConfigurer, MappingBalanceConfigurer {
 
-    String acceptCharsetName();
-
     @Override
     default Charset acceptCharset() {
         try {
-            return Charset.forName(toStr(acceptCharsetName()));
+            return notNullThen(getString("acceptCharset"), Charset::forName);
         } catch (Exception e) {
             return null;
         }
     }
 
-    String contentTypeName();
-
     @Override
     default ContentFormat.ContentFormatter contentFormatter() {
-        return Optional.ofNullable(ContentFormat.ContentType.resolve(contentTypeName()))
-                .map(ContentFormat.ContentType::getContentFormatter).orElse(null);
+        return notNullThen(getString("contentType"), v -> Optional
+                .ofNullable(ContentFormat.ContentType.resolve(v))
+                .map(ContentFormat.ContentType::getContentFormatter).orElse(null));
     }
-
-    String requestMethodName();
 
     @Override
     default HttpMethod requestMethod() {
         try {
-            return HttpMethod.valueOf(toStr(requestMethodName()));
+            return notNullThen(getString("requestMethod"), HttpMethod::valueOf);
         } catch (Exception e) {
             return null;
         }
     }
 
-    String headers();
-
     @Override
     default List<Pair<String, String>> fixedHeaders() {
-        return parseStringToPairList(toStr(headers()));
+        return notNullThen(getString("headers"), ConfigurerElf::parseStringToPairList);
     }
-
-    String pathVars();
 
     @Override
     default List<Pair<String, String>> fixedPathVars() {
-        return parseStringToPairList(toStr(pathVars()));
+        return notNullThen(getString("pathVars"), ConfigurerElf::parseStringToPairList);
     }
-
-    String parameters();
 
     @Override
     default List<Pair<String, Object>> fixedParameters() {
-        return parseStringToPairList(toStr(parameters()));
+        return notNullThen(getString("parameters"), ConfigurerElf::parseStringToPairList);
     }
-
-    String contexts();
 
     @Override
     default List<Pair<String, Object>> fixedContexts() {
-        return parseStringToPairList(toStr(contexts()));
+        return notNullThen(getString("contexts"), ConfigurerElf::parseStringToPairList);
     }
-
-    String statusFallbacks();
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     default Map<HttpStatus, Class<? extends FallbackFunction>> statusFallbackMapping() {
-        val mapping = Splitter.on("&").omitEmptyStrings().trimResults()
-                .withKeyValueSeparator("=").split(toStr(statusFallbacks()));
-        return mapping.entrySet().stream()
-                .filter(e -> nonNull(HttpStatus.resolve(intOf(e.getKey()))))
-                .filter(e -> isAssignable(findClass(e.getValue()), FallbackFunction.class))
-                .collect(toMap(e -> HttpStatus.valueOf(intOf(e.getKey())),
-                        e -> (Class<? extends FallbackFunction>) findClass(e.getValue())));
+        return notNullThen(getString("statusFallbacks"), v -> {
+            val mapping = Splitter.on("&").omitEmptyStrings()
+                    .trimResults().withKeyValueSeparator("=").split(v);
+            return mapping.entrySet().stream()
+                    .filter(e -> nonNull(HttpStatus.resolve(intOf(e.getKey()))))
+                    .filter(e -> isAssignable(findClass(e.getValue()), FallbackFunction.class))
+                    .collect(toMap(e -> HttpStatus.valueOf(intOf(e.getKey())),
+                            e -> (Class<? extends FallbackFunction>) findClass(e.getValue())));
+        });
     }
-
-    String statusSeriesFallbacks();
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     default Map<HttpStatus.Series, Class<? extends FallbackFunction>> statusSeriesFallbackMapping() {
-        val mapping = Splitter.on("&").omitEmptyStrings().trimResults()
-                .withKeyValueSeparator("=").split(toStr(statusSeriesFallbacks()));
-        return mapping.entrySet().stream()
-                .filter(e -> nonNull(HttpStatus.Series.resolve(intOf(e.getKey()))))
-                .filter(e -> isAssignable(findClass(e.getValue()), FallbackFunction.class))
-                .collect(toMap(e -> HttpStatus.Series.valueOf(intOf(e.getKey())),
-                        e -> (Class<? extends FallbackFunction>) findClass(e.getValue())));
+        return notNullThen(getString("statusSeriesFallbacks"), v -> {
+            val mapping = Splitter.on("&").omitEmptyStrings()
+                    .trimResults().withKeyValueSeparator("=").split(v);
+            return mapping.entrySet().stream()
+                    .filter(e -> nonNull(HttpStatus.Series.resolve(intOf(e.getKey()))))
+                    .filter(e -> isAssignable(findClass(e.getValue()), FallbackFunction.class))
+                    .collect(toMap(e -> HttpStatus.Series.valueOf(intOf(e.getKey())),
+                            e -> (Class<? extends FallbackFunction>) findClass(e.getValue())));
+        });
     }
 }
