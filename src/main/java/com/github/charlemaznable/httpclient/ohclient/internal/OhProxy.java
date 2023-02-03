@@ -358,7 +358,7 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
         static Level checkClientLoggingLevel(Configurer configurer, Class clazz, Factory factory) {
             if (configurer instanceof ClientLoggingLevelConfigurer loggingLevelConfigurer)
-                return loggingLevelConfigurer.loggingLevel();
+                return nullThen(loggingLevelConfigurer.loggingLevel(), () -> DEFAULT_LOGGING_LEVEL);
             val clientLoggingLevel = getMergedAnnotation(clazz, ClientLoggingLevel.class);
             if (isNull(clientLoggingLevel)) return DEFAULT_LOGGING_LEVEL;
             val providerClass = clientLoggingLevel.provider();

@@ -476,7 +476,7 @@ public final class OhMappingProxy extends OhRoot {
                                       Class clazz, Method method,
                                       Factory factory, OhProxy proxy) {
             if (configurer instanceof ClientProxyConfigurer proxyConfigurer)
-                return proxyConfigurer.proxy();
+                return nullThen(proxyConfigurer.proxy(), () -> proxy.clientProxy);
             val clientProxy = getMergedAnnotation(method, ClientProxy.class);
             return checkNull(clientProxy, () -> proxy.clientProxy, annotation -> {
                 val providerClass = annotation.proxyProvider();
@@ -594,7 +594,7 @@ public final class OhMappingProxy extends OhRoot {
                                              Class clazz, Method method,
                                              Factory factory, OhProxy proxy) {
             if (configurer instanceof ClientLoggingLevelConfigurer loggingLevelConfigurer)
-                return loggingLevelConfigurer.loggingLevel();
+                return nullThen(loggingLevelConfigurer.loggingLevel(), () -> proxy.loggingLevel);
             val clientLoggingLevel = getMergedAnnotation(method, ClientLoggingLevel.class);
             if (isNull(clientLoggingLevel)) return proxy.loggingLevel;
             val providerClass = clientLoggingLevel.provider();
