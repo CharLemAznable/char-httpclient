@@ -573,7 +573,7 @@ public final class OhMappingProxy extends OhRoot {
                     ? cleanupConfigurer.cleanupInterceptors() : isAnnotated(method, ClientInterceptorCleanup.class);
             val result = newArrayList(cleanup ? null : proxy.interceptors);
             if (configurer instanceof ClientInterceptorsConfigurer interceptorsConfigurer) {
-                result.addAll(interceptorsConfigurer.interceptors());
+                result.addAll(newArrayList(interceptorsConfigurer.interceptors()));
             } else {
                 result.addAll(newArrayList(getMergedRepeatableAnnotations(method, ClientInterceptor.class))
                         .stream().filter(annotation -> Interceptor.class != annotation.value()
@@ -662,7 +662,7 @@ public final class OhMappingProxy extends OhRoot {
                                                             Factory factory, OhProxy proxy) {
             val result = newArrayList(proxy.headers);
             if (configurer instanceof FixedHeadersConfigurer fixedHeadersConfigurer) {
-                result.addAll(fixedHeadersConfigurer.fixedHeaders());
+                result.addAll(newArrayList(fixedHeadersConfigurer.fixedHeaders()));
             } else {
                 result.addAll(newArrayList(getMergedRepeatableAnnotations(method, FixedHeader.class))
                         .stream().filter(an -> isNotBlank(an.name())).map(an -> {
@@ -681,7 +681,7 @@ public final class OhMappingProxy extends OhRoot {
                                                              Factory factory, OhProxy proxy) {
             val result = newArrayList(proxy.pathVars);
             if (configurer instanceof FixedPathVarsConfigurer fixedPathVarsConfigurer) {
-                result.addAll(fixedPathVarsConfigurer.fixedPathVars());
+                result.addAll(newArrayList(fixedPathVarsConfigurer.fixedPathVars()));
             } else {
                 result.addAll(newArrayList(getMergedRepeatableAnnotations(method, FixedPathVar.class))
                         .stream().filter(an -> isNotBlank(an.name())).map(an -> {
@@ -700,7 +700,7 @@ public final class OhMappingProxy extends OhRoot {
                                                                Factory factory, OhProxy proxy) {
             val result = newArrayList(proxy.parameters);
             if (configurer instanceof FixedParametersConfigurer fixedParametersConfigurer) {
-                result.addAll(fixedParametersConfigurer.fixedParameters());
+                result.addAll(newArrayList(fixedParametersConfigurer.fixedParameters()));
             } else {
                 result.addAll(newArrayList(getMergedRepeatableAnnotations(method, FixedParameter.class))
                         .stream().filter(an -> isNotBlank(an.name())).map(an -> {
@@ -719,7 +719,7 @@ public final class OhMappingProxy extends OhRoot {
                                                              Factory factory, OhProxy proxy) {
             val result = newArrayList(proxy.contexts);
             if (configurer instanceof FixedContextsConfigurer fixedContextsConfigurer) {
-                result.addAll(fixedContextsConfigurer.fixedContexts());
+                result.addAll(newArrayList(fixedContextsConfigurer.fixedContexts()));
             } else {
                 result.addAll(newArrayList(getMergedRepeatableAnnotations(method, FixedContext.class))
                         .stream().filter(an -> isNotBlank(an.name())).map(an -> {
@@ -737,7 +737,7 @@ public final class OhMappingProxy extends OhRoot {
         checkStatusFallbackMapping(Configurer configurer, Method method, OhProxy proxy) {
             val result = newHashMap(proxy.statusFallbackMapping);
             if (configurer instanceof StatusFallbacksConfigurer statusFallbacksConfigurer) {
-                result.putAll(statusFallbacksConfigurer.statusFallbackMapping());
+                result.putAll(newHashMap(statusFallbacksConfigurer.statusFallbackMapping()));
             } else {
                 result.putAll(newArrayList(getMergedRepeatableAnnotations(
                         method, StatusFallback.class)).stream()
@@ -750,7 +750,7 @@ public final class OhMappingProxy extends OhRoot {
         checkStatusSeriesFallbackMapping(Configurer configurer, Method method, OhProxy proxy) {
             val result = newHashMap(proxy.statusSeriesFallbackMapping);
             if (configurer instanceof StatusSeriesFallbacksConfigurer statusSeriesFallbacksConfigurer) {
-                result.putAll(statusSeriesFallbacksConfigurer.statusSeriesFallbackMapping());
+                result.putAll(newHashMap(statusSeriesFallbacksConfigurer.statusSeriesFallbackMapping()));
             } else {
                 result.putAll(newArrayList(getMergedRepeatableAnnotations(
                         method, StatusSeriesFallback.class)).stream()

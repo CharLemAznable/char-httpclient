@@ -342,7 +342,7 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
         static List<Interceptor> checkClientInterceptors(Configurer configurer, Class clazz, Factory factory) {
             if (configurer instanceof ClientInterceptorsConfigurer interceptorsConfigurer)
-                return interceptorsConfigurer.interceptors();
+                return newArrayList(interceptorsConfigurer.interceptors());
             return newArrayList(getMergedRepeatableAnnotations(clazz, ClientInterceptor.class))
                     .stream().filter(annotation -> Interceptor.class != annotation.value()
                             || InterceptorProvider.class != annotation.provider())
@@ -405,7 +405,8 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
         static List<Pair<String, String>> checkFixedHeaders(Configurer configurer, Class clazz, Factory factory) {
             if (configurer instanceof FixedHeadersConfigurer fixedHeadersConfigurer)
-                return fixedHeadersConfigurer.fixedHeaders();
+                return newArrayList(fixedHeadersConfigurer.fixedHeaders())
+                        .stream().filter(p -> isNotBlank(p.getKey())).collect(Collectors.toList());
             return newArrayList(getMergedRepeatableAnnotations(clazz, FixedHeader.class))
                     .stream().filter(an -> isNotBlank(an.name())).map(an -> {
                         val name = an.name();
@@ -418,7 +419,8 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
         static List<Pair<String, String>> checkFixedPathVars(Configurer configurer, Class clazz, Factory factory) {
             if (configurer instanceof FixedPathVarsConfigurer fixedPathVarsConfigurer)
-                return fixedPathVarsConfigurer.fixedPathVars();
+                return newArrayList(fixedPathVarsConfigurer.fixedPathVars())
+                        .stream().filter(p -> isNotBlank(p.getKey())).collect(Collectors.toList());
             return newArrayList(getMergedRepeatableAnnotations(clazz, FixedPathVar.class))
                     .stream().filter(an -> isNotBlank(an.name())).map(an -> {
                         val name = an.name();
@@ -431,7 +433,8 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
         static List<Pair<String, Object>> checkFixedParameters(Configurer configurer, Class clazz, Factory factory) {
             if (configurer instanceof FixedParametersConfigurer fixedParametersConfigurer)
-                return fixedParametersConfigurer.fixedParameters();
+                return newArrayList(fixedParametersConfigurer.fixedParameters())
+                        .stream().filter(p -> isNotBlank(p.getKey())).collect(Collectors.toList());
             return newArrayList(getMergedRepeatableAnnotations(clazz, FixedParameter.class))
                     .stream().filter(an -> isNotBlank(an.name())).map(an -> {
                         val name = an.name();
@@ -444,7 +447,8 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
         static List<Pair<String, Object>> checkFixedContexts(Configurer configurer, Class clazz, Factory factory) {
             if (configurer instanceof FixedContextsConfigurer fixedContextsConfigurer)
-                return fixedContextsConfigurer.fixedContexts();
+                return newArrayList(fixedContextsConfigurer.fixedContexts())
+                        .stream().filter(p -> isNotBlank(p.getKey())).collect(Collectors.toList());
             return newArrayList(getMergedRepeatableAnnotations(clazz, FixedContext.class))
                     .stream().filter(an -> isNotBlank(an.name())).map(an -> {
                         val name = an.name();
@@ -458,7 +462,7 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
         static Map<HttpStatus, Class<? extends FallbackFunction>>
         checkStatusFallbackMapping(Configurer configurer, Class clazz) {
             if (configurer instanceof StatusFallbacksConfigurer statusFallbacksConfigurer)
-                return statusFallbacksConfigurer.statusFallbackMapping();
+                return newHashMap(statusFallbacksConfigurer.statusFallbackMapping());
             return newArrayList(getMergedRepeatableAnnotations(
                     clazz, StatusFallback.class)).stream()
                     .collect(toMap(StatusFallback::status, StatusFallback::fallback));
@@ -472,7 +476,7 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
                     : of(HttpStatus.Series.CLIENT_ERROR, StatusErrorThrower.class,
                     HttpStatus.Series.SERVER_ERROR, StatusErrorThrower.class);
             if (configurer instanceof StatusSeriesFallbacksConfigurer statusSeriesFallbacksConfigurer) {
-                result.putAll(statusSeriesFallbacksConfigurer.statusSeriesFallbackMapping());
+                result.putAll(newHashMap(statusSeriesFallbacksConfigurer.statusSeriesFallbackMapping()));
             } else {
                 result.putAll(newArrayList(getMergedRepeatableAnnotations(clazz,
                         StatusSeriesFallback.class)).stream()
