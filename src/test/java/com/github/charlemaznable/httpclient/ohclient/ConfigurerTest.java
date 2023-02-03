@@ -36,7 +36,9 @@ public class ConfigurerTest {
                         """);
         MockDiamondServer.setConfigInfo("ConfigurerClient", "sample", """
                         path=/sample
+                        acceptCharsetName=UTF-8
                         contentTypeName=json
+                        requestMethodName=GET
                         contexts=AAA=aaa&BBB
                         statusFallbacks=404=com.github.charlemaznable.httpclient.common.StatusErrorThrower
                         statusSeriesFallbacks=400=com.github.charlemaznable.httpclient.common.StatusErrorThrower
