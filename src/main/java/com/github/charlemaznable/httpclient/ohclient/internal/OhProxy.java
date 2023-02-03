@@ -96,6 +96,7 @@ import static com.github.charlemaznable.core.lang.Condition.checkBlank;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.emptyThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
+import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.LoadingCachee.get;
 import static com.github.charlemaznable.core.lang.LoadingCachee.simpleCache;
@@ -382,7 +383,7 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
         static Charset checkAcceptCharset(Configurer configurer, Class clazz) {
             if (configurer instanceof AcceptCharsetConfigurer acceptCharsetConfigurer)
-                return acceptCharsetConfigurer.acceptCharset();
+                return nullThen(acceptCharsetConfigurer.acceptCharset(), () -> DEFAULT_ACCEPT_CHARSET);
             val acceptCharset = getMergedAnnotation(clazz, AcceptCharset.class);
             return checkNull(acceptCharset, () -> DEFAULT_ACCEPT_CHARSET,
                     annotation -> Charset.forName(annotation.value()));
@@ -390,7 +391,7 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
         static ContentFormatter checkContentFormatter(Configurer configurer, Class clazz, Factory factory) {
             if (configurer instanceof ContentFormatConfigurer contentFormatConfigurer)
-                return contentFormatConfigurer.contentFormatter();
+                return nullThen(contentFormatConfigurer.contentFormatter(), () -> DEFAULT_CONTENT_FORMATTER);
             val contentFormat = getMergedAnnotation(clazz, ContentFormat.class);
             return checkNull(contentFormat, () -> DEFAULT_CONTENT_FORMATTER,
                     annotation -> FactoryContext.build(factory, annotation.value()));
@@ -398,7 +399,7 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
         static HttpMethod checkHttpMethod(Configurer configurer, Class clazz) {
             if (configurer instanceof RequestMethodConfigurer requestMethodConfigurer)
-                return requestMethodConfigurer.requestMethod();
+                return nullThen(requestMethodConfigurer.requestMethod(), () -> DEFAULT_HTTP_METHOD);
             val requestMethod = getMergedAnnotation(clazz, RequestMethod.class);
             return checkNull(requestMethod, () -> DEFAULT_HTTP_METHOD, RequestMethod::value);
         }
@@ -511,7 +512,7 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
         static MappingBalancer checkMappingBalancer(Configurer configurer, Class clazz, Factory factory) {
             if (configurer instanceof MappingBalanceConfigurer mappingBalanceConfigurer)
-                return mappingBalanceConfigurer.mappingBalancer();
+                return nullThen(mappingBalanceConfigurer.mappingBalancer(), RandomBalancer::new);
             val mappingBalance = getMergedAnnotation(clazz, MappingBalance.class);
             return checkNull(mappingBalance, RandomBalancer::new, annotation ->
                     FactoryContext.build(factory, annotation.value()));

@@ -103,6 +103,7 @@ import static com.github.charlemaznable.core.lang.Condition.checkBlank;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.emptyThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
+import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
@@ -635,7 +636,7 @@ public final class OhMappingProxy extends OhRoot {
 
         static Charset checkAcceptCharset(Configurer configurer, Method method, OhProxy proxy) {
             if (configurer instanceof AcceptCharsetConfigurer acceptCharsetConfigurer)
-                return acceptCharsetConfigurer.acceptCharset();
+                return nullThen(acceptCharsetConfigurer.acceptCharset(), () -> proxy.acceptCharset);
             val acceptCharset = getMergedAnnotation(method, AcceptCharset.class);
             return checkNull(acceptCharset, () -> proxy.acceptCharset,
                     annotation -> Charset.forName(annotation.value()));
@@ -644,7 +645,7 @@ public final class OhMappingProxy extends OhRoot {
         static ContentFormatter checkContentFormatter(
                 Configurer configurer, Method method, Factory factory, OhProxy proxy) {
             if (configurer instanceof ContentFormatConfigurer contentFormatConfigurer)
-                return contentFormatConfigurer.contentFormatter();
+                return nullThen(contentFormatConfigurer.contentFormatter(), () -> proxy.contentFormatter);
             val contentFormat = getMergedAnnotation(method, ContentFormat.class);
             return checkNull(contentFormat, () -> proxy.contentFormatter,
                     annotation -> FactoryContext.build(factory, annotation.value()));
@@ -652,7 +653,7 @@ public final class OhMappingProxy extends OhRoot {
 
         static HttpMethod checkHttpMethod(Configurer configurer, Method method, OhProxy proxy) {
             if (configurer instanceof RequestMethodConfigurer requestMethodConfigurer)
-                return requestMethodConfigurer.requestMethod();
+                return nullThen(requestMethodConfigurer.requestMethod(), () -> proxy.httpMethod);
             val requestMethod = getMergedAnnotation(method, RequestMethod.class);
             return checkNull(requestMethod, () -> proxy.httpMethod, RequestMethod::value);
         }
@@ -762,7 +763,7 @@ public final class OhMappingProxy extends OhRoot {
         static RequestExtender checkRequestExtender(
                 Configurer configurer, Method method, Factory factory, OhProxy proxy) {
             if (configurer instanceof RequestExtendConfigurer requestExtendConfigurer)
-                return requestExtendConfigurer.requestExtender();
+                return nullThen(requestExtendConfigurer.requestExtender(), () -> proxy.requestExtender);
             val requestExtend = getMergedAnnotation(method, RequestExtend.class);
             return checkNull(requestExtend, () -> proxy.requestExtender, annotation ->
                     FactoryContext.build(factory, annotation.value()));
@@ -771,7 +772,7 @@ public final class OhMappingProxy extends OhRoot {
         static ResponseParser checkResponseParser(
                 Configurer configurer, Method method, Factory factory, OhProxy proxy) {
             if (configurer instanceof ResponseParseConfigurer responseParseConfigurer)
-                return responseParseConfigurer.responseParser();
+                return nullThen(responseParseConfigurer.responseParser(), () -> proxy.responseParser);
             val responseParse = getMergedAnnotation(method, ResponseParse.class);
             return checkNull(responseParse, () -> proxy.responseParser, annotation ->
                     FactoryContext.build(factory, annotation.value()));
@@ -780,7 +781,7 @@ public final class OhMappingProxy extends OhRoot {
         static ExtraUrlQueryBuilder checkExtraUrlQueryBuilder(
                 Configurer configurer, Method method, Factory factory, OhProxy proxy) {
             if (configurer instanceof ExtraUrlQueryConfigurer extraUrlQueryConfigurer)
-                return extraUrlQueryConfigurer.extraUrlQueryBuilder();
+                return nullThen(extraUrlQueryConfigurer.extraUrlQueryBuilder(), () -> proxy.extraUrlQueryBuilder);
             val extraUrlQuery = getMergedAnnotation(method, ExtraUrlQuery.class);
             return checkNull(extraUrlQuery, () -> proxy.extraUrlQueryBuilder, annotation ->
                     FactoryContext.build(factory, annotation.value()));
@@ -789,7 +790,7 @@ public final class OhMappingProxy extends OhRoot {
         static MappingBalancer checkMappingBalancer(
                 Configurer configurer, Method method, Factory factory, OhProxy proxy) {
             if (configurer instanceof MappingBalanceConfigurer mappingBalanceConfigurer)
-                return mappingBalanceConfigurer.mappingBalancer();
+                return nullThen(mappingBalanceConfigurer.mappingBalancer(), () -> proxy.mappingBalancer);
             val mappingBalance = getMergedAnnotation(method, MappingBalance.class);
             return checkNull(mappingBalance, () -> proxy.mappingBalancer, annotation ->
                     FactoryContext.build(factory, annotation.value()));
