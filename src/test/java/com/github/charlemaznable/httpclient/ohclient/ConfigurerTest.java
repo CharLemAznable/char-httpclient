@@ -4,6 +4,8 @@ import com.github.charlemaznable.configservice.Config;
 import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
+import com.github.charlemaznable.httpclient.configurer.CommonClientConfigurer;
+import com.github.charlemaznable.httpclient.configurer.CommonMethodConfigurer;
 import com.github.charlemaznable.httpclient.configurer.MappingConfigurer;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -31,7 +33,13 @@ public class ConfigurerTest {
         MockDiamondServer.setUpMockServer();
         MockDiamondServer.setConfigInfo("ConfigurerClient", "default", """
                         baseUrl=${root}:41310
+                        """);
+        MockDiamondServer.setConfigInfo("ConfigurerClient", "sample", """
                         path=/sample
+                        contentTypeName=json
+                        contexts=AAA=aaa&BBB
+                        statusFallbacks=404=com.github.charlemaznable.httpclient.common.StatusErrorThrower
+                        statusSeriesFallbacks=400=com.github.charlemaznable.httpclient.common.StatusErrorThrower
                         """);
 
         try (val mockWebServer = new MockWebServer()) {
@@ -68,26 +76,10 @@ public class ConfigurerTest {
     }
 
     @Config(keyset = "ConfigurerClient", key = "default")
-    public interface ConfigurerClientConfig extends MappingConfigurer {
+    public interface ConfigurerClientConfig extends CommonClientConfigurer {}
 
-        String baseUrl();
-
-        @Override
-        default List<String> urls() {
-            return newArrayList(baseUrl());
-        }
-    }
-
-    @Config(keyset = "ConfigurerClient", key = "default")
-    public interface ConfigurerClientSampleConfig extends MappingConfigurer {
-
-        String path();
-
-        @Override
-        default List<String> urls() {
-            return newArrayList(path());
-        }
-    }
+    @Config(keyset = "ConfigurerClient", key = "sample")
+    public interface ConfigurerClientSampleConfig extends CommonMethodConfigurer {}
 
     @OhClient
     @ConfigureWith(ConfigurerClientErrorConfig.class)
