@@ -371,7 +371,9 @@ public final class OhMappingProxy extends OhRoot {
         }
 
         static SSLRoot checkClientSSL(Configurer configurer, Method method, Factory factory, OhProxy proxy) {
-            boolean disabledSSLSocketFactory, disabledX509TrustManager, disabledHostnameVerifier;
+            boolean disabledSSLSocketFactory;
+            boolean disabledX509TrustManager;
+            boolean disabledHostnameVerifier;
             if (configurer instanceof ClientSSLDisabledConfigurer disabledConfigurer) {
                 disabledSSLSocketFactory = disabledConfigurer.disabledSSLSocketFactory();
                 disabledX509TrustManager = disabledConfigurer.disabledX509TrustManager();

@@ -212,7 +212,7 @@ class OhRoot {
                         anno.value(), anno.emptyAsCleanup()))).filter(NOT_BLANK_KEY).toList();
     }
 
-    static String cleanupValue(String value, boolean emptyAsCleanup) {
+    private static String cleanupValue(String value, boolean emptyAsCleanup) {
         return emptyThen(value, () -> emptyAsCleanup ? null : "");
     }
 
@@ -274,28 +274,52 @@ class OhRoot {
                                   boolean disabledHostnameVerifier, SSLRoot defaultValue) {
         val sslRoot = new SSLRoot();
         if (configurer instanceof ClientSSLConfigurer sslConfigurer) {
-            sslRoot.sslSocketFactory = disabledSSLSocketFactory ? null : nullThen(
-                    sslConfigurer.sslSocketFactory(), () -> defaultValue.sslSocketFactory);
-            sslRoot.x509TrustManager = disabledX509TrustManager ? null : nullThen(
-                    sslConfigurer.x509TrustManager(), () -> defaultValue.x509TrustManager);
-            sslRoot.hostnameVerifier = disabledHostnameVerifier ? null : nullThen(
-                    sslConfigurer.hostnameVerifier(), () -> defaultValue.hostnameVerifier);
+            processSSLRootWithConfigurer(sslRoot, sslConfigurer, disabledSSLSocketFactory,
+                    disabledX509TrustManager, disabledHostnameVerifier, defaultValue);
         } else {
             val clientSSL = getMergedAnnotation(element, ClientSSL.class);
             if (nonNull(clientSSL)) {
-                sslRoot.sslSocketFactory = disabledSSLSocketFactory ? null : nullThen(
-                        FactoryContext.build(factory, clientSSL.sslSocketFactory()), () -> defaultValue.sslSocketFactory);
-                sslRoot.x509TrustManager = disabledX509TrustManager ? null : nullThen(
-                        FactoryContext.build(factory, clientSSL.x509TrustManager()), () -> defaultValue.x509TrustManager);
-                sslRoot.hostnameVerifier = disabledHostnameVerifier ? null : nullThen(
-                        FactoryContext.build(factory, clientSSL.hostnameVerifier()), () -> defaultValue.hostnameVerifier);
+                processSSLRootWithAnnotation(sslRoot, clientSSL, factory, disabledSSLSocketFactory,
+                        disabledX509TrustManager, disabledHostnameVerifier, defaultValue);
             } else {
-                sslRoot.sslSocketFactory = disabledSSLSocketFactory ? null : defaultValue.sslSocketFactory;
-                sslRoot.x509TrustManager = disabledX509TrustManager ? null : defaultValue.x509TrustManager;
-                sslRoot.hostnameVerifier = disabledHostnameVerifier ? null : defaultValue.hostnameVerifier;
+                processSSLRootWithDefault(sslRoot, disabledSSLSocketFactory,
+                        disabledX509TrustManager, disabledHostnameVerifier, defaultValue);
             }
         }
         return sslRoot;
+    }
+
+    private static void processSSLRootWithConfigurer(SSLRoot sslRoot, ClientSSLConfigurer sslConfigurer,
+                                                     boolean disabledSSLSocketFactory,
+                                                     boolean disabledX509TrustManager,
+                                                     boolean disabledHostnameVerifier, SSLRoot defaultValue) {
+        sslRoot.sslSocketFactory = disabledSSLSocketFactory ? null : nullThen(
+                sslConfigurer.sslSocketFactory(), () -> defaultValue.sslSocketFactory);
+        sslRoot.x509TrustManager = disabledX509TrustManager ? null : nullThen(
+                sslConfigurer.x509TrustManager(), () -> defaultValue.x509TrustManager);
+        sslRoot.hostnameVerifier = disabledHostnameVerifier ? null : nullThen(
+                sslConfigurer.hostnameVerifier(), () -> defaultValue.hostnameVerifier);
+    }
+
+    private static void processSSLRootWithAnnotation(SSLRoot sslRoot, ClientSSL clientSSL, Factory factory,
+                                                     boolean disabledSSLSocketFactory,
+                                                     boolean disabledX509TrustManager,
+                                                     boolean disabledHostnameVerifier, SSLRoot defaultValue) {
+        sslRoot.sslSocketFactory = disabledSSLSocketFactory ? null : nullThen(
+                FactoryContext.build(factory, clientSSL.sslSocketFactory()), () -> defaultValue.sslSocketFactory);
+        sslRoot.x509TrustManager = disabledX509TrustManager ? null : nullThen(
+                FactoryContext.build(factory, clientSSL.x509TrustManager()), () -> defaultValue.x509TrustManager);
+        sslRoot.hostnameVerifier = disabledHostnameVerifier ? null : nullThen(
+                FactoryContext.build(factory, clientSSL.hostnameVerifier()), () -> defaultValue.hostnameVerifier);
+    }
+
+    private static void processSSLRootWithDefault(SSLRoot sslRoot,
+                                                  boolean disabledSSLSocketFactory,
+                                                  boolean disabledX509TrustManager,
+                                                  boolean disabledHostnameVerifier, SSLRoot defaultValue) {
+        sslRoot.sslSocketFactory = disabledSSLSocketFactory ? null : defaultValue.sslSocketFactory;
+        sslRoot.x509TrustManager = disabledX509TrustManager ? null : defaultValue.x509TrustManager;
+        sslRoot.hostnameVerifier = disabledHostnameVerifier ? null : defaultValue.hostnameVerifier;
     }
 
     static ConnectionPool checkConnectionPool(Configurer configurer, AnnotatedElement element) {
