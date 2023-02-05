@@ -45,6 +45,7 @@ public class ConfigurerTest {
                         statusFallbacks=404=com.github.charlemaznable.httpclient.common.StatusErrorThrower
                         statusSeriesFallbacks=400=com.github.charlemaznable.httpclient.common.StatusErrorThrower
                         mappingBalancer=randomm
+                        loggingLevel=BASICC
                         """);
 
         try (val mockWebServer = new MockWebServer()) {
