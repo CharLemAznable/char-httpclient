@@ -293,8 +293,8 @@ class OhRoot {
                                                      boolean disabledSSLSocketFactory,
                                                      boolean disabledX509TrustManager,
                                                      boolean disabledHostnameVerifier, SSLRoot defaultValue) {
-        sslRoot.sslSocketFactory = disabledSSLSocketFactory ? null : nullThen(
-                sslConfigurer.sslSocketFactory(), () -> defaultValue.sslSocketFactory);
+        if (disabledSSLSocketFactory) sslRoot.sslSocketFactory = null;
+        else sslRoot.sslSocketFactory = nullThen(sslConfigurer.sslSocketFactory(), () -> defaultValue.sslSocketFactory);
         sslRoot.x509TrustManager = disabledX509TrustManager ? null : nullThen(
                 sslConfigurer.x509TrustManager(), () -> defaultValue.x509TrustManager);
         sslRoot.hostnameVerifier = disabledHostnameVerifier ? null : nullThen(

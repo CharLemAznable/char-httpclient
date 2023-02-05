@@ -78,7 +78,11 @@ public class TimeoutTest {
     @ClientTimeout
     public interface TimeoutHttpClient2 {
 
-        @ClientTimeout
+        @ClientTimeout(
+                callTimeout = 60_000,
+                connectTimeout = 60_000,
+                readTimeout = 60_000,
+                writeTimeout = 60_000)
         String sample();
     }
 
