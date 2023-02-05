@@ -2,7 +2,6 @@ package com.github.charlemaznable.httpclient.ohclient.spring;
 
 import com.github.charlemaznable.core.spring.SpringContext;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.ohclient.testclient.TestComponentSpring;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientConcrete;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientIsolated;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientNone;
@@ -13,7 +12,6 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import javax.annotation.Nonnull;
@@ -26,8 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 public class OhSpringTest {
 
     private static final String SAMPLE = "Sample";
-    @Autowired
-    private TestComponentSpring testComponent;
 
     @SneakyThrows
     @Test
@@ -47,16 +43,6 @@ public class OhSpringTest {
                 }
             });
             mockWebServer.start(41102);
-
-            val testHttpClient = testComponent.getTestHttpClient();
-            assertEquals(SAMPLE, testHttpClient.sample());
-            assertEquals("{Sample}", testHttpClient.sampleWrapper());
-            assertEquals(SAMPLE, testHttpClient.sampleWrap());
-            assertEquals("Done", testHttpClient.sampleByContext());
-            assertEquals(SAMPLE, testHttpClient.sample());
-            assertEquals("{Sample}", testHttpClient.sampleWrapper());
-            assertEquals(SAMPLE, testHttpClient.sampleWrap());
-            assertEquals("Done", testHttpClient.sampleByContext());
 
             val testHttpClientIsolated = SpringContext.getBean(TestHttpClientIsolated.class);
             assertEquals(SAMPLE, testHttpClientIsolated.sample());

@@ -2,7 +2,6 @@ package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.FixedPathVar;
-import com.github.charlemaznable.httpclient.common.FixedValueProvider;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.MappingMethodNameDisabled;
@@ -20,7 +19,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.Method;
 import java.util.List;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
@@ -65,7 +63,7 @@ public class PathVarTest {
     }
 
     @FixedPathVar(name = "P1", value = "V1")
-    @FixedPathVar(name = "P2", valueProvider = P2Provider.class)
+    @FixedPathVar(name = "P2", value = "V2")
     @Mapping("${root}:41150/{P1}/{P2}")
     @MappingMethodNameDisabled
     @OhClient
@@ -73,24 +71,11 @@ public class PathVarTest {
 
         String sampleDefault();
 
-        @FixedPathVar(name = "P2", valueProvider = P2Provider.class)
+        @FixedPathVar(name = "P2", value = "V3")
         String sampleMapping();
 
         @FixedPathVar(name = "P2", value = "V3")
         String samplePathVars(@PathVar("P2") String v4);
-    }
-
-    public static class P2Provider implements FixedValueProvider {
-
-        @Override
-        public String value(Class<?> clazz, String name) {
-            return "V2";
-        }
-
-        @Override
-        public String value(Class<?> clazz, Method method, String name) {
-            return "V3";
-        }
     }
 
     @Mapping("${root}:41150/{P1}/{P2}")

@@ -25,4 +25,11 @@ public @interface RequestExtend {
                     List<Pair<String, Object>> parameters,
                     List<Pair<String, Object>> contexts);
     }
+
+    @Documented
+    @Inherited
+    @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface Disabled {
+    }
 }

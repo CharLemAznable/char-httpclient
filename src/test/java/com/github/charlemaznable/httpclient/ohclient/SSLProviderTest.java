@@ -2,14 +2,10 @@ package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.common.ProviderException;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL.HostnameVerifierProvider;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL.SSLSocketFactoryProvider;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL.X509TrustManagerProvider;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSLDisabled;
 import com.github.charlemaznable.httpclient.ohclient.configurer.ClientSSLConfigurer;
+import com.github.charlemaznable.httpclient.ohclient.configurer.ClientSSLDisabledConfigurer;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.OkHttpClient;
@@ -25,7 +21,6 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.security.cert.X509Certificate;
@@ -34,7 +29,6 @@ import static com.github.charlemaznable.core.context.FactoryContext.ReflectFacto
 import static org.joor.Reflect.on;
 import static org.joor.Reflect.onClass;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SuppressWarnings("UnusedReturnValue")
@@ -117,11 +111,6 @@ public class SSLProviderTest {
         } catch (Exception e) {
             assertEquals(FAILED, e.getMessage());
         }
-        try {
-            httpClient.sampleAllProvider();
-        } catch (Exception e) {
-            assertEquals(FAILED, e.getMessage());
-        }
     }
 
     @SneakyThrows
@@ -152,22 +141,6 @@ public class SSLProviderTest {
         }
     }
 
-    @SneakyThrows
-    @Test
-    public void testErrorSSL() {
-        assertThrows(ProviderException.class, () ->
-                ohLoader.getClient(ErrorSSLHttpClient1.class));
-        assertThrows(ProviderException.class, () ->
-                ohLoader.getClient(ErrorSSLHttpClient2.class));
-        assertThrows(ProviderException.class, () ->
-                ohLoader.getClient(ErrorSSLHttpClient3.class));
-
-        val httpClient = ohLoader.getClient(ErrorSSLHttpClient4.class);
-        assertThrows(ProviderException.class, httpClient::error1);
-        assertThrows(ProviderException.class, httpClient::error2);
-        assertThrows(ProviderException.class, httpClient::error3);
-    }
-
     @OhClient
     @Mapping("${root}:41120")
     @ClientSSL(
@@ -192,8 +165,8 @@ public class SSLProviderTest {
     @OhClient
     @Mapping("${root}:41122")
     @ClientSSL(
-            sslSocketFactoryProvider = TestSSLSocketFactoryProvider.class,
-            hostnameVerifierProvider = TestHostnameVerifierProvider.class)
+            sslSocketFactory = TestSSLSocketFactory.class,
+            hostnameVerifier = TestHostnameVerifier.class)
     public interface SSLDefParamHttpClient {
 
         String sample(SSLSocketFactory sslSocketFactory, HostnameVerifier hostnameVerifier);
@@ -202,9 +175,9 @@ public class SSLProviderTest {
     @OhClient
     @Mapping("${root}:41123")
     @ClientSSL(
-            sslSocketFactoryProvider = TestSSLSocketFactoryProvider.class,
-            x509TrustManagerProvider = TestX509TrustManagerProvider.class,
-            hostnameVerifierProvider = TestHostnameVerifierProvider.class)
+            sslSocketFactory = TestSSLSocketFactory.class,
+            x509TrustManager = TestX509TrustManager.class,
+            hostnameVerifier = TestHostnameVerifier.class)
     public interface SSLAllParamHttpClient {
 
         String sample(SSLSocketFactory sslSocketFactory, X509TrustManager x509TrustManager, HostnameVerifier hostnameVerifier);
@@ -217,8 +190,8 @@ public class SSLProviderTest {
         String sample();
 
         @ClientSSL(
-                sslSocketFactoryProvider = TestSSLSocketFactoryProvider.class,
-                hostnameVerifierProvider = TestHostnameVerifierProvider.class)
+                sslSocketFactory = TestSSLSocketFactory.class,
+                hostnameVerifier = TestHostnameVerifier.class)
         String sampleDef();
 
         @ClientSSL(
@@ -226,26 +199,20 @@ public class SSLProviderTest {
                 x509TrustManager = TestX509TrustManager.class,
                 hostnameVerifier = TestHostnameVerifier.class)
         String sampleAll();
-
-        @ClientSSL(
-                sslSocketFactoryProvider = TestSSLSocketFactoryProvider.class,
-                x509TrustManagerProvider = TestX509TrustManagerProvider.class,
-                hostnameVerifierProvider = TestHostnameVerifierProvider.class)
-        String sampleAllProvider();
     }
 
     @Documented
     @Inherited
     @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
     @Retention(RetentionPolicy.RUNTIME)
-    @ClientSSLDisabled
+    @ClientSSL.Disabled
     public @interface Disabled {}
 
     @OhClient
     @Mapping("${root}:41124")
     @ClientSSL(
-            sslSocketFactoryProvider = TestSSLSocketFactoryProvider.class,
-            hostnameVerifierProvider = TestHostnameVerifierProvider.class)
+            sslSocketFactory = TestSSLSocketFactory.class,
+            hostnameVerifier = TestHostnameVerifier.class)
     public interface DisableSSLHttpClient {
 
         String sample();
@@ -259,6 +226,7 @@ public class SSLProviderTest {
     @ConfigureWith(DisableSSLHttpClientConfig.class)
     public interface DisableSSLHttpClientNeo {
 
+        @ConfigureWith(DefaultConfig.class)
         String sample();
 
         @ConfigureWith(SampleConfig.class)
@@ -283,52 +251,9 @@ public class SSLProviderTest {
         }
     }
 
-    public static class SampleConfig implements ClientSSLConfigurer {}
+    public static class DefaultConfig implements ClientSSLConfigurer {}
 
-    @OhClient
-    @Mapping("${root}:41125")
-    @ClientSSL(
-            sslSocketFactoryProvider = ErrorSSLSocketFactoryProvider.class)
-    public interface ErrorSSLHttpClient1 {}
-
-    @OhClient
-    @Mapping("${root}:41125")
-    @ClientSSL(
-            sslSocketFactoryProvider = NoErrorSSLSocketFactoryProvider.class,
-            x509TrustManagerProvider = ErrorX509TrustManagerProvider.class)
-    public interface ErrorSSLHttpClient2 {}
-
-    @OhClient
-    @Mapping("${root}:41125")
-    @ClientSSL(
-            sslSocketFactoryProvider = NoErrorSSLSocketFactoryProvider.class,
-            x509TrustManagerProvider = NoErrorX509TrustManagerProvider.class,
-            hostnameVerifierProvider = ErrorHostnameVerifierProvider.class)
-    public interface ErrorSSLHttpClient3 {}
-
-    @OhClient
-    @Mapping("${root}:41125")
-    @ClientSSL(
-            sslSocketFactoryProvider = NoErrorSSLSocketFactoryProvider.class,
-            x509TrustManagerProvider = NoErrorX509TrustManagerProvider.class,
-            hostnameVerifierProvider = NoErrorHostnameVerifierProvider.class)
-    public interface ErrorSSLHttpClient4 {
-
-        @ClientSSL(
-                sslSocketFactoryProvider = ErrorSSLSocketFactoryProvider.class)
-        String error1();
-
-        @ClientSSL(
-                sslSocketFactoryProvider = NoErrorSSLSocketFactoryProvider.class,
-                x509TrustManagerProvider = ErrorX509TrustManagerProvider.class)
-        String error2();
-
-        @ClientSSL(
-                sslSocketFactoryProvider = NoErrorSSLSocketFactoryProvider.class,
-                x509TrustManagerProvider = NoErrorX509TrustManagerProvider.class,
-                hostnameVerifierProvider = ErrorHostnameVerifierProvider.class)
-        String error3();
-    }
+    public static class SampleConfig implements ClientSSLDisabledConfigurer {}
 
     public static class TestSSLSocketFactory extends SSLSocketFactory {
 
@@ -368,19 +293,6 @@ public class SSLProviderTest {
         }
     }
 
-    public static class TestSSLSocketFactoryProvider implements SSLSocketFactoryProvider {
-
-        @Override
-        public SSLSocketFactory sslSocketFactory(Class<?> clazz) {
-            return new TestSSLSocketFactory();
-        }
-
-        @Override
-        public SSLSocketFactory sslSocketFactory(Class<?> clazz, Method method) {
-            return new TestSSLSocketFactory();
-        }
-    }
-
     public static class TestX509TrustManager implements X509TrustManager {
 
         @Override
@@ -399,82 +311,11 @@ public class SSLProviderTest {
         }
     }
 
-    public static class TestX509TrustManagerProvider implements X509TrustManagerProvider {
-
-        @Override
-        public X509TrustManager x509TrustManager(Class<?> clazz) {
-            return new TestX509TrustManager();
-        }
-
-        @Override
-        public X509TrustManager x509TrustManager(Class<?> clazz, Method method) {
-            return new TestX509TrustManager();
-        }
-    }
-
     public static class TestHostnameVerifier implements HostnameVerifier {
 
         @Override
         public boolean verify(String s, SSLSession sslSession) {
             return true;
-        }
-    }
-
-    public static class TestHostnameVerifierProvider implements HostnameVerifierProvider {
-
-        @Override
-        public HostnameVerifier hostnameVerifier(Class<?> clazz) {
-            return new TestHostnameVerifier();
-        }
-
-        @Override
-        public HostnameVerifier hostnameVerifier(Class<?> clazz, Method method) {
-            return new TestHostnameVerifier();
-        }
-    }
-
-    public static class ErrorSSLSocketFactoryProvider implements SSLSocketFactoryProvider {}
-
-    public static class NoErrorSSLSocketFactoryProvider implements SSLSocketFactoryProvider {
-
-        @Override
-        public SSLSocketFactory sslSocketFactory(Class<?> clazz) {
-            return new TestSSLSocketFactory();
-        }
-
-        @Override
-        public SSLSocketFactory sslSocketFactory(Class<?> clazz, Method method) {
-            return new TestSSLSocketFactory();
-        }
-    }
-
-    public static class ErrorX509TrustManagerProvider implements X509TrustManagerProvider {}
-
-    public static class NoErrorX509TrustManagerProvider implements X509TrustManagerProvider {
-
-        @Override
-        public X509TrustManager x509TrustManager(Class<?> clazz) {
-            return new TestX509TrustManager();
-        }
-
-        @Override
-        public X509TrustManager x509TrustManager(Class<?> clazz, Method method) {
-            return new TestX509TrustManager();
-        }
-    }
-
-    public static class ErrorHostnameVerifierProvider implements HostnameVerifierProvider {}
-
-    public static class NoErrorHostnameVerifierProvider implements HostnameVerifierProvider {
-
-        @Override
-        public HostnameVerifier hostnameVerifier(Class<?> clazz) {
-            return new TestHostnameVerifier();
-        }
-
-        @Override
-        public HostnameVerifier hostnameVerifier(Class<?> clazz, Method method) {
-            return new TestHostnameVerifier();
         }
     }
 }

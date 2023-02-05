@@ -4,8 +4,7 @@ import com.google.common.base.Splitter;
 
 import java.util.List;
 
-public interface CommonClientConfigurer extends
-        CommonAbstractConfigurer, MappingConfigurer,
+public interface CommonClientConfigurer extends CommonAbstractConfigurer,
         MappingMethodNameDisabledConfigurer, DefaultFallbackDisabledConfigurer {
 
     @Override

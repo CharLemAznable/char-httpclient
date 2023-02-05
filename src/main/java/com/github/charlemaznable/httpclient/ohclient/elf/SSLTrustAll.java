@@ -1,8 +1,6 @@
 package com.github.charlemaznable.httpclient.ohclient.elf;
 
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL.HostnameVerifierProvider;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL.SSLSocketFactoryProvider;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL.X509TrustManagerProvider;
+import com.github.charlemaznable.httpclient.ohclient.configurer.ClientSSLConfigurer;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -15,7 +13,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.lang.reflect.Method;
 import java.net.Socket;
 import java.security.KeyStore;
 import java.security.SecureRandom;
@@ -73,36 +70,20 @@ public final class SSLTrustAll {
         return (s, sslSession) -> true;
     }
 
-    public static class Provider implements
-            SSLSocketFactoryProvider, X509TrustManagerProvider, HostnameVerifierProvider {
+    public static class Configurer implements ClientSSLConfigurer {
 
         @Override
-        public SSLSocketFactory sslSocketFactory(Class<?> clazz) {
+        public SSLSocketFactory sslSocketFactory() {
             return SSLTrustAll.sslSocketFactory();
         }
 
         @Override
-        public SSLSocketFactory sslSocketFactory(Class<?> clazz, Method method) {
-            return SSLTrustAll.sslSocketFactory();
-        }
-
-        @Override
-        public X509TrustManager x509TrustManager(Class<?> clazz) {
+        public X509TrustManager x509TrustManager() {
             return SSLTrustAll.x509TrustManager();
         }
 
         @Override
-        public X509TrustManager x509TrustManager(Class<?> clazz, Method method) {
-            return SSLTrustAll.x509TrustManager();
-        }
-
-        @Override
-        public HostnameVerifier hostnameVerifier(Class<?> clazz) {
-            return SSLTrustAll.hostnameVerifier();
-        }
-
-        @Override
-        public HostnameVerifier hostnameVerifier(Class<?> clazz, Method method) {
+        public HostnameVerifier hostnameVerifier() {
             return SSLTrustAll.hostnameVerifier();
         }
     }

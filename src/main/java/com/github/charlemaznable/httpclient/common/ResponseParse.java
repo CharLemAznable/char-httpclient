@@ -23,4 +23,11 @@ public @interface ResponseParse {
                      @Nonnull final Class<?> returnType,
                      @Nonnull final Map<String, Object> contextMap);
     }
+
+    @Documented
+    @Inherited
+    @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface Disabled {
+    }
 }

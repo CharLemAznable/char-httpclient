@@ -2,11 +2,9 @@ package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.FixedHeader;
-import com.github.charlemaznable.httpclient.common.FixedValueProvider;
 import com.github.charlemaznable.httpclient.common.Header;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.common.ProviderException;
 import com.github.charlemaznable.httpclient.configurer.FixedHeadersConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import lombok.SneakyThrows;
@@ -19,7 +17,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.Method;
 import java.util.List;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
@@ -27,7 +24,6 @@ import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class HeaderTest {
 
@@ -81,69 +77,22 @@ public class HeaderTest {
         }
     }
 
-    @SneakyThrows
-    @Test
-    public void testErrorOhHeader() {
-        assertThrows(ProviderException.class, () ->
-                ohLoader.getClient(ErrorFixedHttpClient1.class));
-
-        val httpClient = ohLoader.getClient(ErrorFixedHttpClient2.class);
-        assertThrows(ProviderException.class, httpClient::sample);
-    }
-
     @FixedHeader(name = "H1", value = "V1")
-    @FixedHeader(name = "H2", valueProvider = H2Provider.class)
+    @FixedHeader(name = "H2", value = "V2")
     @Mapping("${root}:41140")
     @OhClient
     public interface HeaderHttpClient {
 
         String sampleDefault();
 
-        @FixedHeader(name = "H2", valueProvider = H2Provider.class)
+        @FixedHeader(name = "H2")
         @FixedHeader(name = "H3", value = "V3")
         String sampleMapping();
 
-        @FixedHeader(name = "H2", valueProvider = H2Provider.class)
+        @FixedHeader(name = "H2")
         @FixedHeader(name = "H3", value = "V3")
         String sampleHeaders(@Header("H3") String v3,
                              @Header("H4") String v4);
-    }
-
-    @FixedHeader(name = "H2", valueProvider = ErrorClassProvider.class)
-    @Mapping("${root}:41141")
-    @OhClient
-    public interface ErrorFixedHttpClient1 {}
-
-    @FixedHeader(name = "H2", valueProvider = H2Provider.class)
-    @Mapping("${root}:41142")
-    @OhClient
-    public interface ErrorFixedHttpClient2 {
-
-        @FixedHeader(name = "H2", valueProvider = ErrorMethodProvider.class)
-        String sample();
-    }
-
-    public static class H2Provider implements FixedValueProvider {
-
-        @Override
-        public String value(Class<?> clazz, String name) {
-            return "V2";
-        }
-
-        @Override
-        public String value(Class<?> clazz, Method method, String name) {
-            return null;
-        }
-    }
-
-    public static class ErrorClassProvider implements FixedValueProvider {}
-
-    public static class ErrorMethodProvider implements FixedValueProvider {
-
-        @Override
-        public String value(Class<?> clazz, String name) {
-            return "V2";
-        }
     }
 
     @Mapping("${root}:41140")

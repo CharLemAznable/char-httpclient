@@ -19,5 +19,5 @@ public @interface FixedPathVar {
 
     String value() default "";
 
-    Class<? extends FixedValueProvider> valueProvider() default FixedValueProvider.class;
+    boolean emptyAsCleanup() default true;
 }

@@ -33,15 +33,18 @@ public class ConfigurerTest {
         MockDiamondServer.setUpMockServer();
         MockDiamondServer.setConfigInfo("ConfigurerClient", "default", """
                         baseUrl=${root}:41310
+                        contentType=json
+                        mappingBalancer=random
                         """);
         MockDiamondServer.setConfigInfo("ConfigurerClient", "sample", """
                         path=/sample
-                        acceptCharset=UTF8
-                        contentType=json
+                        acceptCharset=UTF88
+                        contentType=jsonn
                         requestMethod=GETT
                         contexts=AAA=aaa&BBB
                         statusFallbacks=404=com.github.charlemaznable.httpclient.common.StatusErrorThrower
                         statusSeriesFallbacks=400=com.github.charlemaznable.httpclient.common.StatusErrorThrower
+                        mappingBalancer=randomm
                         """);
 
         try (val mockWebServer = new MockWebServer()) {

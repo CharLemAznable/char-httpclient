@@ -5,6 +5,7 @@ import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
+import com.github.charlemaznable.httpclient.common.MappingBalance;
 import com.google.common.base.Splitter;
 import lombok.val;
 import org.apache.commons.lang3.tuple.Pair;
@@ -21,7 +22,7 @@ import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.intOf;
 import static java.util.Objects.nonNull;
 
-public interface CommonAbstractConfigurer extends ConfigGetter,
+public interface CommonAbstractConfigurer extends ConfigGetter, MappingConfigurer,
         AcceptCharsetConfigurer, ContentFormatConfigurer, RequestMethodConfigurer,
         FixedHeadersConfigurer, FixedPathVarsConfigurer, FixedParametersConfigurer, FixedContextsConfigurer,
         StatusFallbacksConfigurer, StatusSeriesFallbacksConfigurer,
@@ -98,5 +99,12 @@ public interface CommonAbstractConfigurer extends ConfigGetter,
                     .collect(toMap(e -> HttpStatus.Series.valueOf(intOf(e.getKey())),
                             e -> (Class<? extends FallbackFunction>) findClass(e.getValue())));
         });
+    }
+
+    @Override
+    default MappingBalance.MappingBalancer mappingBalancer() {
+        return notNullThen(getString("mappingBalancer"), v -> Optional
+                .ofNullable(MappingBalance.BalanceType.resolve(v))
+                .map(MappingBalance.BalanceType::getMappingBalancer).orElse(null));
     }
 }

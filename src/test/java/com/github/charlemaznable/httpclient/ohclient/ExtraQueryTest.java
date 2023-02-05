@@ -12,6 +12,7 @@ import com.github.charlemaznable.httpclient.common.MappingBalance;
 import com.github.charlemaznable.httpclient.common.Parameter;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
 import com.github.charlemaznable.httpclient.configurer.ExtraUrlQueryConfigurer;
+import com.github.charlemaznable.httpclient.configurer.ExtraUrlQueryDisabledConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -28,6 +29,7 @@ import static com.github.charlemaznable.core.codec.Json.unJson;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ExtraQueryTest {
 
@@ -54,6 +56,11 @@ public class ExtraQueryTest {
                             val body = unJson(request.getBody().readUtf8());
                             assertEquals("PV1", body.get("P1"));
                             return new MockResponse().setBody("OK");
+                        case "/sampleNone":
+                            assertEquals("GET", request.getMethod());
+                            assertNull(requestUrl.queryParameter("EQ1"));
+                            assertEquals("PV1", requestUrl.queryParameter("P1"));
+                            return new MockResponse().setBody("OK");
                         default:
                             return new MockResponse()
                                     .setResponseCode(HttpStatus.NOT_FOUND.value())
@@ -66,10 +73,12 @@ public class ExtraQueryTest {
             val httpClient = ohLoader.getClient(ExtraHttpClient.class);
             assertEquals("OK", httpClient.sampleGet("PV1"));
             assertEquals("OK", httpClient.samplePost("PV1"));
+            assertEquals("OK", httpClient.sampleNone("PV1"));
 
             val httpClientNeo = ohLoader.getClient(ExtraHttpClientNeo.class);
             assertEquals("OK", httpClientNeo.sampleGet("PV1"));
             assertEquals("OK", httpClientNeo.samplePost("PV1"));
+            assertEquals("OK", httpClientNeo.sampleNone("PV1"));
         }
     }
 
@@ -85,6 +94,9 @@ public class ExtraQueryTest {
         @RequestMethod(HttpMethod.POST)
         @ExtraUrlQuery(ExtraOnMethod.class)
         String samplePost(@Parameter("P1") String p);
+
+        @ExtraUrlQuery.Disabled
+        String sampleNone(@Parameter("P1") String p);
     }
 
     public static class ExtraOnClass implements ExtraUrlQueryBuilder {
@@ -117,6 +129,9 @@ public class ExtraQueryTest {
         @RequestMethod(HttpMethod.POST)
         @ConfigureWith(ExtraOnMethodConfig.class)
         String samplePost(@Parameter("P1") String p);
+
+        @ConfigureWith(ExtraNoneConfig.class)
+        String sampleNone(@Parameter("P1") String p);
     }
 
     public static class ExtraOnClassConfig implements ExtraUrlQueryConfigurer {
@@ -134,4 +149,6 @@ public class ExtraQueryTest {
             return new ExtraOnMethod();
         }
     }
+
+    public static class ExtraNoneConfig implements ExtraUrlQueryDisabledConfigurer {}
 }

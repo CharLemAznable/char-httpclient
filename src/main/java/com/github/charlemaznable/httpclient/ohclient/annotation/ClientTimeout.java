@@ -1,14 +1,11 @@
 package com.github.charlemaznable.httpclient.ohclient.annotation;
 
-import com.github.charlemaznable.httpclient.common.ProviderException;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Method;
 
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CALL_TIMEOUT;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONNECT_TIMEOUT;
@@ -28,25 +25,4 @@ public @interface ClientTimeout {
     long readTimeout() default DEFAULT_READ_TIMEOUT;
 
     long writeTimeout() default DEFAULT_WRITE_TIMEOUT;
-
-    Class<? extends TimeoutProvider> callTimeoutProvider() default TimeoutProvider.class;
-
-    Class<? extends TimeoutProvider> connectTimeoutProvider() default TimeoutProvider.class;
-
-    Class<? extends TimeoutProvider> readTimeoutProvider() default TimeoutProvider.class;
-
-    Class<? extends TimeoutProvider> writeTimeoutProvider() default TimeoutProvider.class;
-
-    interface TimeoutProvider {
-
-        default long timeout(Class<?> clazz) {
-            throw new ProviderException(this.getClass().getName()
-                    + "#timeout(Class<?>) need be overwritten");
-        }
-
-        default long timeout(Class<?> clazz, Method method) {
-            throw new ProviderException(this.getClass().getName()
-                    + "#timeout(Class<?>, Method) need be overwritten");
-        }
-    }
 }

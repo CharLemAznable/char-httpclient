@@ -22,4 +22,11 @@ public @interface ExtraUrlQuery {
         String build(@Nonnull final Map<String, Object> parameterMap,
                      @Nonnull final Map<String, Object> contextMap);
     }
+
+    @Documented
+    @Inherited
+    @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface Disabled {
+    }
 }

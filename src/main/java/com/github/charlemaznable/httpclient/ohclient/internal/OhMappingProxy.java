@@ -2,95 +2,44 @@ package com.github.charlemaznable.httpclient.ohclient.internal;
 
 import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.Factory;
-import com.github.charlemaznable.httpclient.common.AcceptCharset;
 import com.github.charlemaznable.httpclient.common.CncResponse;
-import com.github.charlemaznable.httpclient.common.ContentFormat;
-import com.github.charlemaznable.httpclient.common.ContentFormat.ContentFormatter;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery.ExtraUrlQueryBuilder;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.FallbackFunction.Response;
-import com.github.charlemaznable.httpclient.common.FixedContext;
-import com.github.charlemaznable.httpclient.common.FixedHeader;
-import com.github.charlemaznable.httpclient.common.FixedParameter;
-import com.github.charlemaznable.httpclient.common.FixedPathVar;
-import com.github.charlemaznable.httpclient.common.FixedValueProvider;
-import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.common.Mapping.UrlProvider;
-import com.github.charlemaznable.httpclient.common.MappingBalance;
-import com.github.charlemaznable.httpclient.common.MappingBalance.MappingBalancer;
 import com.github.charlemaznable.httpclient.common.RequestExtend;
 import com.github.charlemaznable.httpclient.common.RequestExtend.RequestExtender;
-import com.github.charlemaznable.httpclient.common.RequestMethod;
 import com.github.charlemaznable.httpclient.common.ResponseParse;
 import com.github.charlemaznable.httpclient.common.ResponseParse.ResponseParser;
-import com.github.charlemaznable.httpclient.common.StatusFallback;
-import com.github.charlemaznable.httpclient.common.StatusSeriesFallback;
-import com.github.charlemaznable.httpclient.configurer.AcceptCharsetConfigurer;
 import com.github.charlemaznable.httpclient.configurer.Configurer;
-import com.github.charlemaznable.httpclient.configurer.ContentFormatConfigurer;
-import com.github.charlemaznable.httpclient.configurer.ExtraUrlQueryConfigurer;
-import com.github.charlemaznable.httpclient.configurer.FixedContextsConfigurer;
-import com.github.charlemaznable.httpclient.configurer.FixedHeadersConfigurer;
-import com.github.charlemaznable.httpclient.configurer.FixedParametersConfigurer;
-import com.github.charlemaznable.httpclient.configurer.FixedPathVarsConfigurer;
-import com.github.charlemaznable.httpclient.configurer.MappingBalanceConfigurer;
-import com.github.charlemaznable.httpclient.configurer.MappingConfigurer;
-import com.github.charlemaznable.httpclient.configurer.RequestExtendConfigurer;
-import com.github.charlemaznable.httpclient.configurer.RequestMethodConfigurer;
-import com.github.charlemaznable.httpclient.configurer.ResponseParseConfigurer;
-import com.github.charlemaznable.httpclient.configurer.StatusFallbacksConfigurer;
-import com.github.charlemaznable.httpclient.configurer.StatusSeriesFallbacksConfigurer;
+import com.github.charlemaznable.httpclient.configurer.ExtraUrlQueryDisabledConfigurer;
+import com.github.charlemaznable.httpclient.configurer.RequestExtendDisabledConfigurer;
+import com.github.charlemaznable.httpclient.configurer.ResponseParseDisabledConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhException;
-import com.github.charlemaznable.httpclient.ohclient.OhReq;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptor;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptor.InterceptorProvider;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptorCleanup;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientLoggingLevel;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientLoggingLevel.LoggingLevelProvider;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientProxy;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientProxy.ProxyProvider;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL.HostnameVerifierProvider;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL.SSLSocketFactoryProvider;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL.X509TrustManagerProvider;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout.TimeoutProvider;
-import com.github.charlemaznable.httpclient.ohclient.annotation.IsolatedConnectionPool;
 import com.github.charlemaznable.httpclient.ohclient.configurer.ClientInterceptorsCleanupConfigurer;
-import com.github.charlemaznable.httpclient.ohclient.configurer.ClientInterceptorsConfigurer;
-import com.github.charlemaznable.httpclient.ohclient.configurer.ClientLoggingLevelConfigurer;
-import com.github.charlemaznable.httpclient.ohclient.configurer.ClientProxyConfigurer;
-import com.github.charlemaznable.httpclient.ohclient.configurer.ClientSSLConfigurer;
-import com.github.charlemaznable.httpclient.ohclient.configurer.ClientTimeoutConfigurer;
-import com.github.charlemaznable.httpclient.ohclient.configurer.IsolatedConnectionPoolConfigurer;
+import com.github.charlemaznable.httpclient.ohclient.configurer.ClientProxyDisabledConfigurer;
+import com.github.charlemaznable.httpclient.ohclient.configurer.ClientSSLDisabledConfigurer;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.val;
-import okhttp3.ConnectionPool;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
-import okhttp3.logging.HttpLoggingInterceptor.Level;
 import okio.BufferedSource;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.X509TrustManager;
 import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -100,7 +49,6 @@ import java.util.stream.Collectors;
 
 import static com.github.charlemaznable.core.codec.Json.desc;
 import static com.github.charlemaznable.core.lang.Condition.checkBlank;
-import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.emptyThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
@@ -108,15 +56,11 @@ import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.isBlank;
-import static com.github.charlemaznable.core.lang.Str.isNotBlank;
 import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.ohExecutorService;
 import static com.google.common.collect.Sets.newHashSet;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static lombok.AccessLevel.PRIVATE;
-import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
-import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedRepeatableAnnotations;
 import static org.springframework.core.annotation.AnnotatedElementUtils.isAnnotated;
 
 @SuppressWarnings("rawtypes")
@@ -143,82 +87,46 @@ public final class OhMappingProxy extends OhRoot {
         this.ohMethod = ohMethod;
         this.factory = factory;
         this.configurer = checkConfigurer(this.ohMethod, this.factory);
-        this.requestUrls = Elf.checkRequestUrls(this.configurer,
-                this.ohClass, this.ohMethod, this.factory, proxy);
 
-        this.clientProxy = Elf.checkClientProxy(this.configurer,
-                this.ohClass, this.ohMethod, this.factory, proxy);
-        if (this.configurer instanceof ClientSSLConfigurer sslConfigurer) {
-            this.sslSocketFactory = sslConfigurer.sslSocketFactory();
-            this.x509TrustManager = sslConfigurer.x509TrustManager();
-            this.hostnameVerifier = sslConfigurer.hostnameVerifier();
-        } else {
-            val clientSSL = Elf.checkClientSSL(this.ohMethod);
-            if (nonNull(clientSSL)) {
-                this.sslSocketFactory = Elf.checkSSLSocketFactory(
-                        this.ohClass, this.ohMethod, this.factory, clientSSL);
-                this.x509TrustManager = Elf.checkX509TrustManager(
-                        this.ohClass, this.ohMethod, this.factory, clientSSL);
-                this.hostnameVerifier = Elf.checkHostnameVerifier(
-                        this.ohClass, this.ohMethod, this.factory, clientSSL);
-            } else {
-                this.sslSocketFactory = proxy.sslSocketFactory;
-                this.x509TrustManager = proxy.x509TrustManager;
-                this.hostnameVerifier = proxy.hostnameVerifier;
-            }
-        }
-        this.connectionPool = Elf.checkConnectionPool(this.configurer, this.ohMethod, proxy);
-        if (this.configurer instanceof ClientTimeoutConfigurer timeoutConfigurer) {
-            this.callTimeout = timeoutConfigurer.callTimeout();
-            this.connectTimeout = timeoutConfigurer.connectTimeout();
-            this.readTimeout = timeoutConfigurer.readTimeout();
-            this.writeTimeout = timeoutConfigurer.writeTimeout();
-        } else {
-            val clientTimeout = Elf.checkClientTimeout(this.ohMethod);
-            if (nonNull(clientTimeout)) {
-                this.callTimeout = Elf.checkCallTimeout(
-                        this.ohClass, this.ohMethod, this.factory, clientTimeout);
-                this.connectTimeout = Elf.checkConnectTimeout(
-                        this.ohClass, this.ohMethod, this.factory, clientTimeout);
-                this.readTimeout = Elf.checkReadTimeout(
-                        this.ohClass, this.ohMethod, this.factory, clientTimeout);
-                this.writeTimeout = Elf.checkWriteTimeout(
-                        this.ohClass, this.ohMethod, this.factory, clientTimeout);
-            } else {
-                this.callTimeout = proxy.callTimeout;
-                this.connectTimeout = proxy.connectTimeout;
-                this.readTimeout = proxy.readTimeout;
-                this.writeTimeout = proxy.writeTimeout;
-            }
-        }
-        this.interceptors = Elf.checkClientInterceptors(this.configurer,
-                this.ohClass, this.ohMethod, this.factory, proxy);
-        this.loggingLevel = Elf.checkClientLoggingLevel(this.configurer,
-                this.ohClass, this.ohMethod, this.factory, proxy);
+        this.requestUrls = Elf.checkRequestUrls(this.configurer, this.ohMethod, proxy);
+
+        this.clientProxy = Elf.checkClientProxy(this.configurer, this.ohMethod, proxy);
+        this.sslRoot = Elf.checkClientSSL(this.configurer, this.ohMethod, this.factory, proxy);
+        this.connectionPool = nullThen(checkConnectionPool(
+                this.configurer, this.ohMethod), () -> proxy.connectionPool);
+        this.timeoutRoot = Elf.checkClientTimeout(this.configurer, this.ohMethod, proxy);
+        this.interceptors = Elf.defaultClientInterceptors(this.configurer, this.ohMethod, proxy);
+        this.interceptors.addAll(checkClientInterceptors(this.configurer, this.ohMethod, this.factory));
+        this.loggingLevel = nullThen(checkClientLoggingLevel(
+                this.configurer, this.ohMethod), () -> proxy.loggingLevel);
+
         this.okHttpClient = Elf.buildOkHttpClient(this, proxy);
 
-        this.acceptCharset = Elf.checkAcceptCharset(this.configurer, this.ohMethod, proxy);
-        this.contentFormatter = Elf.checkContentFormatter(
-                this.configurer, this.ohMethod, this.factory, proxy);
-        this.httpMethod = Elf.checkHttpMethod(this.configurer, this.ohMethod, proxy);
-        this.headers = Elf.checkFixedHeaders(this.configurer,
-                this.ohClass, this.ohMethod, this.factory, proxy);
-        this.pathVars = Elf.checkFixedPathVars(this.configurer,
-                this.ohClass, this.ohMethod, this.factory, proxy);
-        this.parameters = Elf.checkFixedParameters(this.configurer,
-                this.ohClass, this.ohMethod, this.factory, proxy);
-        this.contexts = Elf.checkFixedContexts(this.configurer,
-                this.ohClass, this.ohMethod, this.factory, proxy);
+        this.acceptCharset = nullThen(checkAcceptCharset(
+                this.configurer, this.ohMethod), () -> proxy.acceptCharset);
+        this.contentFormatter = nullThen(checkContentFormatter(
+                this.configurer, this.ohMethod, this.factory), () -> proxy.contentFormatter);
+        this.httpMethod = nullThen(checkHttpMethod(
+                this.configurer, this.ohMethod), () -> proxy.httpMethod);
+        this.headers = newArrayList(proxy.headers);
+        this.headers.addAll(checkFixedHeaders(this.configurer, this.ohMethod));
+        this.pathVars = newArrayList(proxy.pathVars);
+        this.pathVars.addAll(checkFixedPathVars(this.configurer, this.ohMethod));
+        this.parameters = newArrayList(proxy.parameters);
+        this.parameters.addAll(checkFixedParameters(this.configurer, this.ohMethod));
+        this.contexts = newArrayList(proxy.contexts);
+        this.contexts.addAll(checkFixedContexts(this.configurer, this.ohMethod));
 
-        this.statusFallbackMapping = Elf.checkStatusFallbackMapping(this.configurer, this.ohMethod, proxy);
-        this.statusSeriesFallbackMapping = Elf.checkStatusSeriesFallbackMapping(this.configurer, this.ohMethod, proxy);
+        this.statusFallbackMapping = newHashMap(proxy.statusFallbackMapping);
+        this.statusFallbackMapping.putAll(checkStatusFallbackMapping(this.configurer, this.ohMethod));
+        this.statusSeriesFallbackMapping = newHashMap(proxy.statusSeriesFallbackMapping);
+        this.statusSeriesFallbackMapping.putAll(checkStatusSeriesFallbackMapping(this.configurer, this.ohMethod));
 
         this.requestExtender = Elf.checkRequestExtender(this.configurer, this.ohMethod, this.factory, proxy);
         this.responseParser = Elf.checkResponseParser(this.configurer, this.ohMethod, this.factory, proxy);
-
         this.extraUrlQueryBuilder = Elf.checkExtraUrlQueryBuilder(this.configurer, this.ohMethod, this.factory, proxy);
-
-        this.mappingBalancer = Elf.checkMappingBalancer(this.configurer, this.ohMethod, this.factory, proxy);
+        this.mappingBalancer = nullThen(checkMappingBalancer(
+                this.configurer, this.ohMethod, this.factory), () -> proxy.mappingBalancer);
 
         processReturnType(this.ohMethod);
     }
@@ -440,10 +348,9 @@ public final class OhMappingProxy extends OhRoot {
     @NoArgsConstructor(access = PRIVATE)
     static class Elf {
 
-        static List<String> checkRequestUrls(Configurer configurer,
-                                             Class clazz, Method method,
-                                             Factory factory, OhProxy proxy) {
-            val urls = checkMethodUrls(configurer, clazz, method, factory, proxy);
+        static List<String> checkRequestUrls(Configurer configurer, Method method, OhProxy proxy) {
+            val urls = emptyThen(checkMappingUrls(configurer, method), () ->
+                    newArrayList(proxy.mappingMethodNameDisabled ? "" : "/" + method.getName()));
             Set<String> requestUrls = newHashSet();
             for (val url : urls) {
                 if (isBlank(url)) {
@@ -456,162 +363,48 @@ public final class OhMappingProxy extends OhRoot {
             return requestUrls.stream().distinct().collect(Collectors.toList());
         }
 
-        static List<String> checkMethodUrls(Configurer configurer,
-                                            Class clazz, Method method,
-                                            Factory factory, OhProxy proxy) {
-            if (configurer instanceof MappingConfigurer mappingConfigurer)
-                return newArrayList(mappingConfigurer.urls())
-                        .stream().map(OhDummy::substitute).collect(Collectors.toList());
-            val mapping = getMergedAnnotation(method, Mapping.class);
-            if (isNull(mapping)) return newArrayList(
-                    proxy.mappingMethodNameDisabled ? "" : "/" + method.getName());
-            Class<? extends UrlProvider> providerClass = mapping.urlProvider();
-            return (UrlProvider.class == providerClass ? Arrays.asList(mapping.value())
-                    : FactoryContext.apply(factory, providerClass, p ->
-                    emptyThen(p.urls(clazz, method), () -> newArrayList(p.url(clazz, method)))))
-                    .stream().map(OhDummy::substitute).collect(Collectors.toList());
+        static Proxy checkClientProxy(Configurer configurer, Method method, OhProxy proxy) {
+            if (configurer instanceof ClientProxyDisabledConfigurer disabledConfigurer
+                    ? disabledConfigurer.disabledClientProxy()
+                    : isAnnotated(method, ClientProxy.Disabled.class)) return null;
+            return nullThen(OhRoot.checkClientProxy(configurer, method), () -> proxy.clientProxy);
         }
 
-        static Proxy checkClientProxy(Configurer configurer,
-                                      Class clazz, Method method,
-                                      Factory factory, OhProxy proxy) {
-            if (configurer instanceof ClientProxyConfigurer proxyConfigurer)
-                return nullThen(proxyConfigurer.proxy(), () -> proxy.clientProxy);
-            val clientProxy = getMergedAnnotation(method, ClientProxy.class);
-            return checkNull(clientProxy, () -> proxy.clientProxy, annotation -> {
-                val providerClass = annotation.proxyProvider();
-                if (ProxyProvider.class == providerClass) {
-                    return checkBlank(annotation.host(), () -> null,
-                            xx -> new Proxy(annotation.type(), new InetSocketAddress(
-                                    annotation.host(), annotation.port())));
-                }
-                return FactoryContext.apply(factory, providerClass, p -> p.proxy(clazz, method));
-            });
-        }
-
-        static ClientSSL checkClientSSL(Method method) {
-            return getMergedAnnotation(method, ClientSSL.class);
-        }
-
-        static SSLSocketFactory checkSSLSocketFactory(Class clazz, Method method,
-                                                      Factory factory, ClientSSL clientSSL) {
-            val providerClass = clientSSL.sslSocketFactoryProvider();
-            if (SSLSocketFactoryProvider.class == providerClass) {
-                val factoryClass = clientSSL.sslSocketFactory();
-                return SSLSocketFactory.class == factoryClass ? null
-                        : FactoryContext.build(factory, factoryClass);
+        static SSLRoot checkClientSSL(Configurer configurer, Method method, Factory factory, OhProxy proxy) {
+            boolean disabledSSLSocketFactory, disabledX509TrustManager, disabledHostnameVerifier;
+            if (configurer instanceof ClientSSLDisabledConfigurer disabledConfigurer) {
+                disabledSSLSocketFactory = disabledConfigurer.disabledSSLSocketFactory();
+                disabledX509TrustManager = disabledConfigurer.disabledX509TrustManager();
+                disabledHostnameVerifier = disabledConfigurer.disabledHostnameVerifier();
+            } else {
+                disabledSSLSocketFactory = isAnnotated(method, ClientSSL.DisabledSSLSocketFactory.class);
+                disabledX509TrustManager = isAnnotated(method, ClientSSL.DisabledX509TrustManager.class);
+                disabledHostnameVerifier = isAnnotated(method, ClientSSL.DisabledHostnameVerifier.class);
             }
-            return FactoryContext.apply(factory, providerClass,
-                    p -> p.sslSocketFactory(clazz, method));
+            return OhRoot.checkClientSSL(configurer, method, factory,
+                    disabledSSLSocketFactory, disabledX509TrustManager, disabledHostnameVerifier, proxy.sslRoot);
         }
 
-        static X509TrustManager checkX509TrustManager(Class clazz, Method method,
-                                                      Factory factory, ClientSSL clientSSL) {
-            val providerClass = clientSSL.x509TrustManagerProvider();
-            if (X509TrustManagerProvider.class == providerClass) {
-                val managerClass = clientSSL.x509TrustManager();
-                return X509TrustManager.class == managerClass ? null
-                        : FactoryContext.build(factory, managerClass);
-            }
-            return FactoryContext.apply(factory, providerClass,
-                    p -> p.x509TrustManager(clazz, method));
+        static TimeoutRoot checkClientTimeout(Configurer configurer, Method method, OhProxy proxy) {
+            return OhRoot.checkClientTimeout(configurer, method, proxy.timeoutRoot);
         }
 
-        static HostnameVerifier checkHostnameVerifier(Class clazz, Method method,
-                                                      Factory factory, ClientSSL clientSSL) {
-            val providerClass = clientSSL.hostnameVerifierProvider();
-            if (HostnameVerifierProvider.class == providerClass) {
-                val verifierClass = clientSSL.hostnameVerifier();
-                return HostnameVerifier.class == verifierClass ? null
-                        : FactoryContext.build(factory, verifierClass);
-            }
-            return FactoryContext.apply(factory, providerClass,
-                    p -> p.hostnameVerifier(clazz, method));
-        }
-
-        static ConnectionPool checkConnectionPool(Configurer configurer, Method method, OhProxy proxy) {
-            val isolated = configurer instanceof IsolatedConnectionPoolConfigurer poolConfigurer
-                    ? poolConfigurer.isolatedConnectionPool() : isAnnotated(method, IsolatedConnectionPool.class);
-            return isolated ? new ConnectionPool() : proxy.connectionPool;
-        }
-
-        static ClientTimeout checkClientTimeout(Method method) {
-            return getMergedAnnotation(method, ClientTimeout.class);
-        }
-
-        static long checkCallTimeout(
-                Class clazz, Method method, Factory factory, ClientTimeout clientTimeout) {
-            val providerClass = clientTimeout.callTimeoutProvider();
-            return TimeoutProvider.class == providerClass ? clientTimeout.callTimeout()
-                    : FactoryContext.apply(factory, providerClass, p -> p.timeout(clazz, method));
-        }
-
-        static long checkConnectTimeout(
-                Class clazz, Method method, Factory factory, ClientTimeout clientTimeout) {
-            val providerClass = clientTimeout.connectTimeoutProvider();
-            return TimeoutProvider.class == providerClass ? clientTimeout.connectTimeout()
-                    : FactoryContext.apply(factory, providerClass, p -> p.timeout(clazz, method));
-        }
-
-        static long checkReadTimeout(
-                Class clazz, Method method, Factory factory, ClientTimeout clientTimeout) {
-            val providerClass = clientTimeout.readTimeoutProvider();
-            return TimeoutProvider.class == providerClass ? clientTimeout.readTimeout()
-                    : FactoryContext.apply(factory, providerClass, p -> p.timeout(clazz, method));
-        }
-
-        static long checkWriteTimeout(
-                Class clazz, Method method, Factory factory, ClientTimeout clientTimeout) {
-            val providerClass = clientTimeout.writeTimeoutProvider();
-            return TimeoutProvider.class == providerClass ? clientTimeout.writeTimeout()
-                    : FactoryContext.apply(factory, providerClass, p -> p.timeout(clazz, method));
-        }
-
-        static List<Interceptor> checkClientInterceptors(Configurer configurer,
-                                                         Class clazz, Method method,
-                                                         Factory factory, OhProxy proxy) {
+        static List<Interceptor> defaultClientInterceptors(Configurer configurer, Method method, OhProxy proxy) {
             val cleanup = configurer instanceof ClientInterceptorsCleanupConfigurer cleanupConfigurer
                     ? cleanupConfigurer.cleanupInterceptors() : isAnnotated(method, ClientInterceptorCleanup.class);
-            val result = newArrayList(cleanup ? null : proxy.interceptors);
-            if (configurer instanceof ClientInterceptorsConfigurer interceptorsConfigurer) {
-                result.addAll(newArrayList(interceptorsConfigurer.interceptors()));
-            } else {
-                result.addAll(newArrayList(getMergedRepeatableAnnotations(method, ClientInterceptor.class))
-                        .stream().filter(annotation -> Interceptor.class != annotation.value()
-                                || InterceptorProvider.class != annotation.provider())
-                        .map(annotation -> {
-                            val providerClass = annotation.provider();
-                            if (InterceptorProvider.class == providerClass) {
-                                return FactoryContext.build(factory, annotation.value());
-                            }
-                            return FactoryContext.apply(factory, providerClass, p -> p.interceptor(clazz, method));
-                        }).toList());
-            }
-            return result;
-        }
-
-        static Level checkClientLoggingLevel(Configurer configurer,
-                                             Class clazz, Method method,
-                                             Factory factory, OhProxy proxy) {
-            if (configurer instanceof ClientLoggingLevelConfigurer loggingLevelConfigurer)
-                return nullThen(loggingLevelConfigurer.loggingLevel(), () -> proxy.loggingLevel);
-            val clientLoggingLevel = getMergedAnnotation(method, ClientLoggingLevel.class);
-            if (isNull(clientLoggingLevel)) return proxy.loggingLevel;
-            val providerClass = clientLoggingLevel.provider();
-            return LoggingLevelProvider.class == providerClass ? clientLoggingLevel.value()
-                    : FactoryContext.apply(factory, providerClass, p -> p.level(clazz, method));
+            return newArrayList(cleanup ? null : proxy.interceptors);
         }
 
         static OkHttpClient buildOkHttpClient(OhMappingProxy mappingProxy, OhProxy proxy) {
             val sameClientProxy = mappingProxy.clientProxy == proxy.clientProxy;
-            val sameSSLSocketFactory = mappingProxy.sslSocketFactory == proxy.sslSocketFactory;
-            val sameX509TrustManager = mappingProxy.x509TrustManager == proxy.x509TrustManager;
-            val sameHostnameVerifier = mappingProxy.hostnameVerifier == proxy.hostnameVerifier;
+            val sameSSLSocketFactory = mappingProxy.sslRoot.sslSocketFactory == proxy.sslRoot.sslSocketFactory;
+            val sameX509TrustManager = mappingProxy.sslRoot.x509TrustManager == proxy.sslRoot.x509TrustManager;
+            val sameHostnameVerifier = mappingProxy.sslRoot.hostnameVerifier == proxy.sslRoot.hostnameVerifier;
             val sameConnectionPool = mappingProxy.connectionPool == proxy.connectionPool;
-            val sameCallTimeout = mappingProxy.callTimeout == proxy.callTimeout;
-            val sameConnectTimeout = mappingProxy.connectTimeout == proxy.connectTimeout;
-            val sameReadTimeout = mappingProxy.readTimeout == proxy.readTimeout;
-            val sameWriteTimeout = mappingProxy.writeTimeout == proxy.writeTimeout;
+            val sameCallTimeout = mappingProxy.timeoutRoot.callTimeout == proxy.timeoutRoot.callTimeout;
+            val sameConnectTimeout = mappingProxy.timeoutRoot.connectTimeout == proxy.timeoutRoot.connectTimeout;
+            val sameReadTimeout = mappingProxy.timeoutRoot.readTimeout == proxy.timeoutRoot.readTimeout;
+            val sameWriteTimeout = mappingProxy.timeoutRoot.writeTimeout == proxy.timeoutRoot.writeTimeout;
             val sameInterceptors = mappingProxy.interceptors.equals(proxy.interceptors);
             val sameLoggingLevel = mappingProxy.loggingLevel == proxy.loggingLevel;
             if (sameClientProxy && sameSSLSocketFactory && sameX509TrustManager
@@ -620,180 +413,34 @@ public final class OhMappingProxy extends OhRoot {
                     && sameReadTimeout && sameWriteTimeout
                     && sameInterceptors && sameLoggingLevel) return proxy.okHttpClient;
 
-            return new OhReq().clientProxy(mappingProxy.clientProxy)
-                    .sslSocketFactory(mappingProxy.sslSocketFactory)
-                    .x509TrustManager(mappingProxy.x509TrustManager)
-                    .hostnameVerifier(mappingProxy.hostnameVerifier)
-                    .connectionPool(mappingProxy.connectionPool)
-                    .callTimeout(mappingProxy.callTimeout)
-                    .connectTimeout(mappingProxy.connectTimeout)
-                    .readTimeout(mappingProxy.readTimeout)
-                    .writeTimeout(mappingProxy.writeTimeout)
-                    .addInterceptors(mappingProxy.interceptors)
-                    .loggingLevel(mappingProxy.loggingLevel)
-                    .buildHttpClient();
-        }
-
-        static Charset checkAcceptCharset(Configurer configurer, Method method, OhProxy proxy) {
-            if (configurer instanceof AcceptCharsetConfigurer acceptCharsetConfigurer)
-                return nullThen(acceptCharsetConfigurer.acceptCharset(), () -> proxy.acceptCharset);
-            val acceptCharset = getMergedAnnotation(method, AcceptCharset.class);
-            return checkNull(acceptCharset, () -> proxy.acceptCharset,
-                    annotation -> Charset.forName(annotation.value()));
-        }
-
-        static ContentFormatter checkContentFormatter(
-                Configurer configurer, Method method, Factory factory, OhProxy proxy) {
-            if (configurer instanceof ContentFormatConfigurer contentFormatConfigurer)
-                return nullThen(contentFormatConfigurer.contentFormatter(), () -> proxy.contentFormatter);
-            val contentFormat = getMergedAnnotation(method, ContentFormat.class);
-            return checkNull(contentFormat, () -> proxy.contentFormatter,
-                    annotation -> FactoryContext.build(factory, annotation.value()));
-        }
-
-        static HttpMethod checkHttpMethod(Configurer configurer, Method method, OhProxy proxy) {
-            if (configurer instanceof RequestMethodConfigurer requestMethodConfigurer)
-                return nullThen(requestMethodConfigurer.requestMethod(), () -> proxy.httpMethod);
-            val requestMethod = getMergedAnnotation(method, RequestMethod.class);
-            return checkNull(requestMethod, () -> proxy.httpMethod, RequestMethod::value);
-        }
-
-        static List<Pair<String, String>> checkFixedHeaders(Configurer configurer,
-                                                            Class clazz, Method method,
-                                                            Factory factory, OhProxy proxy) {
-            val result = newArrayList(proxy.headers);
-            if (configurer instanceof FixedHeadersConfigurer fixedHeadersConfigurer) {
-                result.addAll(newArrayList(fixedHeadersConfigurer.fixedHeaders()));
-            } else {
-                result.addAll(newArrayList(getMergedRepeatableAnnotations(method, FixedHeader.class))
-                        .stream().filter(an -> isNotBlank(an.name())).map(an -> {
-                            val name = an.name();
-                            val providerClass = an.valueProvider();
-                            return Pair.of(name, FixedValueProvider.class == providerClass
-                                    ? an.value() : FactoryContext.apply(factory,
-                                    providerClass, p -> p.value(clazz, method, name)));
-                        }).toList());
-            }
-            return result;
-        }
-
-        static List<Pair<String, String>> checkFixedPathVars(Configurer configurer,
-                                                             Class clazz, Method method,
-                                                             Factory factory, OhProxy proxy) {
-            val result = newArrayList(proxy.pathVars);
-            if (configurer instanceof FixedPathVarsConfigurer fixedPathVarsConfigurer) {
-                result.addAll(newArrayList(fixedPathVarsConfigurer.fixedPathVars()));
-            } else {
-                result.addAll(newArrayList(getMergedRepeatableAnnotations(method, FixedPathVar.class))
-                        .stream().filter(an -> isNotBlank(an.name())).map(an -> {
-                            val name = an.name();
-                            val providerClass = an.valueProvider();
-                            return Pair.of(name, FixedValueProvider.class == providerClass
-                                    ? an.value() : FactoryContext.apply(factory,
-                                    providerClass, p -> p.value(clazz, method, name)));
-                        }).toList());
-            }
-            return result;
-        }
-
-        static List<Pair<String, Object>> checkFixedParameters(Configurer configurer,
-                                                               Class clazz, Method method,
-                                                               Factory factory, OhProxy proxy) {
-            val result = newArrayList(proxy.parameters);
-            if (configurer instanceof FixedParametersConfigurer fixedParametersConfigurer) {
-                result.addAll(newArrayList(fixedParametersConfigurer.fixedParameters()));
-            } else {
-                result.addAll(newArrayList(getMergedRepeatableAnnotations(method, FixedParameter.class))
-                        .stream().filter(an -> isNotBlank(an.name())).map(an -> {
-                            val name = an.name();
-                            val providerClass = an.valueProvider();
-                            return Pair.of(name, (Object) (FixedValueProvider.class == providerClass
-                                    ? an.value() : FactoryContext.apply(factory,
-                                    providerClass, p -> p.value(clazz, method, name))));
-                        }).toList());
-            }
-            return result;
-        }
-
-        static List<Pair<String, Object>> checkFixedContexts(Configurer configurer,
-                                                             Class clazz, Method method,
-                                                             Factory factory, OhProxy proxy) {
-            val result = newArrayList(proxy.contexts);
-            if (configurer instanceof FixedContextsConfigurer fixedContextsConfigurer) {
-                result.addAll(newArrayList(fixedContextsConfigurer.fixedContexts()));
-            } else {
-                result.addAll(newArrayList(getMergedRepeatableAnnotations(method, FixedContext.class))
-                        .stream().filter(an -> isNotBlank(an.name())).map(an -> {
-                            val name = an.name();
-                            val providerClass = an.valueProvider();
-                            return Pair.of(name, (Object) (FixedValueProvider.class == providerClass
-                                    ? an.value() : FactoryContext.apply(factory,
-                                    providerClass, p -> p.value(clazz, method, name))));
-                        }).toList());
-            }
-            return result;
-        }
-
-        static Map<HttpStatus, Class<? extends FallbackFunction>>
-        checkStatusFallbackMapping(Configurer configurer, Method method, OhProxy proxy) {
-            val result = newHashMap(proxy.statusFallbackMapping);
-            if (configurer instanceof StatusFallbacksConfigurer statusFallbacksConfigurer) {
-                result.putAll(newHashMap(statusFallbacksConfigurer.statusFallbackMapping()));
-            } else {
-                result.putAll(newArrayList(getMergedRepeatableAnnotations(
-                        method, StatusFallback.class)).stream()
-                        .collect(toMap(StatusFallback::status, StatusFallback::fallback)));
-            }
-            return result;
-        }
-
-        static Map<HttpStatus.Series, Class<? extends FallbackFunction>>
-        checkStatusSeriesFallbackMapping(Configurer configurer, Method method, OhProxy proxy) {
-            val result = newHashMap(proxy.statusSeriesFallbackMapping);
-            if (configurer instanceof StatusSeriesFallbacksConfigurer statusSeriesFallbacksConfigurer) {
-                result.putAll(newHashMap(statusSeriesFallbacksConfigurer.statusSeriesFallbackMapping()));
-            } else {
-                result.putAll(newArrayList(getMergedRepeatableAnnotations(
-                        method, StatusSeriesFallback.class)).stream()
-                        .collect(toMap(StatusSeriesFallback::statusSeries, StatusSeriesFallback::fallback)));
-            }
-            return result;
+            return OhRoot.buildOkHttpClient(mappingProxy);
         }
 
         static RequestExtender checkRequestExtender(
                 Configurer configurer, Method method, Factory factory, OhProxy proxy) {
-            if (configurer instanceof RequestExtendConfigurer requestExtendConfigurer)
-                return nullThen(requestExtendConfigurer.requestExtender(), () -> proxy.requestExtender);
-            val requestExtend = getMergedAnnotation(method, RequestExtend.class);
-            return checkNull(requestExtend, () -> proxy.requestExtender, annotation ->
-                    FactoryContext.build(factory, annotation.value()));
+            if (configurer instanceof RequestExtendDisabledConfigurer disabledConfigurer
+                    ? disabledConfigurer.disabledRequestExtend()
+                    : isAnnotated(method, RequestExtend.Disabled.class)) return null;
+            return nullThen(OhRoot.checkRequestExtender(
+                    configurer, method, factory), () -> proxy.requestExtender);
         }
 
         static ResponseParser checkResponseParser(
                 Configurer configurer, Method method, Factory factory, OhProxy proxy) {
-            if (configurer instanceof ResponseParseConfigurer responseParseConfigurer)
-                return nullThen(responseParseConfigurer.responseParser(), () -> proxy.responseParser);
-            val responseParse = getMergedAnnotation(method, ResponseParse.class);
-            return checkNull(responseParse, () -> proxy.responseParser, annotation ->
-                    FactoryContext.build(factory, annotation.value()));
+            if (configurer instanceof ResponseParseDisabledConfigurer disabledConfigurer
+                    ? disabledConfigurer.disabledResponseParse()
+                    : isAnnotated(method, ResponseParse.Disabled.class)) return null;
+            return nullThen(OhRoot.checkResponseParser(
+                    configurer, method, factory), () -> proxy.responseParser);
         }
 
         static ExtraUrlQueryBuilder checkExtraUrlQueryBuilder(
                 Configurer configurer, Method method, Factory factory, OhProxy proxy) {
-            if (configurer instanceof ExtraUrlQueryConfigurer extraUrlQueryConfigurer)
-                return nullThen(extraUrlQueryConfigurer.extraUrlQueryBuilder(), () -> proxy.extraUrlQueryBuilder);
-            val extraUrlQuery = getMergedAnnotation(method, ExtraUrlQuery.class);
-            return checkNull(extraUrlQuery, () -> proxy.extraUrlQueryBuilder, annotation ->
-                    FactoryContext.build(factory, annotation.value()));
-        }
-
-        static MappingBalancer checkMappingBalancer(
-                Configurer configurer, Method method, Factory factory, OhProxy proxy) {
-            if (configurer instanceof MappingBalanceConfigurer mappingBalanceConfigurer)
-                return nullThen(mappingBalanceConfigurer.mappingBalancer(), () -> proxy.mappingBalancer);
-            val mappingBalance = getMergedAnnotation(method, MappingBalance.class);
-            return checkNull(mappingBalance, () -> proxy.mappingBalancer, annotation ->
-                    FactoryContext.build(factory, annotation.value()));
+            if (configurer instanceof ExtraUrlQueryDisabledConfigurer disabledConfigurer
+                    ? disabledConfigurer.disabledExtraUrlQuery()
+                    : isAnnotated(method, ExtraUrlQuery.Disabled.class)) return null;
+            return nullThen(OhRoot.checkExtraUrlQueryBuilder(
+                    configurer, method, factory), () -> proxy.extraUrlQueryBuilder);
         }
     }
 }

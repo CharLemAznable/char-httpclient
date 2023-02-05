@@ -6,16 +6,13 @@ import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.common.ProviderException;
 import com.github.charlemaznable.httpclient.common.RequestBodyRaw;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
 import com.github.charlemaznable.httpclient.configurer.RequestMethodConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptor;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptor.InterceptorProvider;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptorCleanup;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientLoggingLevel;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientLoggingLevel.LoggingLevelProvider;
 import com.github.charlemaznable.httpclient.ohclient.configurer.ClientInterceptorsCleanupConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.configurer.ClientInterceptorsConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.configurer.ClientLoggingLevelConfigurer;
@@ -34,14 +31,12 @@ import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.List;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class InterceptorTest {
 
@@ -106,32 +101,12 @@ public class InterceptorTest {
             assertEquals(CONTENT, client.sample3(new ParamInterceptor(), Level.BODY, BODY));
             assertEquals(CONTENT, client.sample3(null, Level.BODY, BODY));
 
-            val providerClient = ohLoader.getClient(InterceptorProviderClient.class);
-            assertEquals(CONTENT, providerClient.sample1());
-            assertEquals(CONTENT, providerClient.sample2());
-            assertEquals(CONTENT, providerClient.sample3(new ParamInterceptor(), Level.BODY, BODY));
-            assertEquals(CONTENT, providerClient.sample3(null, Level.BODY, BODY));
-
             val clientNeo = ohLoader.getClient(InterceptorClientNeo.class);
             assertEquals(CONTENT, clientNeo.sample1());
             assertEquals(CONTENT, clientNeo.sample2());
             assertEquals(CONTENT, clientNeo.sample3(new ParamInterceptor(), Level.BODY, BODY));
             assertEquals(CONTENT, clientNeo.sample3(null, Level.BODY, BODY));
         }
-    }
-
-    @SneakyThrows
-    @Test
-    public void testError() {
-        assertThrows(ProviderException.class, () ->
-                ohLoader.getClient(ErrorClassLoggingClient.class));
-        assertThrows(ProviderException.class, () ->
-                ohLoader.getClient(ErrorClassInterceptorClient.class));
-
-        val loggingClient = ohLoader.getClient(ErrorMethodLoggingClient.class);
-        assertThrows(ProviderException.class, loggingClient::sample);
-        val interceptorClient = ohLoader.getClient(ErrorMethodInterceptorClient.class);
-        assertThrows(ProviderException.class, interceptorClient::sample);
     }
 
     @OhClient
@@ -155,66 +130,6 @@ public class InterceptorTest {
         String sample3(ParamInterceptor interceptor, Level level, @RequestBodyRaw String body);
     }
 
-    @OhClient
-    @Mapping("${root}:${port}")
-    @ClientInterceptor(provider = TestInterceptorProvider.class)
-    @ClientLoggingLevel(provider = TestLoggingLevelProvider.class)
-    public interface InterceptorProviderClient {
-
-        String sample1();
-
-        @ClientInterceptor(provider = TestInterceptorProvider.class)
-        @ClientLoggingLevel(provider = TestLoggingLevelProvider.class)
-        String sample2();
-
-        @RequestMethod(HttpMethod.POST)
-        @ClientInterceptorCleanup
-        @ClientInterceptor(provider = TestInterceptorProvider.class)
-        @ClientLoggingLevel(provider = TestLoggingLevelProvider.class)
-        String sample3(ParamInterceptor interceptor, Level level, @RequestBodyRaw String body);
-    }
-
-    @OhClient
-    @Mapping("${root}:${port}")
-    @ClientLoggingLevel(provider = ErrorClassLoggingLevelProvider.class)
-    public interface ErrorClassLoggingClient {}
-
-    @OhClient
-    @Mapping("${root}:${port}")
-    @ClientLoggingLevel(provider = TestLoggingLevelProvider.class)
-    public interface ErrorMethodLoggingClient {
-
-        @ClientLoggingLevel(provider = ErrorMethodLoggingLevelProvider.class)
-        String sample();
-    }
-
-    @OhClient
-    @Mapping("${root}:${port}")
-    @ClientInterceptor(provider = ErrorClassInterceptorProvider.class)
-    public interface ErrorClassInterceptorClient {}
-
-    @OhClient
-    @Mapping("${root}:${port}")
-    @ClientInterceptor(provider = TestInterceptorProvider.class)
-    public interface ErrorMethodInterceptorClient {
-
-        @ClientInterceptor(provider = ErrorMethodInterceptorProvider.class)
-        String sample();
-    }
-
-    public static class TestLoggingLevelProvider implements LoggingLevelProvider {
-
-        @Override
-        public Level level(Class<?> clazz) {
-            return Level.BASIC;
-        }
-
-        @Override
-        public Level level(Class<?> clazz, Method method) {
-            return Level.HEADERS;
-        }
-    }
-
     @EverythingIsNonNull
     public static class ClassInterceptor implements Interceptor {
 
@@ -224,19 +139,6 @@ public class InterceptorTest {
             val requestBuilder = chain.request().newBuilder();
             requestBuilder.addHeader(HEADER_NAME, "class");
             return chain.proceed(requestBuilder.build());
-        }
-    }
-
-    public static class TestInterceptorProvider implements InterceptorProvider {
-
-        @Override
-        public Interceptor interceptor(Class<?> clazz) {
-            return new ClassInterceptor();
-        }
-
-        @Override
-        public Interceptor interceptor(Class<?> clazz, Method method) {
-            return new MethodInterceptor();
         }
     }
 
@@ -261,26 +163,6 @@ public class InterceptorTest {
             val requestBuilder = chain.request().newBuilder();
             requestBuilder.addHeader(HEADER_NAME, "parameter");
             return chain.proceed(requestBuilder.build());
-        }
-    }
-
-    public static class ErrorClassLoggingLevelProvider implements LoggingLevelProvider {}
-
-    public static class ErrorMethodLoggingLevelProvider implements LoggingLevelProvider {
-
-        @Override
-        public Level level(Class<?> clazz) {
-            return Level.BASIC;
-        }
-    }
-
-    public static class ErrorClassInterceptorProvider implements InterceptorProvider {}
-
-    public static class ErrorMethodInterceptorProvider implements InterceptorProvider {
-
-        @Override
-        public Interceptor interceptor(Class<?> clazz) {
-            return new ClassInterceptor();
         }
     }
 

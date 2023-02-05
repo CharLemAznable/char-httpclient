@@ -8,7 +8,6 @@ import com.github.charlemaznable.httpclient.common.ContentFormat.JsonContentForm
 import com.github.charlemaznable.httpclient.common.ContentFormat.TextXmlContentFormatter;
 import com.github.charlemaznable.httpclient.common.FixedParameter;
 import com.github.charlemaznable.httpclient.common.FixedPathVar;
-import com.github.charlemaznable.httpclient.common.FixedValueProvider;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
@@ -32,7 +31,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
@@ -222,7 +220,7 @@ public class ParameterTest {
 
     @FixedPathVar(name = "T0", value = "V0")
     @FixedParameter(name = "T1", value = "V1")
-    @FixedParameter(name = "T2", valueProvider = T2Provider.class)
+    @FixedParameter(name = "T2", value = "V2")
     @Mapping("${root}:41160")
     @OhClient
     public interface GetParameterHttpClient {
@@ -230,12 +228,12 @@ public class ParameterTest {
         String sampleDefault();
 
         @Mapping("/sampleMapping?T0={T0}")
-        @FixedParameter(name = "T2", valueProvider = T2Provider.class)
+        @FixedParameter(name = "T2")
         @FixedParameter(name = "T3", value = "V3")
         String sampleMapping();
 
         @Mapping("/sampleParameters?T0={T0}")
-        @FixedParameter(name = "T2", valueProvider = T2Provider.class)
+        @FixedParameter(name = "T2")
         @FixedParameter(name = "T3", value = "V3")
         String sampleParameters(@Parameter("T3") String v3,
                                 @Parameter("T4") String v4);
@@ -248,7 +246,7 @@ public class ParameterTest {
     }
 
     @FixedParameter(name = "T1", value = "V1")
-    @FixedParameter(name = "T2", valueProvider = T2Provider.class)
+    @FixedParameter(name = "T2", value = "V2")
     @RequestMethod(HttpMethod.POST)
     @ContentFormat(FormContentFormatter.class)
     @Mapping("${root}:41161")
@@ -258,12 +256,12 @@ public class ParameterTest {
         String sampleDefault();
 
         @ContentFormat(JsonContentFormatter.class)
-        @FixedParameter(name = "T2", valueProvider = T2Provider.class)
+        @FixedParameter(name = "T2")
         @FixedParameter(name = "T3", value = "V3")
         String sampleMapping();
 
         @ContentFormat(TextXmlContentFormatter.class)
-        @FixedParameter(name = "T2", valueProvider = T2Provider.class)
+        @FixedParameter(name = "T2")
         @FixedParameter(name = "T3", value = "V3")
         String sampleParameters(@Parameter("T3") String v3,
                                 @Parameter("T4") String v4);
@@ -277,19 +275,6 @@ public class ParameterTest {
         String sampleRaw(@RequestBodyRaw String raw);
 
         String sampleRawError(@RequestBodyRaw Object raw);
-    }
-
-    public static class T2Provider implements FixedValueProvider {
-
-        @Override
-        public String value(Class<?> clazz, String name) {
-            return "V2";
-        }
-
-        @Override
-        public String value(Class<?> clazz, Method method, String name) {
-            return null;
-        }
     }
 
     @Getter
