@@ -4,9 +4,9 @@ import com.github.charlemaznable.configservice.Config;
 import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.configurer.CommonClientConfigurer;
-import com.github.charlemaznable.httpclient.configurer.CommonMethodConfigurer;
 import com.github.charlemaznable.httpclient.configurer.MappingConfigurer;
+import com.github.charlemaznable.httpclient.ohclient.configurer.OkHttpClientConfigurer;
+import com.github.charlemaznable.httpclient.ohclient.configurer.OkHttpMethodConfigurer;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.Dispatcher;
@@ -81,10 +81,10 @@ public class ConfigurerTest {
     }
 
     @Config(keyset = "ConfigurerClient", key = "default")
-    public interface ConfigurerClientConfig extends CommonClientConfigurer {}
+    public interface ConfigurerClientConfig extends OkHttpClientConfigurer {}
 
     @Config(keyset = "ConfigurerClient", key = "sample")
-    public interface ConfigurerClientSampleConfig extends CommonMethodConfigurer {}
+    public interface ConfigurerClientSampleConfig extends OkHttpMethodConfigurer {}
 
     @OhClient
     @ConfigureWith(ConfigurerClientErrorConfig.class)
