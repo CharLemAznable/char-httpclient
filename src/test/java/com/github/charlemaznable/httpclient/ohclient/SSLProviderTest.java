@@ -127,6 +127,11 @@ public class SSLProviderTest {
         } catch (Exception e) {
             assertEquals(FAILED, e.getMessage());
         }
+        try {
+            httpClient.sampleDisabled2();
+        } catch (Exception e) {
+            assertEquals(FAILED, e.getMessage());
+        }
 
         val httpClientNeo = ohLoader.getClient(DisableSSLHttpClientNeo.class);
         try {
@@ -136,6 +141,11 @@ public class SSLProviderTest {
         }
         try {
             httpClientNeo.sampleDisabled();
+        } catch (Exception e) {
+            assertEquals(FAILED, e.getMessage());
+        }
+        try {
+            httpClientNeo.sampleDisabled2();
         } catch (Exception e) {
             assertEquals(FAILED, e.getMessage());
         }
@@ -219,6 +229,10 @@ public class SSLProviderTest {
 
         @Disabled
         String sampleDisabled();
+
+        @Disabled
+        @ClientSSL
+        String sampleDisabled2();
     }
 
     @OhClient
@@ -231,6 +245,9 @@ public class SSLProviderTest {
 
         @ConfigureWith(SampleConfig.class)
         String sampleDisabled();
+
+        @ConfigureWith(SampleConfig2.class)
+        String sampleDisabled2();
     }
 
     public static class DisableSSLHttpClientConfig implements ClientSSLConfigurer {
@@ -254,6 +271,8 @@ public class SSLProviderTest {
     public static class DefaultConfig implements ClientSSLConfigurer {}
 
     public static class SampleConfig implements ClientSSLDisabledConfigurer {}
+
+    public static class SampleConfig2 implements ClientSSLConfigurer, ClientSSLDisabledConfigurer {}
 
     public static class TestSSLSocketFactory extends SSLSocketFactory {
 
