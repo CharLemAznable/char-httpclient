@@ -3,7 +3,6 @@ package com.github.charlemaznable.httpclient.ohclient.internal;
 import com.github.charlemaznable.configservice.ConfigFactory;
 import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.Factory;
-import com.github.charlemaznable.core.lang.Listt;
 import com.github.charlemaznable.httpclient.common.AcceptCharset;
 import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
@@ -73,7 +72,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.emptyThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
@@ -155,7 +153,7 @@ class OhRoot {
             return newArrayList(mappingConfigurer.urls())
                     .stream().map(OhDummy::substitute).toList();
         val mapping = getMergedAnnotation(element, Mapping.class);
-        return checkNull(mapping, Listt::newArrayList, anno -> Arrays
+        return notNullThen(mapping, anno -> Arrays
                 .stream(anno.value()).map(OhDummy::substitute).toList());
     }
 
