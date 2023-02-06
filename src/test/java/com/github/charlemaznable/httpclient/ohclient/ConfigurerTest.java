@@ -49,6 +49,17 @@ public class ConfigurerTest {
                         loggingLevel=BASICC
                         disabledClientProxy=y
                         """);
+        MockDiamondServer.setConfigInfo("ConfigurerClient", "sample2", """
+                        path=/sample
+                        acceptCharset=UTF88
+                        contentFormatter=jsonn
+                        requestMethod=GETT
+                        fixedContexts=AAA=aaa&BBB
+                        statusFallbackMapping=404=com.github.charlemaznable.httpclient.common.StatusErrorThrower
+                        statusSeriesFallbackMapping=400=com.github.charlemaznable.httpclient.common.StatusErrorThrower
+                        mappingBalancer=randomm
+                        loggingLevel=BASICC
+                        """);
 
         try (val mockWebServer = new MockWebServer()) {
             mockWebServer.setDispatcher(new Dispatcher() {
@@ -67,6 +78,11 @@ public class ConfigurerTest {
 
             val client = ohLoader.getClient(ConfigurerClient.class);
             assertEquals("SAMPLE", client.sample());
+            try {
+                client.sample2();
+            } catch (Exception e) {
+                assertEquals("Failed to connect to /127.0.0.1:41311", e.getMessage());
+            }
 
             val clientError = ohLoader.getClient(ConfigurerClientError.class);
             assertEquals("SAMPLE", clientError.sample());
@@ -81,6 +97,9 @@ public class ConfigurerTest {
 
         @ConfigureWith(ConfigurerClientSampleConfig.class)
         String sample();
+
+        @ConfigureWith(ConfigurerClientSample2Config.class)
+        void sample2();
     }
 
     @Config(keyset = "ConfigurerClient", key = "default")
@@ -93,6 +112,14 @@ public class ConfigurerTest {
 
     @Config(keyset = "ConfigurerClient", key = "sample")
     public interface ConfigurerClientSampleConfig extends OkHttpMethodConfig {
+
+        @Override
+        @Config("path")
+        String urlsString();
+    }
+
+    @Config(keyset = "ConfigurerClient", key = "sample2")
+    public interface ConfigurerClientSample2Config extends OkHttpMethodConfig {
 
         @Override
         @Config("path")
