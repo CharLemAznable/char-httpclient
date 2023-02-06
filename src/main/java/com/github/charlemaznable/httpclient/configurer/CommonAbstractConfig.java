@@ -1,11 +1,15 @@
 package com.github.charlemaznable.httpclient.configurer;
 
-import com.github.charlemaznable.configservice.ConfigGetter;
+import com.github.charlemaznable.configservice.Config;
+import com.github.charlemaznable.core.lang.Objectt;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
+import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.MappingBalance;
+import com.github.charlemaznable.httpclient.common.RequestExtend;
+import com.github.charlemaznable.httpclient.common.ResponseParse;
 import com.google.common.base.Splitter;
 import lombok.val;
 import org.apache.commons.lang3.tuple.Pair;
@@ -22,16 +26,64 @@ import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.intOf;
 import static java.util.Objects.nonNull;
 
-public interface CommonAbstractConfigurer extends ConfigGetter, MappingConfigurer,
+public interface CommonAbstractConfig extends MappingConfigurer,
         AcceptCharsetConfigurer, ContentFormatConfigurer, RequestMethodConfigurer,
         FixedHeadersConfigurer, FixedPathVarsConfigurer, FixedParametersConfigurer, FixedContextsConfigurer,
         StatusFallbacksConfigurer, StatusSeriesFallbacksConfigurer,
         RequestExtendConfigurer, ResponseParseConfigurer, ExtraUrlQueryConfigurer, MappingBalanceConfigurer {
 
+    @Config("urls")
+    String urlsString();
+
+    @Config("acceptCharset")
+    String acceptCharsetString();
+
+    @Config("contentFormatter")
+    String contentFormatterString();
+
+    @Config("requestMethod")
+    String requestMethodString();
+
+    @Config("fixedHeaders")
+    String fixedHeadersString();
+
+    @Config("fixedPathVars")
+    String fixedPathVarsString();
+
+    @Config("fixedParameters")
+    String fixedParametersString();
+
+    @Config("fixedContexts")
+    String fixedContextsString();
+
+    @Config("statusFallbackMapping")
+    String statusFallbackMappingString();
+
+    @Config("statusSeriesFallbackMapping")
+    String statusSeriesFallbackMappingString();
+
+    @Config("requestExtender")
+    String requestExtenderString();
+
+    @Config("responseParser")
+    String responseParserString();
+
+    @Config("extraUrlQueryBuilder")
+    String extraUrlQueryBuilderString();
+
+    @Config("mappingBalancer")
+    String mappingBalancerString();
+
+    @Override
+    default List<String> urls() {
+        return notNullThen(urlsString(), v -> Splitter.on(",")
+                .omitEmptyStrings().trimResults().splitToList(v));
+    }
+
     @Override
     default Charset acceptCharset() {
         try {
-            return notNullThen(getString("acceptCharset"), Charset::forName);
+            return notNullThen(acceptCharsetString(), Charset::forName);
         } catch (Exception e) {
             return null;
         }
@@ -39,7 +91,7 @@ public interface CommonAbstractConfigurer extends ConfigGetter, MappingConfigure
 
     @Override
     default ContentFormat.ContentFormatter contentFormatter() {
-        return notNullThen(getString("contentType"), v -> Optional
+        return notNullThen(contentFormatterString(), v -> Optional
                 .ofNullable(ContentFormat.ContentType.resolve(v))
                 .map(ContentFormat.ContentType::getContentFormatter).orElse(null));
     }
@@ -47,7 +99,7 @@ public interface CommonAbstractConfigurer extends ConfigGetter, MappingConfigure
     @Override
     default HttpMethod requestMethod() {
         try {
-            return notNullThen(getString("requestMethod"), HttpMethod::valueOf);
+            return notNullThen(requestMethodString(), HttpMethod::valueOf);
         } catch (Exception e) {
             return null;
         }
@@ -55,28 +107,28 @@ public interface CommonAbstractConfigurer extends ConfigGetter, MappingConfigure
 
     @Override
     default List<Pair<String, String>> fixedHeaders() {
-        return notNullThen(getString("headers"), ConfigurerElf::parseStringToPairList);
+        return notNullThen(fixedHeadersString(), ConfigurerElf::parseStringToPairList);
     }
 
     @Override
     default List<Pair<String, String>> fixedPathVars() {
-        return notNullThen(getString("pathVars"), ConfigurerElf::parseStringToPairList);
+        return notNullThen(fixedPathVarsString(), ConfigurerElf::parseStringToPairList);
     }
 
     @Override
     default List<Pair<String, Object>> fixedParameters() {
-        return notNullThen(getString("parameters"), ConfigurerElf::parseStringToPairList);
+        return notNullThen(fixedParametersString(), ConfigurerElf::parseStringToPairList);
     }
 
     @Override
     default List<Pair<String, Object>> fixedContexts() {
-        return notNullThen(getString("contexts"), ConfigurerElf::parseStringToPairList);
+        return notNullThen(fixedContextsString(), ConfigurerElf::parseStringToPairList);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     default Map<HttpStatus, Class<? extends FallbackFunction>> statusFallbackMapping() {
-        return notNullThen(getString("statusFallbacks"), v -> {
+        return notNullThen(statusFallbackMappingString(), v -> {
             val mapping = Splitter.on("&").omitEmptyStrings()
                     .trimResults().withKeyValueSeparator("=").split(v);
             return mapping.entrySet().stream()
@@ -90,7 +142,7 @@ public interface CommonAbstractConfigurer extends ConfigGetter, MappingConfigure
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     default Map<HttpStatus.Series, Class<? extends FallbackFunction>> statusSeriesFallbackMapping() {
-        return notNullThen(getString("statusSeriesFallbacks"), v -> {
+        return notNullThen(statusSeriesFallbackMappingString(), v -> {
             val mapping = Splitter.on("&").omitEmptyStrings()
                     .trimResults().withKeyValueSeparator("=").split(v);
             return mapping.entrySet().stream()
@@ -102,8 +154,23 @@ public interface CommonAbstractConfigurer extends ConfigGetter, MappingConfigure
     }
 
     @Override
+    default RequestExtend.RequestExtender requestExtender() {
+        return Objectt.parseObject(requestExtenderString(), RequestExtend.RequestExtender.class);
+    }
+
+    @Override
+    default ResponseParse.ResponseParser responseParser() {
+        return Objectt.parseObject(responseParserString(), ResponseParse.ResponseParser.class);
+    }
+
+    @Override
+    default ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder() {
+        return Objectt.parseObject(extraUrlQueryBuilderString(), ExtraUrlQuery.ExtraUrlQueryBuilder.class);
+    }
+
+    @Override
     default MappingBalance.MappingBalancer mappingBalancer() {
-        return notNullThen(getString("mappingBalancer"), v -> Optional
+        return notNullThen(mappingBalancerString(), v -> Optional
                 .ofNullable(MappingBalance.BalanceType.resolve(v))
                 .map(MappingBalance.BalanceType::getMappingBalancer).orElse(null));
     }

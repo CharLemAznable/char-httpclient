@@ -5,8 +5,8 @@ import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.configurer.MappingConfigurer;
-import com.github.charlemaznable.httpclient.ohclient.configurer.OkHttpClientConfigurer;
-import com.github.charlemaznable.httpclient.ohclient.configurer.OkHttpMethodConfigurer;
+import com.github.charlemaznable.httpclient.ohclient.configurer.OkHttpClientConfig;
+import com.github.charlemaznable.httpclient.ohclient.configurer.OkHttpMethodConfig;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.Dispatcher;
@@ -33,19 +33,21 @@ public class ConfigurerTest {
         MockDiamondServer.setUpMockServer();
         MockDiamondServer.setConfigInfo("ConfigurerClient", "default", """
                         baseUrl=${root}:41310
-                        contentType=json
+                        contentFormatter=json
                         mappingBalancer=random
+                        proxy=http://127.0.0.1:41311
                         """);
         MockDiamondServer.setConfigInfo("ConfigurerClient", "sample", """
                         path=/sample
                         acceptCharset=UTF88
-                        contentType=jsonn
+                        contentFormatter=jsonn
                         requestMethod=GETT
-                        contexts=AAA=aaa&BBB
-                        statusFallbacks=404=com.github.charlemaznable.httpclient.common.StatusErrorThrower
-                        statusSeriesFallbacks=400=com.github.charlemaznable.httpclient.common.StatusErrorThrower
+                        fixedContexts=AAA=aaa&BBB
+                        statusFallbackMapping=404=com.github.charlemaznable.httpclient.common.StatusErrorThrower
+                        statusSeriesFallbackMapping=400=com.github.charlemaznable.httpclient.common.StatusErrorThrower
                         mappingBalancer=randomm
                         loggingLevel=BASICC
+                        disabledClientProxy=y
                         """);
 
         try (val mockWebServer = new MockWebServer()) {
@@ -82,10 +84,20 @@ public class ConfigurerTest {
     }
 
     @Config(keyset = "ConfigurerClient", key = "default")
-    public interface ConfigurerClientConfig extends OkHttpClientConfigurer {}
+    public interface ConfigurerClientConfig extends OkHttpClientConfig {
+
+        @Override
+        @Config("baseUrl")
+        String urlsString();
+    }
 
     @Config(keyset = "ConfigurerClient", key = "sample")
-    public interface ConfigurerClientSampleConfig extends OkHttpMethodConfigurer {}
+    public interface ConfigurerClientSampleConfig extends OkHttpMethodConfig {
+
+        @Override
+        @Config("path")
+        String urlsString();
+    }
 
     @OhClient
     @ConfigureWith(ConfigurerClientErrorConfig.class)
