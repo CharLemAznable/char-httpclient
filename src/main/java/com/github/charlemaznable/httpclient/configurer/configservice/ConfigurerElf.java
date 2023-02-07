@@ -1,4 +1,4 @@
-package com.github.charlemaznable.httpclient.configurer;
+package com.github.charlemaznable.httpclient.configurer.configservice;
 
 import com.google.common.base.Splitter;
 import lombok.AccessLevel;
