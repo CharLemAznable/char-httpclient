@@ -1,9 +1,9 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.core.lang.Reloadable;
+import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.common.Mapping.UrlProvider;
+import com.github.charlemaznable.httpclient.configurer.MappingConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -14,8 +14,10 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -69,18 +71,18 @@ public class ReloaderTest {
         }
     }
 
-    @Mapping(urlProvider = UrlReloader.class)
     @OhClient
+    @ConfigureWith(UrlReloader.class)
     public interface ReloadableClient extends Reloadable {
 
         String sample();
     }
 
-    public static class UrlReloader implements UrlProvider {
+    public static class UrlReloader implements MappingConfigurer {
 
         @Override
-        public String url(Class<?> clazz) {
-            return baseUrl;
+        public List<String> urls() {
+            return newArrayList(baseUrl);
         }
     }
 }

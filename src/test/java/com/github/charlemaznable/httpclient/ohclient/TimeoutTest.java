@@ -1,11 +1,12 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.common.ProviderException;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout.TimeoutProvider;
+import com.github.charlemaznable.httpclient.ohclient.configurer.ClientTimeoutConfigurer;
+import com.github.charlemaznable.httpclient.ohclient.configurer.IsolatedConnectionPoolConfigurer;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.Dispatcher;
@@ -15,11 +16,9 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.Method;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TimeoutTest {
 
@@ -50,12 +49,6 @@ public class TimeoutTest {
             val client2 = ohLoader.getClient(TimeoutHttpClient2.class);
             assertEquals(SAMPLE, client2.sample());
 
-            val provider1 = ohLoader.getClient(TimeoutProviderHttpClient1.class);
-            assertEquals(SAMPLE, provider1.sample());
-
-            val provider2 = ohLoader.getClient(TimeoutProviderHttpClient2.class);
-            assertEquals(SAMPLE, provider2.sample());
-
             val timeout1 = OhFactory.timeout();
             val param1 = ohLoader.getClient(TimeoutParamHttpClient1.class);
             assertEquals(SAMPLE, param1.sample(timeout1));
@@ -64,26 +57,12 @@ public class TimeoutTest {
             val param2 = ohLoader.getClient(TimeoutParamHttpClient2.class);
             assertEquals(SAMPLE, param2.sample(timeout2));
 
-            assertEquals(TimeoutProvider.class, timeout1.callTimeoutProvider());
-            assertEquals(TimeoutProvider.class, timeout1.connectTimeoutProvider());
-            assertEquals(TimeoutProvider.class, timeout1.readTimeoutProvider());
-            assertEquals(TimeoutProvider.class, timeout1.writeTimeoutProvider());
             assertEquals(ClientTimeout.class, timeout1.annotationType());
-            assertEquals(TimeoutProvider.class, timeout2.callTimeoutProvider());
-            assertEquals(TimeoutProvider.class, timeout2.connectTimeoutProvider());
-            assertEquals(TimeoutProvider.class, timeout2.readTimeoutProvider());
-            assertEquals(TimeoutProvider.class, timeout2.writeTimeoutProvider());
             assertEquals(ClientTimeout.class, timeout2.annotationType());
+
+            val clientNeo = ohLoader.getClient(TimeoutHttpClientNeo.class);
+            assertEquals(SAMPLE, clientNeo.sample());
         }
-    }
-
-    @Test
-    public void testTimeoutError() {
-        assertThrows(ProviderException.class, () ->
-                ohLoader.getClient(TimeoutErrorHttpClient1.class));
-
-        val httpClient = ohLoader.getClient(TimeoutErrorHttpClient2.class);
-        assertThrows(ProviderException.class, httpClient::sample);
     }
 
     @OhClient
@@ -99,39 +78,11 @@ public class TimeoutTest {
     @ClientTimeout
     public interface TimeoutHttpClient2 {
 
-        @ClientTimeout
-        String sample();
-    }
-
-    @OhClient
-    @Mapping("${root}:41210")
-    @ClientTimeout(
-            callTimeoutProvider = Timeout60.class,
-            connectTimeoutProvider = Timeout60.class,
-            readTimeoutProvider = Timeout60.class,
-            writeTimeoutProvider = Timeout60.class
-    )
-    public interface TimeoutProviderHttpClient1 {
-
-        String sample();
-    }
-
-    @OhClient
-    @Mapping("${root}:41210")
-    @ClientTimeout(
-            callTimeoutProvider = Timeout60.class,
-            connectTimeoutProvider = Timeout60.class,
-            readTimeoutProvider = Timeout60.class,
-            writeTimeoutProvider = Timeout60.class
-    )
-    public interface TimeoutProviderHttpClient2 {
-
         @ClientTimeout(
-                callTimeoutProvider = Timeout60.class,
-                connectTimeoutProvider = Timeout60.class,
-                readTimeoutProvider = Timeout60.class,
-                writeTimeoutProvider = Timeout60.class
-        )
+                callTimeout = 60_000,
+                connectTimeout = 60_000,
+                readTimeout = 60_000,
+                writeTimeout = 60_000)
         String sample();
     }
 
@@ -154,40 +105,12 @@ public class TimeoutTest {
 
     @OhClient
     @Mapping("${root}:41210")
-    @ClientTimeout(connectTimeoutProvider = TimeoutError1.class)
-    public interface TimeoutErrorHttpClient1 {
+    @ConfigureWith(TimeoutHttpClientConfig.class)
+    public interface TimeoutHttpClientNeo {
 
+        @ConfigureWith(TimeoutHttpClientConfig.class)
         String sample();
     }
 
-    @OhClient
-    @Mapping("${root}:41210")
-    public interface TimeoutErrorHttpClient2 {
-
-        @ClientTimeout(connectTimeoutProvider = TimeoutError2.class)
-        String sample();
-    }
-
-    public static class Timeout60 implements TimeoutProvider {
-
-        @Override
-        public long timeout(Class<?> clazz) {
-            return 60_000;
-        }
-
-        @Override
-        public long timeout(Class<?> clazz, Method method) {
-            return 60_000;
-        }
-    }
-
-    public static class TimeoutError1 implements TimeoutProvider {}
-
-    public static class TimeoutError2 implements TimeoutProvider {
-
-        @Override
-        public long timeout(Class<?> clazz) {
-            return 60_000;
-        }
-    }
+    public static class TimeoutHttpClientConfig implements ClientTimeoutConfigurer, IsolatedConnectionPoolConfigurer {}
 }

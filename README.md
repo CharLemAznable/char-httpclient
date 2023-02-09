@@ -120,7 +120,7 @@ public interface MyHttpClient {
 // 1. http://host2/path2
 ```
 
-##### ```MappingMethodNameDisabled```
+##### ```@MappingMethodNameDisabled```
 
 在接口上添加此注解, 则:
 

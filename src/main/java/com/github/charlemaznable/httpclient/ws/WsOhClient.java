@@ -3,7 +3,6 @@ package com.github.charlemaznable.httpclient.ws;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.common.Mapping.UrlProvider;
 import com.github.charlemaznable.httpclient.common.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
 import com.github.charlemaznable.httpclient.common.ResponseParse;
@@ -34,7 +33,4 @@ public @interface WsOhClient {
 
     @AliasFor(annotation = Mapping.class)
     String[] urls() default "";
-
-    @AliasFor(annotation = Mapping.class)
-    Class<? extends UrlProvider> urlProvider() default UrlProvider.class;
 }

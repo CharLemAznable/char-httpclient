@@ -50,9 +50,8 @@
             src/main/java/com/github/charlemaznable/httpclient/ohclient/elf/SSLTrustAll.java
         </sonar.exclusions>
 
-        <char-elves.version>2022.0.4-SNAPSHOT</char-elves.version>
-
         <char-configservice.version>2022.0.4-SNAPSHOT</char-configservice.version>
+
         <logback-dendrobe.version>2022.0.4-SNAPSHOT</logback-dendrobe.version>
     </properties>
 
@@ -64,8 +63,8 @@
         </dependency>
         <dependency>
             <groupId>com.github.charlemaznable</groupId>
-            <artifactId>char-elves</artifactId>
-            <version>${char-elves.version}</version>
+            <artifactId>char-configservice</artifactId>
+            <version>${char-configservice.version}</version>
         </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
@@ -97,12 +96,6 @@
         <dependency>
             <groupId>com.github.bingoohuang</groupId>
             <artifactId>diamond-client</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.charlemaznable</groupId>
-            <artifactId>char-configservice</artifactId>
-            <version>${char-configservice.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

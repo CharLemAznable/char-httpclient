@@ -133,26 +133,6 @@ public final class OhFactory {
         private long writeTimeout = DEFAULT_WRITE_TIMEOUT; // in milliseconds
 
         @Override
-        public Class<? extends TimeoutProvider> callTimeoutProvider() {
-            return TimeoutProvider.class;
-        }
-
-        @Override
-        public Class<? extends TimeoutProvider> connectTimeoutProvider() {
-            return TimeoutProvider.class;
-        }
-
-        @Override
-        public Class<? extends TimeoutProvider> readTimeoutProvider() {
-            return TimeoutProvider.class;
-        }
-
-        @Override
-        public Class<? extends TimeoutProvider> writeTimeoutProvider() {
-            return TimeoutProvider.class;
-        }
-
-        @Override
         public Class<? extends Annotation> annotationType() {
             return ClientTimeout.class;
         }

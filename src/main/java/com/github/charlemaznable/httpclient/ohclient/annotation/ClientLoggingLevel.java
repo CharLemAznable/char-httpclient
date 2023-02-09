@@ -1,6 +1,5 @@
 package com.github.charlemaznable.httpclient.ohclient.annotation;
 
-import com.github.charlemaznable.httpclient.common.ProviderException;
 import okhttp3.logging.HttpLoggingInterceptor.Level;
 
 import java.lang.annotation.Documented;
@@ -9,7 +8,6 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Method;
 
 @Documented
 @Inherited
@@ -18,19 +16,4 @@ import java.lang.reflect.Method;
 public @interface ClientLoggingLevel {
 
     Level value() default Level.NONE;
-
-    Class<? extends LoggingLevelProvider> provider() default LoggingLevelProvider.class;
-
-    interface LoggingLevelProvider {
-
-        default Level level(Class<?> clazz) {
-            throw new ProviderException(this.getClass().getName()
-                    + "#level(Class<?>) need be overwritten");
-        }
-
-        default Level level(Class<?> clazz, Method method) {
-            throw new ProviderException(this.getClass().getName()
-                    + "#level(Class<?>, Method) need be overwritten");
-        }
-    }
 }

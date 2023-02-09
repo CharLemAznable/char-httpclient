@@ -1,19 +1,21 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.httpclient.common.Bundle;
+import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.ContentFormat.FormContentFormatter;
 import com.github.charlemaznable.httpclient.common.ContentFormat.JsonContentFormatter;
 import com.github.charlemaznable.httpclient.common.ContentFormat.TextXmlContentFormatter;
 import com.github.charlemaznable.httpclient.common.FixedParameter;
 import com.github.charlemaznable.httpclient.common.FixedPathVar;
-import com.github.charlemaznable.httpclient.common.FixedValueProvider;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.Parameter;
 import com.github.charlemaznable.httpclient.common.RequestBodyRaw;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
+import com.github.charlemaznable.httpclient.configurer.ContentFormatConfigurer;
+import com.github.charlemaznable.httpclient.configurer.FixedParametersConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import com.google.common.base.Splitter;
 import lombok.AllArgsConstructor;
@@ -25,15 +27,17 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 
 import static com.github.charlemaznable.core.codec.Json.unJson;
 import static com.github.charlemaznable.core.codec.Xml.unXml;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.of;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -111,6 +115,14 @@ public class ParameterTest {
             assertEquals("OK", httpClient.sampleBundle(new TestBundle(null, null, "V4", "V5")));
             assertEquals("OK", httpClient.sampleBundle2(null));
             assertEquals("OK", httpClient.sampleBundle3(of("T2", null, "T4", "V4", "t5", "V5")));
+
+            val httpClientNeo = ohLoader.getClient(GetParameterHttpClientNeo.class);
+            assertEquals("OK", httpClientNeo.sampleDefault());
+            assertEquals("OK", httpClientNeo.sampleMapping());
+            assertEquals("OK", httpClientNeo.sampleParameters(null, "V4"));
+            assertEquals("OK", httpClientNeo.sampleBundle(new TestBundle(null, null, "V4", "V5")));
+            assertEquals("OK", httpClientNeo.sampleBundle2(null));
+            assertEquals("OK", httpClientNeo.sampleBundle3(of("T2", null, "T4", "V4", "t5", "V5")));
         }
     }
 
@@ -193,12 +205,22 @@ public class ParameterTest {
             assertEquals("OK", httpClient.sampleBundle3(of("T2", null, "T4", "V4", "t5", "V5")));
             assertEquals("OK", httpClient.sampleRaw("T3=V3&T4=V4"));
             assertEquals("OK", httpClient.sampleRawError(new Object()));
+
+            val httpClientNeo = ohLoader.getClient(PostParameterHttpClientNeo.class);
+            assertEquals("OK", httpClientNeo.sampleDefault());
+            assertEquals("OK", httpClientNeo.sampleMapping());
+            assertEquals("OK", httpClientNeo.sampleParameters(null, "V4"));
+            assertEquals("OK", httpClientNeo.sampleBundle(new TestBundle(null, null, "V4", "V5")));
+            assertEquals("OK", httpClientNeo.sampleBundle2(null));
+            assertEquals("OK", httpClientNeo.sampleBundle3(of("T2", null, "T4", "V4", "t5", "V5")));
+            assertEquals("OK", httpClientNeo.sampleRaw("T3=V3&T4=V4"));
+            assertEquals("OK", httpClientNeo.sampleRawError(new Object()));
         }
     }
 
     @FixedPathVar(name = "T0", value = "V0")
     @FixedParameter(name = "T1", value = "V1")
-    @FixedParameter(name = "T2", valueProvider = T2Provider.class)
+    @FixedParameter(name = "T2", value = "V2")
     @Mapping("${root}:41160")
     @OhClient
     public interface GetParameterHttpClient {
@@ -206,12 +228,12 @@ public class ParameterTest {
         String sampleDefault();
 
         @Mapping("/sampleMapping?T0={T0}")
-        @FixedParameter(name = "T2", valueProvider = T2Provider.class)
+        @FixedParameter(name = "T2")
         @FixedParameter(name = "T3", value = "V3")
         String sampleMapping();
 
         @Mapping("/sampleParameters?T0={T0}")
-        @FixedParameter(name = "T2", valueProvider = T2Provider.class)
+        @FixedParameter(name = "T2")
         @FixedParameter(name = "T3", value = "V3")
         String sampleParameters(@Parameter("T3") String v3,
                                 @Parameter("T4") String v4);
@@ -224,7 +246,7 @@ public class ParameterTest {
     }
 
     @FixedParameter(name = "T1", value = "V1")
-    @FixedParameter(name = "T2", valueProvider = T2Provider.class)
+    @FixedParameter(name = "T2", value = "V2")
     @RequestMethod(HttpMethod.POST)
     @ContentFormat(FormContentFormatter.class)
     @Mapping("${root}:41161")
@@ -234,12 +256,12 @@ public class ParameterTest {
         String sampleDefault();
 
         @ContentFormat(JsonContentFormatter.class)
-        @FixedParameter(name = "T2", valueProvider = T2Provider.class)
+        @FixedParameter(name = "T2")
         @FixedParameter(name = "T3", value = "V3")
         String sampleMapping();
 
         @ContentFormat(TextXmlContentFormatter.class)
-        @FixedParameter(name = "T2", valueProvider = T2Provider.class)
+        @FixedParameter(name = "T2")
         @FixedParameter(name = "T3", value = "V3")
         String sampleParameters(@Parameter("T3") String v3,
                                 @Parameter("T4") String v4);
@@ -253,19 +275,6 @@ public class ParameterTest {
         String sampleRaw(@RequestBodyRaw String raw);
 
         String sampleRawError(@RequestBodyRaw Object raw);
-    }
-
-    public static class T2Provider implements FixedValueProvider {
-
-        @Override
-        public String value(Class<?> clazz, String name) {
-            return "V2";
-        }
-
-        @Override
-        public String value(Class<?> clazz, Method method, String name) {
-            return null;
-        }
     }
 
     @Getter
@@ -287,5 +296,94 @@ public class ParameterTest {
         @Parameter("T4")
         private String t4;
         private String t5;
+    }
+
+    @FixedPathVar(name = "T0", value = "V0")
+    @Mapping("${root}:41160")
+    @OhClient
+    @ConfigureWith(ParameterHttpClientConfig.class)
+    public interface GetParameterHttpClientNeo {
+
+        String sampleDefault();
+
+        @Mapping("/sampleMapping?T0={T0}")
+        @ConfigureWith(SampleMappingConfig.class)
+        String sampleMapping();
+
+        @Mapping("/sampleParameters?T0={T0}")
+        @ConfigureWith(SampleMappingConfig.class)
+        String sampleParameters(@Parameter("T3") String v3,
+                                @Parameter("T4") String v4);
+
+        String sampleBundle(@Bundle TestBundle bundle);
+
+        String sampleBundle2(@Bundle TestBundle bundle);
+
+        String sampleBundle3(@Bundle Map<String, Object> bundle);
+    }
+
+    @RequestMethod(HttpMethod.POST)
+    @Mapping("${root}:41161")
+    @OhClient
+    @ConfigureWith(ParameterHttpClientConfig.class)
+    public interface PostParameterHttpClientNeo {
+
+        String sampleDefault();
+
+        @ConfigureWith(SampleMappingConfig.class)
+        String sampleMapping();
+
+        @ConfigureWith(SampleParametersConfig.class)
+        String sampleParameters(@Parameter("T3") String v3,
+                                @Parameter("T4") String v4);
+
+        String sampleBundle(@Bundle TestBundle bundle);
+
+        String sampleBundle2(@Bundle TestBundle bundle);
+
+        String sampleBundle3(@Bundle Map<String, Object> bundle);
+
+        String sampleRaw(@RequestBodyRaw String raw);
+
+        String sampleRawError(@RequestBodyRaw Object raw);
+    }
+
+    public static class ParameterHttpClientConfig implements ContentFormatConfigurer, FixedParametersConfigurer {
+
+        @Override
+        public ContentFormat.ContentFormatter contentFormatter() {
+            return new FormContentFormatter();
+        }
+
+        @Override
+        public List<Pair<String, Object>> fixedParameters() {
+            return newArrayList(Pair.of("T1", "V1"), Pair.of("T2", "V2"));
+        }
+    }
+
+    public static class SampleMappingConfig implements ContentFormatConfigurer, FixedParametersConfigurer {
+
+        @Override
+        public ContentFormat.ContentFormatter contentFormatter() {
+            return new JsonContentFormatter();
+        }
+
+        @Override
+        public List<Pair<String, Object>> fixedParameters() {
+            return newArrayList(Pair.of("T2", null), Pair.of("T3", "V3"));
+        }
+    }
+
+    public static class SampleParametersConfig implements ContentFormatConfigurer, FixedParametersConfigurer {
+
+        @Override
+        public ContentFormat.ContentFormatter contentFormatter() {
+            return new TextXmlContentFormatter();
+        }
+
+        @Override
+        public List<Pair<String, Object>> fixedParameters() {
+            return newArrayList(Pair.of("T2", null), Pair.of("T3", "V3"));
+        }
     }
 }

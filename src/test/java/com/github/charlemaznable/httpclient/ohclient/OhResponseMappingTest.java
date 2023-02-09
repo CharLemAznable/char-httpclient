@@ -1,5 +1,7 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.core.lang.Mapp;
+import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.DefaultFallbackDisabled;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
@@ -7,6 +9,9 @@ import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.StatusError;
 import com.github.charlemaznable.httpclient.common.StatusFallback;
 import com.github.charlemaznable.httpclient.common.StatusSeriesFallback;
+import com.github.charlemaznable.httpclient.configurer.DefaultFallbackDisabledConfigurer;
+import com.github.charlemaznable.httpclient.configurer.StatusFallbacksConfigurer;
+import com.github.charlemaznable.httpclient.configurer.StatusSeriesFallbacksConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -18,11 +23,14 @@ import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
 
+import java.util.Map;
+
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@SuppressWarnings("rawtypes")
 public class OhResponseMappingTest {
 
     private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
@@ -112,6 +120,20 @@ public class OhResponseMappingTest {
             assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), disabledHttpClient.sampleMappingNotFound());
             assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), disabledHttpClient.sampleMappingClientError());
             assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), disabledHttpClient.sampleServerError());
+
+            val httpClientNeo = ohLoader.getClient(MappingHttpClientNeo.class);
+            assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), httpClientNeo.sampleNotFound());
+            assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), httpClientNeo.sampleClientError());
+            assertEquals("\"" + HttpStatus.NOT_FOUND.getReasonPhrase() + "\"", httpClientNeo.sampleMappingNotFound());
+            assertEquals("\"" + HttpStatus.FORBIDDEN.getReasonPhrase() + "\"", httpClientNeo.sampleMappingClientError());
+            assertThrows(StatusError.class, httpClientNeo::sampleServerError);
+
+            val disabledHttpClientNeo = ohLoader.getClient(DisabledMappingHttpClientNeo.class);
+            assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), disabledHttpClientNeo.sampleNotFound());
+            assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), disabledHttpClientNeo.sampleClientError());
+            assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), disabledHttpClientNeo.sampleMappingNotFound());
+            assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), disabledHttpClientNeo.sampleMappingClientError());
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), disabledHttpClientNeo.sampleServerError());
         }
     }
 
@@ -199,4 +221,67 @@ public class OhResponseMappingTest {
             return "\"" + response.responseBodyAsString() + "\"";
         }
     }
+
+    @Mapping("${root}:41180")
+    @OhClient
+    @ConfigureWith(MappingHttpClientConfig.class)
+    public interface MappingHttpClientNeo {
+
+        String sampleNotFound();
+
+        String sampleClientError();
+
+        @ConfigureWith(SampleMappingConfig.class)
+        String sampleMappingNotFound();
+
+        @ConfigureWith(SampleMappingConfig.class)
+        String sampleMappingClientError();
+
+        @SuppressWarnings("UnusedReturnValue")
+        String sampleServerError();
+    }
+
+    public static class MappingHttpClientConfig implements StatusFallbacksConfigurer, StatusSeriesFallbacksConfigurer {
+
+        @Override
+        public Map<HttpStatus, Class<? extends FallbackFunction>> statusFallbackMapping() {
+            return Mapp.of(HttpStatus.NOT_FOUND, NotFound.class);
+        }
+
+        @Override
+        public Map<HttpStatus.Series, Class<? extends FallbackFunction>> statusSeriesFallbackMapping() {
+            return Mapp.of(HttpStatus.Series.CLIENT_ERROR, ClientError.class);
+        }
+    }
+
+    public static class SampleMappingConfig implements StatusFallbacksConfigurer, StatusSeriesFallbacksConfigurer {
+
+        @Override
+        public Map<HttpStatus, Class<? extends FallbackFunction>> statusFallbackMapping() {
+            return Mapp.of(HttpStatus.NOT_FOUND, NotFound2.class);
+        }
+
+        @Override
+        public Map<HttpStatus.Series, Class<? extends FallbackFunction>> statusSeriesFallbackMapping() {
+            return Mapp.of(HttpStatus.Series.CLIENT_ERROR, ClientError2.class);
+        }
+    }
+
+    @Mapping("${root}:41180")
+    @OhClient
+    @ConfigureWith(DisabledMappingHttpClientConfig.class)
+    public interface DisabledMappingHttpClientNeo {
+
+        String sampleNotFound();
+
+        String sampleClientError();
+
+        String sampleMappingNotFound();
+
+        String sampleMappingClientError();
+
+        String sampleServerError();
+    }
+
+    public static class DisabledMappingHttpClientConfig implements DefaultFallbackDisabledConfigurer {}
 }

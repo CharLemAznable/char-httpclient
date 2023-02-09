@@ -1,11 +1,13 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.FixedPathVar;
-import com.github.charlemaznable.httpclient.common.FixedValueProvider;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.common.PathVar;
+import com.github.charlemaznable.httpclient.configurer.FixedPathVarsConfigurer;
+import com.github.charlemaznable.httpclient.configurer.MappingMethodNameDisabledConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -13,12 +15,14 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.Method;
+import java.util.List;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -54,11 +58,16 @@ public class PathVarTest {
             assertEquals("V2", httpClient.sampleDefault());
             assertEquals("V3", httpClient.sampleMapping());
             assertEquals("V4", httpClient.samplePathVars("V4"));
+
+            val httpClientNeo = ohLoader.getClient(PathVarHttpClientNeo.class);
+            assertEquals("V2", httpClientNeo.sampleDefault());
+            assertEquals("V3", httpClientNeo.sampleMapping());
+            assertEquals("V4", httpClientNeo.samplePathVars("V4"));
         }
     }
 
     @FixedPathVar(name = "P1", value = "V1")
-    @FixedPathVar(name = "P2", valueProvider = P2Provider.class)
+    @FixedPathVar(name = "P2", value = "V2")
     @Mapping("${root}:41150/{P1}/{P2}")
     @MappingMethodNameDisabled
     @OhClient
@@ -66,23 +75,40 @@ public class PathVarTest {
 
         String sampleDefault();
 
-        @FixedPathVar(name = "P2", valueProvider = P2Provider.class)
+        @FixedPathVar(name = "P2", value = "V3")
         String sampleMapping();
 
         @FixedPathVar(name = "P2", value = "V3")
         String samplePathVars(@PathVar("P2") String v4);
     }
 
-    public static class P2Provider implements FixedValueProvider {
+    @Mapping("${root}:41150/{P1}/{P2}")
+    @OhClient
+    @ConfigureWith(PathVarHttpClientConfig.class)
+    public interface PathVarHttpClientNeo {
+
+        String sampleDefault();
+
+        @ConfigureWith(SampleMappingConfig.class)
+        String sampleMapping();
+
+        @ConfigureWith(SampleMappingConfig.class)
+        String samplePathVars(@PathVar("P2") String v4);
+    }
+
+    public static class PathVarHttpClientConfig implements MappingMethodNameDisabledConfigurer, FixedPathVarsConfigurer {
 
         @Override
-        public String value(Class<?> clazz, String name) {
-            return "V2";
+        public List<Pair<String, String>> fixedPathVars() {
+            return newArrayList(Pair.of("P1", "V1"), Pair.of("P2", "V2"));
         }
+    }
+
+    public static class SampleMappingConfig implements FixedPathVarsConfigurer {
 
         @Override
-        public String value(Class<?> clazz, Method method, String name) {
-            return "V3";
+        public List<Pair<String, String>> fixedPathVars() {
+            return newArrayList(Pair.of("P2", "V3"));
         }
     }
 }

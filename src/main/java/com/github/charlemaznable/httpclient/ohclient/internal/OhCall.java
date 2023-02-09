@@ -12,10 +12,11 @@ import com.github.charlemaznable.httpclient.common.Header;
 import com.github.charlemaznable.httpclient.common.Parameter;
 import com.github.charlemaznable.httpclient.common.PathVar;
 import com.github.charlemaznable.httpclient.common.RequestBodyRaw;
-import com.github.charlemaznable.httpclient.ohclient.OhReq;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.SneakyThrows;
+import lombok.experimental.Accessors;
 import lombok.val;
 import okhttp3.Headers;
 import okhttp3.Interceptor;
@@ -80,14 +81,16 @@ public final class OhCall extends OhRoot {
 
     private void initial(OhMappingProxy proxy) {
         this.clientProxy = proxy.clientProxy;
-        this.sslSocketFactory = proxy.sslSocketFactory;
-        this.x509TrustManager = proxy.x509TrustManager;
-        this.hostnameVerifier = proxy.hostnameVerifier;
+        this.sslRoot = new SSLRoot();
+        this.sslRoot.sslSocketFactory = proxy.sslRoot.sslSocketFactory;
+        this.sslRoot.x509TrustManager = proxy.sslRoot.x509TrustManager;
+        this.sslRoot.hostnameVerifier = proxy.sslRoot.hostnameVerifier;
         this.connectionPool = proxy.connectionPool;
-        this.callTimeout = proxy.callTimeout;
-        this.connectTimeout = proxy.connectTimeout;
-        this.readTimeout = proxy.readTimeout;
-        this.writeTimeout = proxy.writeTimeout;
+        this.timeoutRoot = new TimeoutRoot();
+        this.timeoutRoot.callTimeout = proxy.timeoutRoot.callTimeout;
+        this.timeoutRoot.connectTimeout = proxy.timeoutRoot.connectTimeout;
+        this.timeoutRoot.readTimeout = proxy.timeoutRoot.readTimeout;
+        this.timeoutRoot.writeTimeout = proxy.timeoutRoot.writeTimeout;
         this.interceptors = newArrayList(proxy.interceptors);
         this.loggingLevel = proxy.loggingLevel;
 
@@ -122,18 +125,18 @@ public final class OhCall extends OhRoot {
         if (Proxy.class.isAssignableFrom(parameterType)) {
             this.clientProxy = (Proxy) argument;
         } else if (SSLSocketFactory.class.isAssignableFrom(parameterType)) {
-            this.sslSocketFactory = (SSLSocketFactory) argument;
+            this.sslRoot.sslSocketFactory = (SSLSocketFactory) argument;
         } else if (X509TrustManager.class.isAssignableFrom(parameterType)) {
-            this.x509TrustManager = (X509TrustManager) argument;
+            this.sslRoot.x509TrustManager = (X509TrustManager) argument;
         } else if (HostnameVerifier.class.isAssignableFrom(parameterType)) {
-            this.hostnameVerifier = (HostnameVerifier) argument;
+            this.sslRoot.hostnameVerifier = (HostnameVerifier) argument;
         } else if (ClientTimeout.class.isAssignableFrom(parameterType)) {
             if (nonNull(argument)) {
                 ClientTimeout clientTimeout = (ClientTimeout) argument;
-                this.callTimeout = clientTimeout.callTimeout();
-                this.connectTimeout = clientTimeout.connectTimeout();
-                this.readTimeout = clientTimeout.readTimeout();
-                this.writeTimeout = clientTimeout.writeTimeout();
+                this.timeoutRoot.callTimeout = clientTimeout.callTimeout();
+                this.timeoutRoot.connectTimeout = clientTimeout.connectTimeout();
+                this.timeoutRoot.readTimeout = clientTimeout.readTimeout();
+                this.timeoutRoot.writeTimeout = clientTimeout.writeTimeout();
             }
         } else if (CncRequest.class.isAssignableFrom(parameterType)) {
             this.responseClass = checkNull(argument,
@@ -231,13 +234,13 @@ public final class OhCall extends OhRoot {
 
     private OkHttpClient buildOkHttpClient(OhMappingProxy proxy) {
         val sameClientProxy = this.clientProxy == proxy.clientProxy;
-        val sameSSLSocketFactory = this.sslSocketFactory == proxy.sslSocketFactory;
-        val sameX509TrustManager = this.x509TrustManager == proxy.x509TrustManager;
-        val sameHostnameVerifier = this.hostnameVerifier == proxy.hostnameVerifier;
-        val sameCallTimeout = this.callTimeout == proxy.callTimeout;
-        val sameConnectTimeout = this.connectTimeout == proxy.connectTimeout;
-        val sameReadTimeout = this.readTimeout == proxy.readTimeout;
-        val sameWriteTimeout = this.writeTimeout == proxy.writeTimeout;
+        val sameSSLSocketFactory = this.sslRoot.sslSocketFactory == proxy.sslRoot.sslSocketFactory;
+        val sameX509TrustManager = this.sslRoot.x509TrustManager == proxy.sslRoot.x509TrustManager;
+        val sameHostnameVerifier = this.sslRoot.hostnameVerifier == proxy.sslRoot.hostnameVerifier;
+        val sameCallTimeout = this.timeoutRoot.callTimeout == proxy.timeoutRoot.callTimeout;
+        val sameConnectTimeout = this.timeoutRoot.connectTimeout == proxy.timeoutRoot.connectTimeout;
+        val sameReadTimeout = this.timeoutRoot.readTimeout == proxy.timeoutRoot.readTimeout;
+        val sameWriteTimeout = this.timeoutRoot.writeTimeout == proxy.timeoutRoot.writeTimeout;
         val sameInterceptors = this.interceptors.equals(proxy.interceptors);
         val sameLoggingLevel = this.loggingLevel == proxy.loggingLevel;
         if (sameClientProxy && sameSSLSocketFactory
@@ -246,18 +249,7 @@ public final class OhCall extends OhRoot {
                 && sameReadTimeout && sameWriteTimeout
                 && sameInterceptors && sameLoggingLevel) return proxy.okHttpClient;
 
-        return new OhReq().clientProxy(this.clientProxy)
-                .sslSocketFactory(this.sslSocketFactory)
-                .x509TrustManager(this.x509TrustManager)
-                .hostnameVerifier(this.hostnameVerifier)
-                .connectionPool(this.connectionPool)
-                .callTimeout(this.callTimeout)
-                .connectTimeout(this.connectTimeout)
-                .readTimeout(this.readTimeout)
-                .writeTimeout(this.writeTimeout)
-                .addInterceptors(this.interceptors)
-                .loggingLevel(this.loggingLevel)
-                .buildHttpClient();
+        return OhRoot.buildOkHttpClient(this);
     }
 
     @SuppressWarnings("DuplicatedCode")
@@ -312,16 +304,14 @@ public final class OhCall extends OhRoot {
     @AllArgsConstructor
     private static class ParameterImpl implements Parameter {
 
+        @Getter
+        @Accessors(fluent = true)
+        private final Class<? extends Annotation> annotationType = Parameter.class;
         private String value;
 
         @Override
         public String value() {
             return value;
-        }
-
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return Parameter.class;
         }
     }
 }

@@ -1,8 +1,12 @@
 package com.github.charlemaznable.httpclient.common;
 
 import com.github.charlemaznable.core.net.Url;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.val;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -95,6 +99,30 @@ public @interface ContentFormat {
         @Override
         public String contentType() {
             return XML_UTF_8.toString();
+        }
+    }
+
+    @AllArgsConstructor
+    enum ContentType {
+
+        FORM(FORM_DATA.toString(), new FormContentFormatter()),
+        JSON(JSON_UTF_8.toString(), new JsonContentFormatter()),
+        APPLICATION_XML(APPLICATION_XML_UTF_8.toString(), new ApplicationXmlContentFormatter()),
+        TEXT_XML(XML_UTF_8.toString(), new TextXmlContentFormatter());
+
+        private final String contentTypeName;
+        @Getter
+        private final ContentFormatter contentFormatter;
+
+        @Nullable
+        public static ContentType resolve(String contentTypeName) {
+            for (val contentType : values()) {
+                if (contentType.contentTypeName.equalsIgnoreCase(contentTypeName)
+                        || contentType.name().equalsIgnoreCase(contentTypeName)) {
+                    return contentType;
+                }
+            }
+            return null;
         }
     }
 }

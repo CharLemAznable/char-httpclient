@@ -1,5 +1,10 @@
 package com.github.charlemaznable.httpclient.common;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.val;
+
+import javax.annotation.Nullable;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -52,6 +57,26 @@ public @interface MappingBalance {
                 int next = (curr + 1) % size;
                 if (cyclicCounter.compareAndSet(curr, next)) return next;
             }
+        }
+    }
+
+    @AllArgsConstructor
+    enum BalanceType {
+
+        RANDOM(new RandomBalancer()),
+        ROUND_ROBIN(new RoundRobinBalancer());
+
+        @Getter
+        private final MappingBalancer mappingBalancer;
+
+        @Nullable
+        public static BalanceType resolve(String balanceTypeName) {
+            for (val balanceType : values()) {
+                if (balanceType.name().equalsIgnoreCase(balanceTypeName)) {
+                    return balanceType;
+                }
+            }
+            return null;
         }
     }
 }

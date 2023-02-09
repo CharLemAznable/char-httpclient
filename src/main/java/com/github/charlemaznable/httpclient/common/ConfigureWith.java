@@ -1,4 +1,6 @@
-package com.github.charlemaznable.httpclient.ohclient.annotation;
+package com.github.charlemaznable.httpclient.common;
+
+import com.github.charlemaznable.httpclient.configurer.Configurer;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -9,8 +11,9 @@ import java.lang.annotation.Target;
 
 @Documented
 @Inherited
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@ClientSSL
-public @interface ClientSSLDisabled {
+public @interface ConfigureWith {
+
+    Class<? extends Configurer> value();
 }

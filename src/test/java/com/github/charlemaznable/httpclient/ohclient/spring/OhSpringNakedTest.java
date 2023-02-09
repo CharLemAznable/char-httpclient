@@ -1,10 +1,7 @@
 package com.github.charlemaznable.httpclient.ohclient.spring;
 
-import com.github.charlemaznable.core.spring.SpringContext;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.ohclient.OhException;
-import com.github.charlemaznable.httpclient.ohclient.testclient.TestComponentSpring;
-import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClient;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientConcrete;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientIsolated;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientNone;
@@ -15,25 +12,17 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import javax.annotation.Nonnull;
 
 import static com.github.charlemaznable.httpclient.ohclient.OhFactory.getClient;
 import static java.util.Objects.requireNonNull;
-import static org.joor.Reflect.onClass;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringJUnitConfig(OhSpringNakedConfiguration.class)
 public class OhSpringNakedTest {
-
-    @Autowired
-    private TestComponentSpring testComponent;
 
     @SneakyThrows
     @Test
@@ -57,11 +46,6 @@ public class OhSpringNakedTest {
             });
             mockWebServer.start(41102);
 
-            val testHttpClient = testComponent.getTestHttpClient();
-            assertThrows(NullPointerException.class, testHttpClient::sample);
-            assertThrows(NullPointerException.class, testHttpClient::sampleWrapper);
-            assertEquals("SampleNoError", testHttpClient.sampleWrap());
-
             val testHttpClientIsolated = getClient(TestHttpClientIsolated.class);
             assertEquals("SampleError", testHttpClientIsolated.sample());
             assertEquals("[SampleError]", testHttpClientIsolated.sampleWrapper());
@@ -71,12 +55,6 @@ public class OhSpringNakedTest {
 
             assertThrows(OhException.class,
                     () -> getClient(TestHttpClientNone.class));
-
-            ApplicationContext applicationContext = onClass(SpringContext.class)
-                    .field("applicationContext").get();
-            assertThrows(NoSuchBeanDefinitionException.class, () ->
-                    applicationContext.getBean(TestHttpClient.class));
-            assertNull(SpringContext.getBeanOrCreate(TestHttpClient.class));
         }
     }
 }

@@ -3,8 +3,6 @@ package com.github.charlemaznable.httpclient.ohclient;
 import com.github.charlemaznable.httpclient.common.DefaultFallbackDisabled;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.common.Mapping.UrlProvider;
-import com.github.charlemaznable.httpclient.common.ProviderException;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -15,12 +13,10 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.Method;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UrlConcatTest {
 
@@ -54,16 +50,6 @@ public class UrlConcatTest {
             assertEquals(SAMPLE, httpClient.sampleWithSlash());
             assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), httpClient.notFound());
         }
-    }
-
-    @SneakyThrows
-    @Test
-    public void testErrorUrl() {
-        assertThrows(ProviderException.class, () ->
-                ohLoader.getClient(ErrorUrlHttpClient1.class));
-
-        val httpClient = ohLoader.getClient(ErrorUrlHttpClient2.class);
-        assertThrows(ProviderException.class, httpClient::sample);
     }
 
     @SneakyThrows
@@ -102,7 +88,7 @@ public class UrlConcatTest {
 
         String sample();
 
-        @Mapping(urlProvider = TestUrlProvider.class)
+        @Mapping("/sample")
         String sampleWithSlash();
 
         String notFound();
@@ -110,7 +96,7 @@ public class UrlConcatTest {
 
     @DefaultFallbackDisabled
     @OhClient
-    @Mapping(urlProvider = TestUrlProvider.class)
+    @Mapping("http://127.0.0.1:41101")
     public interface UrlProviderHttpClient {
 
         @Mapping
@@ -121,44 +107,9 @@ public class UrlConcatTest {
 
         String sample();
 
-        @Mapping(urlProvider = TestUrlProvider.class)
+        @Mapping("/sample")
         String sampleWithSlash();
 
         String notFound();
-    }
-
-    @OhClient
-    @Mapping(urlProvider = ClassErrorUrlProvider.class)
-    public interface ErrorUrlHttpClient1 {}
-
-    @OhClient
-    @Mapping(urlProvider = MethodErrorUrlProvider.class)
-    public interface ErrorUrlHttpClient2 {
-
-        @Mapping(urlProvider = MethodErrorUrlProvider.class)
-        String sample();
-    }
-
-    public static class TestUrlProvider implements UrlProvider {
-
-        @Override
-        public String url(Class<?> clazz) {
-            return "http://127.0.0.1:41101";
-        }
-
-        @Override
-        public String url(Class<?> clazz, Method method) {
-            return "/sample";
-        }
-    }
-
-    public static class ClassErrorUrlProvider implements UrlProvider {}
-
-    public static class MethodErrorUrlProvider implements UrlProvider {
-
-        @Override
-        public String url(Class<?> clazz) {
-            return "http://127.0.0.1:41101/";
-        }
     }
 }
