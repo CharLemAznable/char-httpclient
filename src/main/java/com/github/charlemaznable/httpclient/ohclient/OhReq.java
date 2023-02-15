@@ -37,6 +37,7 @@ import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
+import static com.github.charlemaznable.httpclient.ohclient.elf.OhExecutorServiceBuilderElf.buildExecutorService;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.CONTENT_TYPE;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CALL_TIMEOUT;
@@ -45,11 +46,10 @@ import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_READ_TIMEOUT;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_WRITE_TIMEOUT;
 import static java.util.Objects.nonNull;
-import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class OhReq extends CommonReq<OhReq> {
 
-    private static final ExecutorService futureExecutorService = newCachedThreadPool();
+    private static final ExecutorService futureExecutorService = buildExecutorService();
     private static final ConnectionPool globalConnectionPool = new ConnectionPool();
     private final List<Interceptor> interceptors = newArrayList();
     private final HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();

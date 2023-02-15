@@ -47,6 +47,7 @@
     <properties>
         <sonar.projectKey>CharLemAznable_char-httpclient</sonar.projectKey>
         <sonar.exclusions>
+            src/main/java/com/github/charlemaznable/httpclient/ohclient/elf/OhExecutorServiceBuilderElf.java,
             src/main/java/com/github/charlemaznable/httpclient/ohclient/elf/SSLTrustAll.java
         </sonar.exclusions>
 

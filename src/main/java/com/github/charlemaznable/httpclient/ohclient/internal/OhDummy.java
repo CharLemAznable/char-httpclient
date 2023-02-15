@@ -13,8 +13,8 @@ import java.util.concurrent.ExecutorService;
 import static com.github.charlemaznable.core.config.Arguments.argumentsAsProperties;
 import static com.github.charlemaznable.core.lang.ClzPath.classResourceAsProperties;
 import static com.github.charlemaznable.core.lang.Propertiess.ssMap;
+import static com.github.charlemaznable.httpclient.ohclient.elf.OhExecutorServiceBuilderElf.buildExecutorService;
 import static java.util.Objects.isNull;
-import static java.util.concurrent.Executors.newCachedThreadPool;
 
 @AllArgsConstructor
 public class OhDummy {
@@ -25,7 +25,7 @@ public class OhDummy {
     static Properties ohClassPathProperties;
 
     static {
-        ohExecutorService = newCachedThreadPool();
+        ohExecutorService = buildExecutorService();
         ohConnectionPool = new ConnectionPool();
     }
 
