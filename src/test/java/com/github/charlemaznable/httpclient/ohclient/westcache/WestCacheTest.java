@@ -18,6 +18,7 @@ import static com.github.charlemaznable.core.lang.Str.toStr;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @SpringJUnitConfig(WestCacheConfiguration.class)
@@ -56,6 +57,14 @@ public class WestCacheTest {
             Await.awaitForMillis(100);
             val cacheSample2 = westCacheClient.sample();
             assertEquals(cacheSample1, cacheSample2);
+
+            val cacheSampleFuture1 = westCacheClient.sampleFuture();
+            Await.awaitForMillis(100);
+            val cacheSampleFuture2 = westCacheClient.sampleFuture();
+            assertNotSame(cacheSampleFuture1, cacheSampleFuture2);
+            val cacheGet1 = cacheSampleFuture1.get();
+            val cacheGet2 = cacheSampleFuture2.get();
+            assertEquals(cacheGet1, cacheGet2);
         }
     }
 }

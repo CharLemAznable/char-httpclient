@@ -1,28 +1,82 @@
 package com.github.charlemaznable.httpclient.ohclient.enhancer;
 
-import com.github.bingoohuang.westcache.cglib.CglibCacheMethodInterceptor;
+import com.github.bingoohuang.westcache.cglib.CacheMethodInterceptor;
 import com.github.bingoohuang.westcache.utils.Anns;
+import com.github.bingoohuang.westcache.utils.WestCacheOption;
+import com.github.charlemaznable.core.lang.BuddyEnhancer;
 import com.github.charlemaznable.core.lang.ClzPath;
-import com.github.charlemaznable.core.lang.EasyEnhancer;
 import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhDummy;
 import com.google.auto.service.AutoService;
+import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.val;
+
+import javax.annotation.Nonnull;
+import java.lang.reflect.Method;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
+import static com.github.charlemaznable.httpclient.ohclient.elf.OhExecutorServiceBuilderElf.buildExecutorService;
 
 @AutoService(OhClientEnhancer.class)
 public final class WestCacheableOhClientEnhancer implements OhClientEnhancer {
 
+    static final ExecutorService cacheExecutorService;
+
+    static {
+        cacheExecutorService = buildExecutorService();
+    }
+
     @Override
     public boolean isEnabled(Class<?> clientClass) {
-        return ClzPath.classExists("org.springframework.cglib.proxy.Enhancer")
-                && ClzPath.classExists("com.github.bingoohuang.westcache.cglib.CglibCacheMethodInterceptor")
+        return ClzPath.classExists("com.github.bingoohuang.westcache.cglib.CacheMethodInterceptor")
                 && Anns.isFastWestCacheAnnotated(clientClass);
     }
 
     @Override
     public Object build(Class<?> clientClass, Object clientImpl) {
-        return EasyEnhancer.create(OhDummy.class,
+        return BuddyEnhancer.create(OhDummy.class,
+                new Object[]{clientClass},
                 new Class[]{clientClass, Reloadable.class},
-                new CglibCacheMethodInterceptor(clientImpl),
-                new Object[]{clientClass});
+                new WestCacheableOhClientInterceptor(clientImpl));
+    }
+
+    @AllArgsConstructor
+    static final class WestCacheableOhClientInterceptor
+            extends CacheMethodInterceptor<BuddyEnhancer.Invocation>
+            implements BuddyEnhancer.Delegate {
+
+        @Nonnull
+        private Object target;
+
+        @Override
+        public Object invoke(BuddyEnhancer.Invocation invocation) throws Exception {
+            val method = invocation.getMethod();
+            val arguments = invocation.getArguments();
+            val option = WestCacheOption.parseWestCacheable(method);
+            if (option == null) return method.invoke(target, arguments);
+
+            if (Future.class == method.getReturnType())
+                return cacheExecutorService.submit(() ->
+                        intercept(invocation.getThis(), method, arguments, invocation));
+            return intercept(invocation.getThis(), method, arguments, invocation);
+        }
+
+        @SneakyThrows
+        @Override
+        protected Object invokeRaw(Object obj, Object[] args, BuddyEnhancer.Invocation invocation) {
+            val raw = invocation.getMethod().invoke(target, invocation.getArguments());
+            return raw instanceof Future futureRaw ? futureRaw.get() : raw;
+        }
+
+        @Override
+        protected String getCacheKey(WestCacheOption option,
+                                     Object obj,
+                                     Method method,
+                                     Object[] args,
+                                     BuddyEnhancer.Invocation proxy) {
+            return option.getKeyer().getCacheKey(option, method, target, args);
+        }
     }
 }
