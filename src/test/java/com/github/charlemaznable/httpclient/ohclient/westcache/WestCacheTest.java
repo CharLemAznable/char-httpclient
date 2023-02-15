@@ -53,6 +53,11 @@ public class WestCacheTest {
             val noCacheSample2 = noWestCacheClient.sample();
             assertNotEquals(noCacheSample1, noCacheSample2);
 
+            val noneCacheSample1 = westCacheClient.sampleNone();
+            Await.awaitForMillis(100);
+            val noneCacheSample2 = westCacheClient.sampleNone();
+            assertNotEquals(noCacheSample1, noCacheSample2);
+
             val cacheSample1 = westCacheClient.sample();
             Await.awaitForMillis(100);
             val cacheSample2 = westCacheClient.sample();
