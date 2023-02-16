@@ -32,8 +32,8 @@ public class WestCacheTest {
     @SneakyThrows
     @Test
     public void testWestCache() {
-        try (val mockWebServer1 = new MockWebServer()) {
-            mockWebServer1.setDispatcher(new Dispatcher() {
+        try (val mockWebServer = new MockWebServer()) {
+            mockWebServer.setDispatcher(new Dispatcher() {
                 @Nonnull
                 @Override
                 public MockResponse dispatch(@Nonnull RecordedRequest request) {
@@ -46,7 +46,7 @@ public class WestCacheTest {
                             .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
                 }
             });
-            mockWebServer1.start(41260);
+            mockWebServer.start(41260);
 
             val noCacheSample1 = noWestCacheClient.sample();
             Await.awaitForMillis(100);
