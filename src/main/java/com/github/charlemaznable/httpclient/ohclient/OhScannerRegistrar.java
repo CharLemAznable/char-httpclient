@@ -4,6 +4,7 @@ import com.github.charlemaznable.core.spring.SpringFactoryBean;
 import com.github.charlemaznable.core.spring.SpringScannerRegistrar;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import lombok.Setter;
+import lombok.val;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.core.type.ClassMetadata;
 
@@ -27,6 +28,13 @@ public final class OhScannerRegistrar extends SpringScannerRegistrar {
     protected void postProcessBeanDefinition(BeanDefinition beanDefinition) {
         super.postProcessBeanDefinition(beanDefinition);
         beanDefinition.getPropertyValues().add("ohLoader", ohLoader);
+    }
+
+    public static OhClientFactoryBean buildFactoryBean(Class<?> xyzInterface) {
+        val factoryBean = new OhClientFactoryBean();
+        factoryBean.setXyzInterface(xyzInterface);
+        factoryBean.setOhLoader(springOhLoader());
+        return factoryBean;
     }
 
     public static class OhClientFactoryBean extends SpringFactoryBean {
