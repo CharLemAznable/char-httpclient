@@ -1,6 +1,7 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
 import com.github.charlemaznable.configservice.ConfigFactory;
+import com.github.charlemaznable.configservice.ConfigListenerRegister;
 import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.httpclient.common.AcceptCharset;
@@ -71,9 +72,11 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static com.github.charlemaznable.core.lang.Condition.emptyThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
+import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
@@ -145,6 +148,13 @@ class OhRoot {
         } catch (Exception e) {
             log.warn("Load Configurer by ConfigService with exception: ", e);
             return null;
+        }
+    }
+
+    static void checkConfigurerIsRegisterThenRun(Configurer configurer,
+                                                 Consumer<ConfigListenerRegister> consumer) {
+        if (configurer instanceof ConfigListenerRegister register) {
+            notNullThenRun(consumer, c -> c.accept(register));
         }
     }
 

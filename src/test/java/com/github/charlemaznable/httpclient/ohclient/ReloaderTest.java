@@ -1,5 +1,7 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.configservice.ConfigListener;
+import com.github.charlemaznable.configservice.ConfigListenerRegister;
 import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
@@ -17,6 +19,7 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ReloaderTest {
 
     private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
-    private static String baseUrl = "${root}:41270";
 
     @SneakyThrows
     @Test
@@ -52,6 +54,8 @@ public class ReloaderTest {
                     val requestUrl = requireNonNull(request.getRequestUrl());
                     if ("/sample".equals(requestUrl.encodedPath())) {
                         return new MockResponse().setBody("mock server 2");
+                    } else if ("/sample2".equals(requestUrl.encodedPath())) {
+                        return new MockResponse().setBody("mock server 3");
                     }
                     return new MockResponse()
                             .setResponseCode(HttpStatus.NOT_FOUND.value())
@@ -64,10 +68,17 @@ public class ReloaderTest {
             val response1 = httpClient.sample();
             assertEquals("mock server 1", response1);
 
-            baseUrl = "${root}:41280";
-            httpClient.reload();
+            UrlReloader.setBaseUrl("${root}:41280");
             val response2 = httpClient.sample();
             assertEquals("mock server 2", response2);
+
+            SampleReloader.setSamplePath("/sample2");
+            val response3 = httpClient.sample();
+            assertEquals("mock server 3", response3);
+
+            httpClient.reload();
+            val response4 = httpClient.sample();
+            assertEquals("mock server 3", response4);
         }
     }
 
@@ -75,14 +86,79 @@ public class ReloaderTest {
     @ConfigureWith(UrlReloader.class)
     public interface ReloadableClient extends Reloadable {
 
+        @ConfigureWith(SampleReloader.class)
         String sample();
     }
 
-    public static class UrlReloader implements MappingConfigurer {
+    public static class UrlReloader implements MappingConfigurer, ConfigListenerRegister {
+
+        private static String baseUrl = "${root}:41270";
+        private static ConfigListener listener;
+
+        public static void setBaseUrl(String baseUrl) {
+            UrlReloader.baseUrl = baseUrl;
+            notNullThenRun(listener, l -> l.onChange(null, null, null));
+        }
+
+        @Override
+        public void addConfigListener(ConfigListener listener) {
+            UrlReloader.listener = listener;
+        }
+
+        @Override
+        public void removeConfigListener(ConfigListener listener) {
+            UrlReloader.listener = null;
+        }
+
+        @Override
+        public void addConfigListener(String key, ConfigListener listener) {
+            UrlReloader.listener = listener;
+        }
+
+        @Override
+        public void removeConfigListener(String key, ConfigListener listener) {
+            UrlReloader.listener = null;
+        }
 
         @Override
         public List<String> urls() {
             return newArrayList(baseUrl);
+        }
+    }
+
+    public static class SampleReloader implements MappingConfigurer, ConfigListenerRegister {
+
+        private static String samplePath = "/sample";
+        private static ConfigListener listener;
+
+        public static void setSamplePath(String samplePath) {
+            SampleReloader.samplePath = samplePath;
+            notNullThenRun(listener, l -> l.onChange(null, null, null));
+        }
+
+        @Override
+        public void addConfigListener(ConfigListener listener) {
+            SampleReloader.listener = listener;
+        }
+
+        @Override
+        public void removeConfigListener(ConfigListener listener) {
+            SampleReloader.listener = null;
+        }
+
+        @Override
+        public void addConfigListener(String key, ConfigListener listener) {
+            SampleReloader.listener = listener;
+        }
+
+        @Override
+        public void removeConfigListener(String key, ConfigListener listener) {
+            SampleReloader.listener = null;
+        }
+
+        @Override
+        public List<String> urls() {
+            return newArrayList(samplePath);
         }
     }
 }

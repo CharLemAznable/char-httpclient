@@ -1,5 +1,6 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
+import com.github.charlemaznable.configservice.ConfigListener;
 import com.github.charlemaznable.core.lang.BuddyEnhancer;
 import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.core.lang.Reloadable;
@@ -43,6 +44,7 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
     Class ohClass;
     Factory factory;
+    ConfigListener configListener;
     Configurer configurer;
     List<String> baseUrls;
     boolean mappingMethodNameDisabled;
@@ -53,6 +55,7 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
     public OhProxy(Class ohClass, Factory factory) {
         this.ohClass = ohClass;
         this.factory = factory;
+        this.configListener = (keyset, key, value) -> reload();
         this.initialize();
     }
 
@@ -76,7 +79,11 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
     private void initialize() {
         Elf.checkOhClient(this.ohClass);
+        checkConfigurerIsRegisterThenRun(this.configurer, register ->
+                register.removeConfigListener(this.configListener));
         this.configurer = checkConfigurer(this.ohClass, this.factory);
+        checkConfigurerIsRegisterThenRun(this.configurer, register ->
+                register.addConfigListener(this.configListener));
 
         this.baseUrls = emptyThen(checkMappingUrls(this.configurer, this.ohClass), () -> newArrayList(""));
         this.mappingMethodNameDisabled = Elf.checkMappingMethodNameDisabled(this.configurer, this.ohClass);

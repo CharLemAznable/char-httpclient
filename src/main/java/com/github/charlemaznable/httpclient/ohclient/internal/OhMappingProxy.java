@@ -1,7 +1,9 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
+import com.github.charlemaznable.configservice.ConfigListener;
 import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.Factory;
+import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.common.CncResponse;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery.ExtraUrlQueryBuilder;
@@ -64,13 +66,15 @@ import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.core.annotation.AnnotatedElementUtils.isAnnotated;
 
 @SuppressWarnings("rawtypes")
-public final class OhMappingProxy extends OhRoot {
+public final class OhMappingProxy extends OhRoot implements Reloadable {
 
     private static final String RETURN_GENERIC_ERROR = "Method return type generic Error";
 
     Class ohClass;
     Method ohMethod;
     Factory factory;
+    OhProxy proxy;
+    ConfigListener configListener;
     Configurer configurer;
     List<String> requestUrls;
 
@@ -86,49 +90,10 @@ public final class OhMappingProxy extends OhRoot {
         this.ohClass = ohClass;
         this.ohMethod = ohMethod;
         this.factory = factory;
-        this.configurer = checkConfigurer(this.ohMethod, this.factory);
-
-        this.requestUrls = Elf.checkRequestUrls(this.configurer, this.ohMethod, proxy);
-
-        this.clientProxy = Elf.checkClientProxy(this.configurer, this.ohMethod, proxy);
-        this.sslRoot = Elf.checkClientSSL(this.configurer, this.ohMethod, this.factory, proxy);
-        this.connectionPool = nullThen(checkConnectionPool(
-                this.configurer, this.ohMethod), () -> proxy.connectionPool);
-        this.timeoutRoot = Elf.checkClientTimeout(this.configurer, this.ohMethod, proxy);
-        this.interceptors = Elf.defaultClientInterceptors(this.configurer, this.ohMethod, proxy);
-        this.interceptors.addAll(checkClientInterceptors(this.configurer, this.ohMethod, this.factory));
-        this.loggingLevel = nullThen(checkClientLoggingLevel(
-                this.configurer, this.ohMethod), () -> proxy.loggingLevel);
-
-        this.okHttpClient = Elf.buildOkHttpClient(this, proxy);
-
-        this.acceptCharset = nullThen(checkAcceptCharset(
-                this.configurer, this.ohMethod), () -> proxy.acceptCharset);
-        this.contentFormatter = nullThen(checkContentFormatter(
-                this.configurer, this.ohMethod, this.factory), () -> proxy.contentFormatter);
-        this.httpMethod = nullThen(checkHttpMethod(
-                this.configurer, this.ohMethod), () -> proxy.httpMethod);
-        this.headers = newArrayList(proxy.headers);
-        this.headers.addAll(checkFixedHeaders(this.configurer, this.ohMethod));
-        this.pathVars = newArrayList(proxy.pathVars);
-        this.pathVars.addAll(checkFixedPathVars(this.configurer, this.ohMethod));
-        this.parameters = newArrayList(proxy.parameters);
-        this.parameters.addAll(checkFixedParameters(this.configurer, this.ohMethod));
-        this.contexts = newArrayList(proxy.contexts);
-        this.contexts.addAll(checkFixedContexts(this.configurer, this.ohMethod));
-
-        this.statusFallbackMapping = newHashMap(proxy.statusFallbackMapping);
-        this.statusFallbackMapping.putAll(checkStatusFallbackMapping(this.configurer, this.ohMethod));
-        this.statusSeriesFallbackMapping = newHashMap(proxy.statusSeriesFallbackMapping);
-        this.statusSeriesFallbackMapping.putAll(checkStatusSeriesFallbackMapping(this.configurer, this.ohMethod));
-
-        this.requestExtender = Elf.checkRequestExtender(this.configurer, this.ohMethod, this.factory, proxy);
-        this.responseParser = Elf.checkResponseParser(this.configurer, this.ohMethod, this.factory, proxy);
-        this.extraUrlQueryBuilder = Elf.checkExtraUrlQueryBuilder(this.configurer, this.ohMethod, this.factory, proxy);
-        this.mappingBalancer = nullThen(checkMappingBalancer(
-                this.configurer, this.ohMethod, this.factory), () -> proxy.mappingBalancer);
-
-        processReturnType(this.ohMethod);
+        this.proxy = proxy;
+        this.configListener = (keyset, key, value) -> reload();
+        this.initialize();
+        this.processReturnType(this.ohMethod);
     }
 
     Object execute(Object[] args) {
@@ -137,6 +102,59 @@ public final class OhMappingProxy extends OhRoot {
                     () -> internalExecute(args));
         }
         return internalExecute(args);
+    }
+
+    @Override
+    public void reload() {
+        this.initialize();
+    }
+
+    private void initialize() {
+        checkConfigurerIsRegisterThenRun(this.configurer, register ->
+                register.removeConfigListener(this.configListener));
+        this.configurer = checkConfigurer(this.ohMethod, this.factory);
+        checkConfigurerIsRegisterThenRun(this.configurer, register ->
+                register.addConfigListener(this.configListener));
+
+        this.requestUrls = Elf.checkRequestUrls(this.configurer, this.ohMethod, this.proxy);
+
+        this.clientProxy = Elf.checkClientProxy(this.configurer, this.ohMethod, this.proxy);
+        this.sslRoot = Elf.checkClientSSL(this.configurer, this.ohMethod, this.factory, this.proxy);
+        this.connectionPool = nullThen(checkConnectionPool(
+                this.configurer, this.ohMethod), () -> this.proxy.connectionPool);
+        this.timeoutRoot = Elf.checkClientTimeout(this.configurer, this.ohMethod, this.proxy);
+        this.interceptors = Elf.defaultClientInterceptors(this.configurer, this.ohMethod, this.proxy);
+        this.interceptors.addAll(checkClientInterceptors(this.configurer, this.ohMethod, this.factory));
+        this.loggingLevel = nullThen(checkClientLoggingLevel(
+                this.configurer, this.ohMethod), () -> this.proxy.loggingLevel);
+
+        this.okHttpClient = Elf.buildOkHttpClient(this, this.proxy);
+
+        this.acceptCharset = nullThen(checkAcceptCharset(
+                this.configurer, this.ohMethod), () -> this.proxy.acceptCharset);
+        this.contentFormatter = nullThen(checkContentFormatter(
+                this.configurer, this.ohMethod, this.factory), () -> this.proxy.contentFormatter);
+        this.httpMethod = nullThen(checkHttpMethod(
+                this.configurer, this.ohMethod), () -> this.proxy.httpMethod);
+        this.headers = newArrayList(this.proxy.headers);
+        this.headers.addAll(checkFixedHeaders(this.configurer, this.ohMethod));
+        this.pathVars = newArrayList(this.proxy.pathVars);
+        this.pathVars.addAll(checkFixedPathVars(this.configurer, this.ohMethod));
+        this.parameters = newArrayList(this.proxy.parameters);
+        this.parameters.addAll(checkFixedParameters(this.configurer, this.ohMethod));
+        this.contexts = newArrayList(this.proxy.contexts);
+        this.contexts.addAll(checkFixedContexts(this.configurer, this.ohMethod));
+
+        this.statusFallbackMapping = newHashMap(this.proxy.statusFallbackMapping);
+        this.statusFallbackMapping.putAll(checkStatusFallbackMapping(this.configurer, this.ohMethod));
+        this.statusSeriesFallbackMapping = newHashMap(this.proxy.statusSeriesFallbackMapping);
+        this.statusSeriesFallbackMapping.putAll(checkStatusSeriesFallbackMapping(this.configurer, this.ohMethod));
+
+        this.requestExtender = Elf.checkRequestExtender(this.configurer, this.ohMethod, this.factory, this.proxy);
+        this.responseParser = Elf.checkResponseParser(this.configurer, this.ohMethod, this.factory, this.proxy);
+        this.extraUrlQueryBuilder = Elf.checkExtraUrlQueryBuilder(this.configurer, this.ohMethod, this.factory, this.proxy);
+        this.mappingBalancer = nullThen(checkMappingBalancer(
+                this.configurer, this.ohMethod, this.factory), () -> this.proxy.mappingBalancer);
     }
 
     private void processReturnType(Method method) {
