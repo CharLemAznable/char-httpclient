@@ -96,6 +96,7 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
         this.interceptors = checkClientInterceptors(this.configurer, this.ohClass, this.factory);
         this.loggingLevel = nullThen(checkClientLoggingLevel(
                 this.configurer, this.ohClass), () -> DEFAULT_LOGGING_LEVEL);
+        this.dispatcherRoot = Elf.checkClientDispatcher(this.configurer, this.ohClass);
 
         this.okHttpClient = buildOkHttpClient(this);
 
@@ -145,6 +146,10 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
         static TimeoutRoot checkClientTimeout(Configurer configurer, Class clazz) {
             return OhRoot.checkClientTimeout(configurer, clazz, new TimeoutRoot());
+        }
+
+        static DispatcherRoot checkClientDispatcher(Configurer configurer, Class clazz) {
+            return OhRoot.checkClientDispatcher(configurer, clazz, new DispatcherRoot());
         }
 
         static Map<HttpStatus.Series, Class<? extends FallbackFunction>> defaultFallback(Configurer configurer, Class clazz) {

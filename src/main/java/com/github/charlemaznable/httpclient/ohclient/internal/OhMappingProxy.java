@@ -127,6 +127,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         this.interceptors.addAll(checkClientInterceptors(this.configurer, this.ohMethod, this.factory));
         this.loggingLevel = nullThen(checkClientLoggingLevel(
                 this.configurer, this.ohMethod), () -> this.proxy.loggingLevel);
+        this.dispatcherRoot = Elf.checkClientDispatcher(this.configurer, this.ohMethod, this.proxy);
 
         this.okHttpClient = Elf.buildOkHttpClient(this, this.proxy);
 
@@ -415,6 +416,10 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
             return newArrayList(cleanup ? null : proxy.interceptors);
         }
 
+        static DispatcherRoot checkClientDispatcher(Configurer configurer, Method method, OhProxy proxy) {
+            return OhRoot.checkClientDispatcher(configurer, method, proxy.dispatcherRoot);
+        }
+
         static OkHttpClient buildOkHttpClient(OhMappingProxy mappingProxy, OhProxy proxy) {
             val sameClientProxy = mappingProxy.clientProxy == proxy.clientProxy;
             val sameSSLSocketFactory = mappingProxy.sslRoot.sslSocketFactory == proxy.sslRoot.sslSocketFactory;
@@ -427,11 +432,14 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
             val sameWriteTimeout = mappingProxy.timeoutRoot.writeTimeout == proxy.timeoutRoot.writeTimeout;
             val sameInterceptors = mappingProxy.interceptors.equals(proxy.interceptors);
             val sameLoggingLevel = mappingProxy.loggingLevel == proxy.loggingLevel;
+            val sameMaxRequests = mappingProxy.dispatcherRoot.maxRequests == proxy.dispatcherRoot.maxRequests;
+            val sameMaxRequestsPerHost = mappingProxy.dispatcherRoot.maxRequestsPerHost == proxy.dispatcherRoot.maxRequestsPerHost;
             if (sameClientProxy && sameSSLSocketFactory && sameX509TrustManager
                     && sameHostnameVerifier && sameConnectionPool
                     && sameCallTimeout && sameConnectTimeout
                     && sameReadTimeout && sameWriteTimeout
-                    && sameInterceptors && sameLoggingLevel) return proxy.okHttpClient;
+                    && sameInterceptors && sameLoggingLevel
+                    && sameMaxRequests && sameMaxRequestsPerHost) return proxy.okHttpClient;
 
             return OhRoot.buildOkHttpClient(mappingProxy);
         }

@@ -10,9 +10,11 @@ import com.github.charlemaznable.httpclient.common.RequestBodyRaw;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
 import com.github.charlemaznable.httpclient.configurer.RequestMethodConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
+import com.github.charlemaznable.httpclient.ohclient.annotation.ClientDispatcher;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptor;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptorCleanup;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientLoggingLevel;
+import com.github.charlemaznable.httpclient.ohclient.configurer.ClientDispatcherConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.configurer.ClientInterceptorsCleanupConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.configurer.ClientInterceptorsConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.configurer.ClientLoggingLevelConfigurer;
@@ -114,6 +116,7 @@ public class InterceptorTest {
     @ClientInterceptor
     @ClientInterceptor(ClassInterceptor.class)
     @ClientLoggingLevel(Level.BASIC)
+    @ClientDispatcher
     public interface InterceptorClient {
 
         String sample1();
@@ -121,12 +124,14 @@ public class InterceptorTest {
         @ClientInterceptor
         @ClientInterceptor(MethodInterceptor.class)
         @ClientLoggingLevel(Level.HEADERS)
+        @ClientDispatcher(maxRequests = 128)
         String sample2();
 
         @RequestMethod(HttpMethod.POST)
         @ClientInterceptorCleanup
         @ClientInterceptor(MethodInterceptor.class)
         @ClientLoggingLevel(Level.HEADERS)
+        @ClientDispatcher(maxRequestsPerHost = 10)
         String sample3(ParamInterceptor interceptor, Level level, @RequestBodyRaw String body);
     }
 
@@ -180,7 +185,7 @@ public class InterceptorTest {
         String sample3(ParamInterceptor interceptor, Level level, @RequestBodyRaw String body);
     }
 
-    public static class InterceptorClientConfig implements ClientInterceptorsConfigurer, ClientLoggingLevelConfigurer {
+    public static class InterceptorClientConfig implements ClientInterceptorsConfigurer, ClientLoggingLevelConfigurer, ClientDispatcherConfigurer {
 
         @Override
         public List<Interceptor> interceptors() {
@@ -193,7 +198,7 @@ public class InterceptorTest {
         }
     }
 
-    public static class Sample2Config implements ClientInterceptorsConfigurer, ClientLoggingLevelConfigurer {
+    public static class Sample2Config implements ClientInterceptorsConfigurer, ClientLoggingLevelConfigurer, ClientDispatcherConfigurer {
 
         @Override
         public List<Interceptor> interceptors() {
@@ -204,13 +209,28 @@ public class InterceptorTest {
         public Level loggingLevel() {
             return Level.HEADERS;
         }
+
+        @Override
+        public int maxRequests() {
+            return 128;
+        }
     }
 
-    public static class Sample3Config extends Sample2Config implements RequestMethodConfigurer, ClientInterceptorsCleanupConfigurer {
+    public static class Sample3Config extends Sample2Config implements RequestMethodConfigurer, ClientInterceptorsCleanupConfigurer, ClientDispatcherConfigurer {
 
         @Override
         public HttpMethod requestMethod() {
             return HttpMethod.POST;
+        }
+
+        @Override
+        public int maxRequests() {
+            return 64;
+        }
+
+        @Override
+        public int maxRequestsPerHost() {
+            return 10;
         }
     }
 }

@@ -31,5 +31,8 @@ public final class OhConstant {
     public static final long DEFAULT_WRITE_TIMEOUT = 10_000;
     public static final Level DEFAULT_LOGGING_LEVEL = Level.NONE;
 
+    public static final int DEFAULT_MAX_REQUESTS = 64;
+    public static final int DEFAULT_MAX_REQUESTS_PER_HOST = 5;
+
     public static final Predicate<Pair<String, ?>> NOT_BLANK_KEY = p -> isNotBlank(p.getKey());
 }

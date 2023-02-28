@@ -43,6 +43,8 @@ import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CALL_TIMEOUT;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONNECT_TIMEOUT;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONTENT_FORMATTER;
+import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_MAX_REQUESTS;
+import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_MAX_REQUESTS_PER_HOST;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_READ_TIMEOUT;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_WRITE_TIMEOUT;
 import static java.util.Objects.nonNull;
@@ -62,6 +64,8 @@ public class OhReq extends CommonReq<OhReq> {
     private long connectTimeout = DEFAULT_CONNECT_TIMEOUT; // in milliseconds
     private long readTimeout = DEFAULT_READ_TIMEOUT; // in milliseconds
     private long writeTimeout = DEFAULT_WRITE_TIMEOUT; // in milliseconds
+    private int maxRequests = DEFAULT_MAX_REQUESTS;
+    private int maxRequestsPerHost = DEFAULT_MAX_REQUESTS_PER_HOST;
 
     public OhReq() {
         super();
@@ -133,6 +137,16 @@ public class OhReq extends CommonReq<OhReq> {
         return this;
     }
 
+    public OhReq maxRequests(int maxRequests) {
+        this.maxRequests = maxRequests;
+        return this;
+    }
+
+    public OhReq maxRequestsPerHost(int maxRequestsPerHost) {
+        this.maxRequestsPerHost = maxRequestsPerHost;
+        return this;
+    }
+
     public String get() {
         return this.execute(buildGetRequest());
     }
@@ -164,7 +178,10 @@ public class OhReq extends CommonReq<OhReq> {
         httpClientBuilder.writeTimeout(this.writeTimeout, TimeUnit.MILLISECONDS);
         this.interceptors.forEach(httpClientBuilder::addInterceptor);
         httpClientBuilder.addInterceptor(this.loggingInterceptor);
-        return httpClientBuilder.build();
+        val httpClient = httpClientBuilder.build();
+        httpClient.dispatcher().setMaxRequests(this.maxRequests);
+        httpClient.dispatcher().setMaxRequestsPerHost(this.maxRequestsPerHost);
+        return httpClient;
     }
 
     private Request buildGetRequest() {

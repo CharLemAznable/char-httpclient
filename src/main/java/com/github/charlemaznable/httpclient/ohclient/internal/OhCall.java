@@ -93,6 +93,9 @@ public final class OhCall extends OhRoot {
         this.timeoutRoot.writeTimeout = proxy.timeoutRoot.writeTimeout;
         this.interceptors = newArrayList(proxy.interceptors);
         this.loggingLevel = proxy.loggingLevel;
+        this.dispatcherRoot = new DispatcherRoot();
+        this.dispatcherRoot.maxRequests = proxy.dispatcherRoot.maxRequests;
+        this.dispatcherRoot.maxRequestsPerHost = proxy.dispatcherRoot.maxRequestsPerHost;
 
         this.acceptCharset = proxy.acceptCharset;
         this.contentFormatter = proxy.contentFormatter;

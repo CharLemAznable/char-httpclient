@@ -4,5 +4,5 @@ import com.github.charlemaznable.httpclient.configurer.configservice.CommonAbstr
 
 public interface OkHttpAbstractConfig extends CommonAbstractConfig,
         ClientProxyConfig, ClientSSLConfig, IsolatedConnectionPoolConfig,
-        ClientTimeoutConfig, ClientInterceptorsConfig, ClientLoggingLevelConfig {
+        ClientTimeoutConfig, ClientInterceptorsConfig, ClientLoggingLevelConfig, ClientDispatcherConfig {
 }
