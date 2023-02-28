@@ -2,13 +2,15 @@ package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.httpclient.common.CommonReq;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
-import com.github.charlemaznable.httpclient.common.FallbackFunction.Response;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.ohclient.elf.SSLTrustAll;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhResponseBody;
+import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.val;
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.ConnectionPool;
 import okhttp3.Headers;
 import okhttp3.Interceptor;
@@ -16,15 +18,20 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.logging.HttpLoggingInterceptor;
 import okhttp3.logging.HttpLoggingInterceptor.Level;
+import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
+import java.io.IOException;
 import java.net.Proxy;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +58,6 @@ import static java.util.Objects.nonNull;
 
 public class OhReq extends CommonReq<OhReq> {
 
-    private static final ExecutorService futureExecutorService = buildExecutorService();
     private static final ConnectionPool globalConnectionPool = new ConnectionPool();
     private final List<Interceptor> interceptors = newArrayList();
     private final HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
@@ -156,13 +162,11 @@ public class OhReq extends CommonReq<OhReq> {
     }
 
     public Future<String> getFuture() {
-        return futureExecutorService.submit(
-                () -> execute(buildGetRequest()));
+        return this.enqueue(buildGetRequest());
     }
 
     public Future<String> postFuture() {
-        return futureExecutorService.submit(
-                () -> execute(buildPostRequest()));
+        return this.enqueue(buildPostRequest());
     }
 
     public OkHttpClient buildHttpClient() {
@@ -231,8 +235,16 @@ public class OhReq extends CommonReq<OhReq> {
 
     @SneakyThrows
     private String execute(Request request) {
-        val response = buildHttpClient().newCall(request).execute();
+        return processResponse(buildHttpClient().newCall(request).execute());
+    }
 
+    private Future<String> enqueue(Request request) {
+        val future = new CallbackFuture(this);
+        buildHttpClient().newCall(request).enqueue(future);
+        return future;
+    }
+
+    private String processResponse(Response response) {
         val statusCode = response.code();
         val responseBody = notNullThen(response.body(), OhResponseBody::new);
         if (nonNull(response.body())) response.close();
@@ -258,7 +270,7 @@ public class OhReq extends CommonReq<OhReq> {
     private String applyFallback(Class<? extends FallbackFunction> function,
                                  int statusCode, ResponseBody responseBody) {
         return toStr(reflectFactory().build(function).apply(
-                new Response<>(statusCode, responseBody) {
+                new FallbackFunction.Response<>(statusCode, responseBody) {
                     @Override
                     public String responseBodyAsString() {
                         return toStr(notNullThen(getResponseBody(),
@@ -270,5 +282,26 @@ public class OhReq extends CommonReq<OhReq> {
     @SneakyThrows
     private static String extractResponseString(ResponseBody responseBody) {
         return responseBody.string();
+    }
+
+    @AllArgsConstructor
+    private static class CallbackFuture extends CompletableFuture<String> implements Callback {
+
+        @Nonnull
+        private OhReq ohReq;
+
+        @Override
+        public void onFailure(@NotNull Call call, @NotNull IOException e) {
+            super.completeExceptionally(e);
+        }
+
+        @Override
+        public void onResponse(@NotNull Call call, @NotNull Response response) {
+            try {
+                super.complete(ohReq.processResponse(response));
+            } catch (Exception e) {
+                super.completeExceptionally(e);
+            }
+        }
     }
 }

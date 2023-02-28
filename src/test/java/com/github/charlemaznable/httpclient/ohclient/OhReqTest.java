@@ -19,13 +19,17 @@ import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.time.Duration;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.of;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OhReqTest extends CommonReqTest {
 
@@ -84,9 +88,27 @@ public class OhReqTest extends CommonReqTest {
             assertEquals(HttpStatus.NOT_FOUND.value(), e.getStatusCode());
             assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), e.getMessage());
         }
+        Future<String> future5 = ohReq5.getFuture();
+        await().forever().pollDelay(Duration.ofMillis(100)).until(future5::isDone);
+        try {
+            future5.get();
+        } catch (ExecutionException ex) {
+            val e = (StatusError) ex.getCause();
+            assertEquals(HttpStatus.NOT_FOUND.value(), e.getStatusCode());
+            assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), e.getMessage());
+        }
         try {
             ohReq5.parameter("AAA", "aaa").get();
         } catch (StatusError e) {
+            assertEquals(HttpStatus.FORBIDDEN.value(), e.getStatusCode());
+            assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), e.getMessage());
+        }
+        future5 = ohReq5.parameter("AAA", "aaa").getFuture();
+        await().forever().pollDelay(Duration.ofMillis(100)).until(future5::isDone);
+        try {
+            future5.get();
+        } catch (ExecutionException ex) {
+            val e = (StatusError) ex.getCause();
             assertEquals(HttpStatus.FORBIDDEN.value(), e.getStatusCode());
             assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), e.getMessage());
         }
@@ -107,6 +129,19 @@ public class OhReqTest extends CommonReqTest {
                 .loggingLevel(Level.BASIC);
         assertEquals("Sample7", ohReq7.get());
         assertEquals("Sample7", ohReq7.post());
+
+        try {
+            new OhReq("http://127.0.0.1:51103/sample").get();
+        } catch (Exception e) {
+            assertTrue(e.getCause() instanceof ConnectException);
+        }
+        try {
+            val errorFuture = new OhReq("http://127.0.0.1:51103/sample").getFuture();
+            await().forever().pollDelay(Duration.ofMillis(100)).until(errorFuture::isDone);
+            errorFuture.get();
+        } catch (ExecutionException ex) {
+            assertTrue(ex.getCause() instanceof ConnectException);
+        }
 
         shutdownMockWebServer();
     }
