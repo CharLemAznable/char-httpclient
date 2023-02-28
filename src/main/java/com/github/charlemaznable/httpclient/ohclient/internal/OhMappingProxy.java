@@ -8,7 +8,6 @@ import com.github.charlemaznable.httpclient.common.CncResponse;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery.ExtraUrlQueryBuilder;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
-import com.github.charlemaznable.httpclient.common.FallbackFunction.Response;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.RequestExtend;
 import com.github.charlemaznable.httpclient.common.RequestExtend.RequestExtender;
@@ -30,6 +29,7 @@ import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.BufferedSource;
 import org.apache.commons.lang3.tuple.Pair;
@@ -59,7 +59,6 @@ import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.isBlank;
 import static com.github.charlemaznable.core.lang.Str.toStr;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.ohExecutorService;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Objects.nonNull;
 import static lombok.AccessLevel.PRIVATE;
@@ -96,12 +95,19 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         this.processReturnType(this.ohMethod);
     }
 
+    @SneakyThrows
     Object execute(Object[] args) {
+        val ohCall = new OhCall(this, args);
+        val call = ohCall.newCall();
+        val responseClass = ohCall.responseClass;
+
         if (this.returnFuture) {
-            return ohExecutorService.submit(
-                    () -> internalExecute(args));
+            val future = new OhCallbackFuture<>(response ->
+                    processResponse(response, responseClass));
+            call.enqueue(future);
+            return future;
         }
-        return internalExecute(args);
+        return processResponse(call.execute(), responseClass);
     }
 
     @Override
@@ -241,11 +247,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         }
     }
 
-    @SneakyThrows
-    private Object internalExecute(Object[] args) {
-        val ohCall = new OhCall(this, args);
-        val response = ohCall.execute();
-
+    private Object processResponse(Response response, Class responseClass) {
         val statusCode = response.code();
         val responseBody = notNullThen(response.body(), OhResponseBody::new);
         if (nonNull(response.body())) response.close();
@@ -263,7 +265,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         }
 
         val responseObjs = processResponseBody(
-                statusCode, responseBody, ohCall.responseClass);
+                statusCode, responseBody, responseClass);
         if (this.returnCollection) {
             val responseObj = responseObjs.get(0);
             if (responseObj instanceof Collection) {
@@ -296,7 +298,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
     private Object applyFallback(Class<? extends FallbackFunction> function,
                                  int statusCode, ResponseBody responseBody) {
         return FactoryContext.apply(factory, function,
-                f -> f.apply(new Response<>(statusCode, responseBody) {
+                f -> f.apply(new FallbackFunction.Response<>(statusCode, responseBody) {
                     @Override
                     public String responseBodyAsString() {
                         return toStr(notNullThen(getResponseBody(),

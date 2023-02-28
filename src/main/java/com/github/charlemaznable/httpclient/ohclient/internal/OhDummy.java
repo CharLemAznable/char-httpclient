@@ -8,24 +8,20 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
 
 import static com.github.charlemaznable.core.config.Arguments.argumentsAsProperties;
 import static com.github.charlemaznable.core.lang.ClzPath.classResourceAsProperties;
 import static com.github.charlemaznable.core.lang.Propertiess.ssMap;
-import static com.github.charlemaznable.httpclient.ohclient.elf.OhExecutorServiceBuilderElf.buildExecutorService;
 import static java.util.Objects.isNull;
 
 @AllArgsConstructor
 public class OhDummy {
 
     static final Logger log = LoggerFactory.getLogger("OhClient");
-    static final ExecutorService ohExecutorService;
     static final ConnectionPool ohConnectionPool;
     static Properties ohClassPathProperties;
 
     static {
-        ohExecutorService = buildExecutorService();
         ohConnectionPool = new ConnectionPool();
     }
 

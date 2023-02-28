@@ -5,12 +5,10 @@ import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.ohclient.elf.SSLTrustAll;
+import com.github.charlemaznable.httpclient.ohclient.internal.OhCallbackFuture;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhResponseBody;
-import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.val;
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.ConnectionPool;
 import okhttp3.Headers;
 import okhttp3.Interceptor;
@@ -22,17 +20,12 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.logging.HttpLoggingInterceptor;
 import okhttp3.logging.HttpLoggingInterceptor.Level;
-import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
-import java.io.IOException;
 import java.net.Proxy;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -44,7 +37,6 @@ import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
-import static com.github.charlemaznable.httpclient.ohclient.elf.OhExecutorServiceBuilderElf.buildExecutorService;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.CONTENT_TYPE;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CALL_TIMEOUT;
@@ -239,7 +231,7 @@ public class OhReq extends CommonReq<OhReq> {
     }
 
     private Future<String> enqueue(Request request) {
-        val future = new CallbackFuture(this);
+        val future = new OhCallbackFuture<>(this::processResponse);
         buildHttpClient().newCall(request).enqueue(future);
         return future;
     }
@@ -282,26 +274,5 @@ public class OhReq extends CommonReq<OhReq> {
     @SneakyThrows
     private static String extractResponseString(ResponseBody responseBody) {
         return responseBody.string();
-    }
-
-    @AllArgsConstructor
-    private static class CallbackFuture extends CompletableFuture<String> implements Callback {
-
-        @Nonnull
-        private OhReq ohReq;
-
-        @Override
-        public void onFailure(@NotNull Call call, @NotNull IOException e) {
-            super.completeExceptionally(e);
-        }
-
-        @Override
-        public void onResponse(@NotNull Call call, @NotNull Response response) {
-            try {
-                super.complete(ohReq.processResponse(response));
-            } catch (Exception e) {
-                super.completeExceptionally(e);
-            }
-        }
     }
 }

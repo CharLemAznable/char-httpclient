@@ -15,16 +15,15 @@ import com.github.charlemaznable.httpclient.common.RequestBodyRaw;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
 import lombok.val;
+import okhttp3.Call;
 import okhttp3.Headers;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
-import okhttp3.Response;
 import okhttp3.internal.http.HttpMethod;
 import okhttp3.logging.HttpLoggingInterceptor.Level;
 import org.apache.commons.lang3.tuple.Pair;
@@ -74,9 +73,8 @@ public final class OhCall extends OhRoot {
         this.request = buildRequest(proxy);
     }
 
-    @SneakyThrows
-    Response execute() {
-        return this.okHttpClient.newCall(this.request).execute();
+    Call newCall() {
+        return this.okHttpClient.newCall(this.request);
     }
 
     private void initial(OhMappingProxy proxy) {
