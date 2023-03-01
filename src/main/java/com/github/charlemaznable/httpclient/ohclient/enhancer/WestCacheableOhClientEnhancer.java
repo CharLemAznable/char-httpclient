@@ -17,16 +17,12 @@ import java.lang.reflect.Method;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import static com.github.charlemaznable.httpclient.ohclient.elf.OhExecutorServiceBuilderElf.buildExecutorService;
+import static java.util.concurrent.Executors.newCachedThreadPool;
 
 @AutoService(OhClientEnhancer.class)
 public final class WestCacheableOhClientEnhancer implements OhClientEnhancer {
 
-    static final ExecutorService cacheExecutorService;
-
-    static {
-        cacheExecutorService = buildExecutorService();
-    }
+    static final ExecutorService cacheExecutorService = newCachedThreadPool();
 
     @Override
     public boolean isEnabled(Class<?> clientClass) {
