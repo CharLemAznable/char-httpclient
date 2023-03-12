@@ -1,5 +1,6 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
+import com.github.charlemaznable.configservice.ConfigListener;
 import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.common.DefaultFallbackDisabled;
@@ -44,6 +45,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
 
     Class ohClass;
     Factory factory;
+    ConfigListener configListener;
     Configurer configurer;
     List<String> baseUrls;
     boolean mappingMethodNameDisabled;
@@ -54,6 +56,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
     public OhProxy(Class ohClass, Factory factory) {
         this.ohClass = ohClass;
         this.factory = factory;
+        this.configListener = (keyset, key, value) -> reload();
         this.initialize();
     }
 
@@ -76,7 +79,11 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
 
     private void initialize() {
         Elf.checkOhClient(this.ohClass);
+        checkConfigurerIsRegisterThenRun(this.configurer, register ->
+                register.removeConfigListener(this.configListener));
         this.configurer = checkConfigurer(this.ohClass, this.factory);
+        checkConfigurerIsRegisterThenRun(this.configurer, register ->
+                register.addConfigListener(this.configListener));
 
         this.baseUrls = emptyThen(checkMappingUrls(this.configurer, this.ohClass), () -> newArrayList(""));
         this.mappingMethodNameDisabled = Elf.checkMappingMethodNameDisabled(this.configurer, this.ohClass);
@@ -89,6 +96,7 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
         this.interceptors = checkClientInterceptors(this.configurer, this.ohClass, this.factory);
         this.loggingLevel = nullThen(checkClientLoggingLevel(
                 this.configurer, this.ohClass), () -> DEFAULT_LOGGING_LEVEL);
+        this.dispatcherRoot = Elf.checkClientDispatcher(this.configurer, this.ohClass);
 
         this.okHttpClient = buildOkHttpClient(this);
 
@@ -138,6 +146,10 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
 
         static TimeoutRoot checkClientTimeout(Configurer configurer, Class clazz) {
             return OhRoot.checkClientTimeout(configurer, clazz, new TimeoutRoot());
+        }
+
+        static DispatcherRoot checkClientDispatcher(Configurer configurer, Class clazz) {
+            return OhRoot.checkClientDispatcher(configurer, clazz, new DispatcherRoot());
         }
 
         static Map<HttpStatus.Series, Class<? extends FallbackFunction>> defaultFallback(Configurer configurer, Class clazz) {

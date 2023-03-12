@@ -5,6 +5,7 @@ import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientConcrete;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientIsolated;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestHttpClientNone;
+import com.github.charlemaznable.httpclient.ohclient.westcache.NoWestCacheClient;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.Dispatcher;
@@ -18,6 +19,7 @@ import javax.annotation.Nonnull;
 
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 @SpringJUnitConfig(OhSpringConfiguration.class)
@@ -57,5 +59,7 @@ public class OhSpringTest {
             val testHttpClientNone = SpringContext.getBean(TestHttpClientNone.class);
             assertNull(testHttpClientNone);
         }
+
+        assertNotNull(SpringContext.getBean(NoWestCacheClient.class));
     }
 }

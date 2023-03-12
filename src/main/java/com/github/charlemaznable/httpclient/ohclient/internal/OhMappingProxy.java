@@ -1,12 +1,13 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
+import com.github.charlemaznable.configservice.ConfigListener;
 import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.Factory;
+import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.common.CncResponse;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery.ExtraUrlQueryBuilder;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
-import com.github.charlemaznable.httpclient.common.FallbackFunction.Response;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.RequestExtend;
 import com.github.charlemaznable.httpclient.common.RequestExtend.RequestExtender;
@@ -28,6 +29,7 @@ import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.BufferedSource;
 import org.apache.commons.lang3.tuple.Pair;
@@ -57,20 +59,21 @@ import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.isBlank;
 import static com.github.charlemaznable.core.lang.Str.toStr;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.ohExecutorService;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Objects.nonNull;
 import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.core.annotation.AnnotatedElementUtils.isAnnotated;
 
 @SuppressWarnings("rawtypes")
-public final class OhMappingProxy extends OhRoot {
+public final class OhMappingProxy extends OhRoot implements Reloadable {
 
     private static final String RETURN_GENERIC_ERROR = "Method return type generic Error";
 
     Class ohClass;
     Method ohMethod;
     Factory factory;
+    OhProxy proxy;
+    ConfigListener configListener;
     Configurer configurer;
     List<String> requestUrls;
 
@@ -86,57 +89,79 @@ public final class OhMappingProxy extends OhRoot {
         this.ohClass = ohClass;
         this.ohMethod = ohMethod;
         this.factory = factory;
-        this.configurer = checkConfigurer(this.ohMethod, this.factory);
-
-        this.requestUrls = Elf.checkRequestUrls(this.configurer, this.ohMethod, proxy);
-
-        this.clientProxy = Elf.checkClientProxy(this.configurer, this.ohMethod, proxy);
-        this.sslRoot = Elf.checkClientSSL(this.configurer, this.ohMethod, this.factory, proxy);
-        this.connectionPool = nullThen(checkConnectionPool(
-                this.configurer, this.ohMethod), () -> proxy.connectionPool);
-        this.timeoutRoot = Elf.checkClientTimeout(this.configurer, this.ohMethod, proxy);
-        this.interceptors = Elf.defaultClientInterceptors(this.configurer, this.ohMethod, proxy);
-        this.interceptors.addAll(checkClientInterceptors(this.configurer, this.ohMethod, this.factory));
-        this.loggingLevel = nullThen(checkClientLoggingLevel(
-                this.configurer, this.ohMethod), () -> proxy.loggingLevel);
-
-        this.okHttpClient = Elf.buildOkHttpClient(this, proxy);
-
-        this.acceptCharset = nullThen(checkAcceptCharset(
-                this.configurer, this.ohMethod), () -> proxy.acceptCharset);
-        this.contentFormatter = nullThen(checkContentFormatter(
-                this.configurer, this.ohMethod, this.factory), () -> proxy.contentFormatter);
-        this.httpMethod = nullThen(checkHttpMethod(
-                this.configurer, this.ohMethod), () -> proxy.httpMethod);
-        this.headers = newArrayList(proxy.headers);
-        this.headers.addAll(checkFixedHeaders(this.configurer, this.ohMethod));
-        this.pathVars = newArrayList(proxy.pathVars);
-        this.pathVars.addAll(checkFixedPathVars(this.configurer, this.ohMethod));
-        this.parameters = newArrayList(proxy.parameters);
-        this.parameters.addAll(checkFixedParameters(this.configurer, this.ohMethod));
-        this.contexts = newArrayList(proxy.contexts);
-        this.contexts.addAll(checkFixedContexts(this.configurer, this.ohMethod));
-
-        this.statusFallbackMapping = newHashMap(proxy.statusFallbackMapping);
-        this.statusFallbackMapping.putAll(checkStatusFallbackMapping(this.configurer, this.ohMethod));
-        this.statusSeriesFallbackMapping = newHashMap(proxy.statusSeriesFallbackMapping);
-        this.statusSeriesFallbackMapping.putAll(checkStatusSeriesFallbackMapping(this.configurer, this.ohMethod));
-
-        this.requestExtender = Elf.checkRequestExtender(this.configurer, this.ohMethod, this.factory, proxy);
-        this.responseParser = Elf.checkResponseParser(this.configurer, this.ohMethod, this.factory, proxy);
-        this.extraUrlQueryBuilder = Elf.checkExtraUrlQueryBuilder(this.configurer, this.ohMethod, this.factory, proxy);
-        this.mappingBalancer = nullThen(checkMappingBalancer(
-                this.configurer, this.ohMethod, this.factory), () -> proxy.mappingBalancer);
-
-        processReturnType(this.ohMethod);
+        this.proxy = proxy;
+        this.configListener = (keyset, key, value) -> reload();
+        this.initialize();
+        this.processReturnType(this.ohMethod);
     }
 
+    @SneakyThrows
     Object execute(Object[] args) {
+        val ohCall = new OhCall(this, args);
+        val call = ohCall.newCall();
+        val responseClass = ohCall.responseClass;
+
         if (this.returnFuture) {
-            return ohExecutorService.submit(
-                    () -> internalExecute(args));
+            val future = new OhCallbackFuture<>(response ->
+                    processResponse(response, responseClass));
+            call.enqueue(future);
+            return future;
         }
-        return internalExecute(args);
+        return processResponse(call.execute(), responseClass);
+    }
+
+    @Override
+    public void reload() {
+        this.initialize();
+    }
+
+    private void initialize() {
+        checkConfigurerIsRegisterThenRun(this.configurer, register ->
+                register.removeConfigListener(this.configListener));
+        this.configurer = checkConfigurer(this.ohMethod, this.factory);
+        checkConfigurerIsRegisterThenRun(this.configurer, register ->
+                register.addConfigListener(this.configListener));
+
+        this.requestUrls = Elf.checkRequestUrls(this.configurer, this.ohMethod, this.proxy);
+
+        this.clientProxy = Elf.checkClientProxy(this.configurer, this.ohMethod, this.proxy);
+        this.sslRoot = Elf.checkClientSSL(this.configurer, this.ohMethod, this.factory, this.proxy);
+        this.connectionPool = nullThen(checkConnectionPool(
+                this.configurer, this.ohMethod), () -> this.proxy.connectionPool);
+        this.timeoutRoot = Elf.checkClientTimeout(this.configurer, this.ohMethod, this.proxy);
+        this.interceptors = Elf.defaultClientInterceptors(this.configurer, this.ohMethod, this.proxy);
+        this.interceptors.addAll(checkClientInterceptors(this.configurer, this.ohMethod, this.factory));
+        this.loggingLevel = nullThen(checkClientLoggingLevel(
+                this.configurer, this.ohMethod), () -> this.proxy.loggingLevel);
+        this.dispatcherRoot = Elf.checkClientDispatcher(this.configurer, this.ohMethod, this.proxy);
+
+        this.okHttpClient = Elf.buildOkHttpClient(this, this.proxy);
+
+        this.acceptCharset = nullThen(checkAcceptCharset(
+                this.configurer, this.ohMethod), () -> this.proxy.acceptCharset);
+        this.contentFormatter = nullThen(checkContentFormatter(
+                this.configurer, this.ohMethod, this.factory), () -> this.proxy.contentFormatter);
+        this.httpMethod = nullThen(checkHttpMethod(
+                this.configurer, this.ohMethod), () -> this.proxy.httpMethod);
+        this.headers = newArrayList(this.proxy.headers);
+        this.headers.addAll(checkFixedHeaders(this.configurer, this.ohMethod));
+        this.pathVars = newArrayList(this.proxy.pathVars);
+        this.pathVars.addAll(checkFixedPathVars(this.configurer, this.ohMethod));
+        this.parameters = newArrayList(this.proxy.parameters);
+        this.parameters.addAll(checkFixedParameters(this.configurer, this.ohMethod));
+        this.contexts = newArrayList(this.proxy.contexts);
+        this.contexts.addAll(checkFixedContexts(this.configurer, this.ohMethod));
+
+        this.statusFallbackMapping = newHashMap(this.proxy.statusFallbackMapping);
+        this.statusFallbackMapping.putAll(checkStatusFallbackMapping(this.configurer, this.ohMethod));
+        this.statusSeriesFallbackMapping = newHashMap(this.proxy.statusSeriesFallbackMapping);
+        this.statusSeriesFallbackMapping.putAll(checkStatusSeriesFallbackMapping(this.configurer, this.ohMethod));
+
+        this.requestExtender = Elf.checkRequestExtender(this.configurer, this.ohMethod, this.factory, this.proxy);
+        this.responseParser = Elf.checkResponseParser(this.configurer, this.ohMethod, this.factory, this.proxy);
+        this.extraUrlQueryBuilder = Elf.checkExtraUrlQueryBuilder(this.configurer, this.ohMethod, this.factory, this.proxy);
+        this.mappingBalancer = nullThen(checkMappingBalancer(
+                this.configurer, this.ohMethod, this.factory), () -> this.proxy.mappingBalancer);
     }
 
     private void processReturnType(Method method) {
@@ -223,11 +248,7 @@ public final class OhMappingProxy extends OhRoot {
         }
     }
 
-    @SneakyThrows
-    private Object internalExecute(Object[] args) {
-        val ohCall = new OhCall(this, args);
-        val response = ohCall.execute();
-
+    private Object processResponse(Response response, Class responseClass) {
         val statusCode = response.code();
         val responseBody = notNullThen(response.body(), OhResponseBody::new);
         if (nonNull(response.body())) response.close();
@@ -245,7 +266,7 @@ public final class OhMappingProxy extends OhRoot {
         }
 
         val responseObjs = processResponseBody(
-                statusCode, responseBody, ohCall.responseClass);
+                statusCode, responseBody, responseClass);
         if (this.returnCollection) {
             val responseObj = responseObjs.get(0);
             if (responseObj instanceof Collection) {
@@ -278,7 +299,7 @@ public final class OhMappingProxy extends OhRoot {
     private Object applyFallback(Class<? extends FallbackFunction> function,
                                  int statusCode, ResponseBody responseBody) {
         return FactoryContext.apply(factory, function,
-                f -> f.apply(new Response<ResponseBody>(statusCode, responseBody) {
+                f -> f.apply(new FallbackFunction.Response<ResponseBody>(statusCode, responseBody) {
                     @Override
                     public String responseBodyAsString() {
                         return toStr(notNullThen(getResponseBody(),
@@ -401,6 +422,10 @@ public final class OhMappingProxy extends OhRoot {
             return newArrayList(cleanup ? null : proxy.interceptors);
         }
 
+        static DispatcherRoot checkClientDispatcher(Configurer configurer, Method method, OhProxy proxy) {
+            return OhRoot.checkClientDispatcher(configurer, method, proxy.dispatcherRoot);
+        }
+
         static OkHttpClient buildOkHttpClient(OhMappingProxy mappingProxy, OhProxy proxy) {
             val sameClientProxy = mappingProxy.clientProxy == proxy.clientProxy;
             val sameSSLSocketFactory = mappingProxy.sslRoot.sslSocketFactory == proxy.sslRoot.sslSocketFactory;
@@ -413,11 +438,14 @@ public final class OhMappingProxy extends OhRoot {
             val sameWriteTimeout = mappingProxy.timeoutRoot.writeTimeout == proxy.timeoutRoot.writeTimeout;
             val sameInterceptors = mappingProxy.interceptors.equals(proxy.interceptors);
             val sameLoggingLevel = mappingProxy.loggingLevel == proxy.loggingLevel;
+            val sameMaxRequests = mappingProxy.dispatcherRoot.maxRequests == proxy.dispatcherRoot.maxRequests;
+            val sameMaxRequestsPerHost = mappingProxy.dispatcherRoot.maxRequestsPerHost == proxy.dispatcherRoot.maxRequestsPerHost;
             if (sameClientProxy && sameSSLSocketFactory && sameX509TrustManager
                     && sameHostnameVerifier && sameConnectionPool
                     && sameCallTimeout && sameConnectTimeout
                     && sameReadTimeout && sameWriteTimeout
-                    && sameInterceptors && sameLoggingLevel) return proxy.okHttpClient;
+                    && sameInterceptors && sameLoggingLevel
+                    && sameMaxRequests && sameMaxRequestsPerHost) return proxy.okHttpClient;
 
             return OhRoot.buildOkHttpClient(mappingProxy);
         }
