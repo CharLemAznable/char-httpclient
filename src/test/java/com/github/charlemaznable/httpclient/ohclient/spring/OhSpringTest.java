@@ -13,6 +13,7 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
+import org.mockito.internal.util.MockUtil;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import javax.annotation.Nonnull;
@@ -21,6 +22,7 @@ import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringJUnitConfig(OhSpringConfiguration.class)
 public class OhSpringTest {
@@ -49,6 +51,7 @@ public class OhSpringTest {
             val testHttpClientIsolated = SpringContext.getBean(TestHttpClientIsolated.class);
             assertEquals(SAMPLE, testHttpClientIsolated.sample());
             assertEquals("[Sample]", testHttpClientIsolated.sampleWrapper());
+            assertTrue(MockUtil.isSpy(testHttpClientIsolated));
 
             val testHttpClientConcrete = SpringContext.getBean(TestHttpClientConcrete.class);
             assertNull(testHttpClientConcrete);
