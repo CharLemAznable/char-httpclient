@@ -17,12 +17,12 @@ import java.lang.reflect.Method;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import static java.util.concurrent.Executors.newCachedThreadPool;
+import static com.github.charlemaznable.core.lang.concurrent.Executors.parallelismExecutor;
 
 @AutoService(OhClientEnhancer.class)
 public final class WestCacheableOhClientEnhancer implements OhClientEnhancer {
 
-    static final ExecutorService cacheExecutorService = newCachedThreadPool();
+    static final ExecutorService cacheExecutorService = parallelismExecutor(0, 8);
 
     @Override
     public boolean isEnabled(Class<?> clientClass) {
