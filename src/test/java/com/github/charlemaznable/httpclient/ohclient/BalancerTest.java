@@ -6,6 +6,7 @@ import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.MappingBalance;
 import com.github.charlemaznable.httpclient.common.MappingBalance.RandomBalancer;
 import com.github.charlemaznable.httpclient.common.MappingBalance.RoundRobinBalancer;
+import com.github.charlemaznable.httpclient.configurer.InitializationConfigurer;
 import com.github.charlemaznable.httpclient.configurer.MappingBalanceConfigurer;
 import com.github.charlemaznable.httpclient.configurer.MappingConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
@@ -149,7 +150,7 @@ public class BalancerTest {
         void cover();
     }
 
-    public static class RoundRobinBalancerConfig implements MappingConfigurer, MappingBalanceConfigurer {
+    public static class RoundRobinBalancerConfig implements MappingConfigurer, MappingBalanceConfigurer, InitializationConfigurer {
 
         @Override
         public List<String> urls() {

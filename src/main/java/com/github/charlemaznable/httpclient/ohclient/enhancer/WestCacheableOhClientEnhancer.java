@@ -14,15 +14,10 @@ import lombok.val;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-
-import static com.github.charlemaznable.core.lang.concurrent.Executors.parallelismExecutor;
 
 @AutoService(OhClientEnhancer.class)
 public final class WestCacheableOhClientEnhancer implements OhClientEnhancer {
-
-    static final ExecutorService cacheExecutorService = parallelismExecutor(0, 8);
 
     @Override
     public boolean isEnabled(Class<?> clientClass) {
@@ -54,7 +49,7 @@ public final class WestCacheableOhClientEnhancer implements OhClientEnhancer {
             if (option == null) return method.invoke(target, arguments);
 
             if (Future.class == method.getReturnType())
-                return cacheExecutorService.submit(() ->
+                return OhDummy.ohDispatcher.executorService().submit(() ->
                         intercept(invocation.getThis(), method, arguments, invocation));
             return intercept(invocation.getThis(), method, arguments, invocation);
         }

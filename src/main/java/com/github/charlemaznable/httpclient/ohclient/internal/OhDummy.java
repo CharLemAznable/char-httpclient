@@ -1,7 +1,10 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
+import com.github.charlemaznable.httpclient.ohclient.elf.OhConnectionPoolElf;
+import com.github.charlemaznable.httpclient.ohclient.elf.OhDispatcherElf;
 import lombok.AllArgsConstructor;
 import okhttp3.ConnectionPool;
+import okhttp3.Dispatcher;
 import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,12 +20,14 @@ import static java.util.Objects.isNull;
 @AllArgsConstructor
 public class OhDummy {
 
-    static final Logger log = LoggerFactory.getLogger("OhClient");
-    static final ConnectionPool ohConnectionPool;
+    public static final Logger log = LoggerFactory.getLogger("OhClient");
+    public static final Dispatcher ohDispatcher;
+    public static final ConnectionPool ohConnectionPool;
     static Properties ohClassPathProperties;
 
     static {
-        ohConnectionPool = new ConnectionPool();
+        ohDispatcher = OhDispatcherElf.newDispatcher();
+        ohConnectionPool = OhConnectionPoolElf.newConnectionPool();
     }
 
     static String substitute(String source) {

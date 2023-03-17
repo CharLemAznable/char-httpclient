@@ -83,6 +83,7 @@ public final class OhCall extends OhRoot {
         this.sslRoot.sslSocketFactory = proxy.sslRoot.sslSocketFactory;
         this.sslRoot.x509TrustManager = proxy.sslRoot.x509TrustManager;
         this.sslRoot.hostnameVerifier = proxy.sslRoot.hostnameVerifier;
+        this.dispatcher = proxy.dispatcher;
         this.connectionPool = proxy.connectionPool;
         this.timeoutRoot = new TimeoutRoot();
         this.timeoutRoot.callTimeout = proxy.timeoutRoot.callTimeout;
@@ -91,9 +92,6 @@ public final class OhCall extends OhRoot {
         this.timeoutRoot.writeTimeout = proxy.timeoutRoot.writeTimeout;
         this.interceptors = newArrayList(proxy.interceptors);
         this.loggingLevel = proxy.loggingLevel;
-        this.dispatcherRoot = new DispatcherRoot();
-        this.dispatcherRoot.maxRequests = proxy.dispatcherRoot.maxRequests;
-        this.dispatcherRoot.maxRequestsPerHost = proxy.dispatcherRoot.maxRequestsPerHost;
 
         this.acceptCharset = proxy.acceptCharset;
         this.contentFormatter = proxy.contentFormatter;
@@ -244,10 +242,8 @@ public final class OhCall extends OhRoot {
         val sameWriteTimeout = this.timeoutRoot.writeTimeout == proxy.timeoutRoot.writeTimeout;
         val sameInterceptors = this.interceptors.equals(proxy.interceptors);
         val sameLoggingLevel = this.loggingLevel == proxy.loggingLevel;
-        if (sameClientProxy && sameSSLSocketFactory
-                && sameX509TrustManager && sameHostnameVerifier
-                && sameCallTimeout && sameConnectTimeout
-                && sameReadTimeout && sameWriteTimeout
+        if (sameClientProxy && sameSSLSocketFactory && sameX509TrustManager && sameHostnameVerifier
+                && sameCallTimeout && sameConnectTimeout && sameReadTimeout && sameWriteTimeout
                 && sameInterceptors && sameLoggingLevel) return proxy.okHttpClient;
 
         return OhRoot.buildOkHttpClient(this);

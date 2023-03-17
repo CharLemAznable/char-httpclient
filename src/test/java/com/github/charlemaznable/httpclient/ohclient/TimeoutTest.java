@@ -7,6 +7,7 @@ import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout;
 import com.github.charlemaznable.httpclient.ohclient.configurer.ClientTimeoutConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.configurer.IsolatedConnectionPoolConfigurer;
+import com.github.charlemaznable.httpclient.ohclient.configurer.IsolatedDispatcherConfigurer;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.Dispatcher;
@@ -112,5 +113,6 @@ public class TimeoutTest {
         String sample();
     }
 
-    public static class TimeoutHttpClientConfig implements ClientTimeoutConfigurer, IsolatedConnectionPoolConfigurer {}
+    public static class TimeoutHttpClientConfig implements ClientTimeoutConfigurer,
+            IsolatedDispatcherConfigurer, IsolatedConnectionPoolConfigurer {}
 }

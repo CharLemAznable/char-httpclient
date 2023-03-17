@@ -46,11 +46,24 @@ public abstract class CommonReq<T extends CommonReq<T>> {
             HttpStatus.Series.SERVER_ERROR, StatusErrorThrower.class);
 
     public CommonReq() {
-        this(null);
+        this((String) null);
     }
 
     public CommonReq(String baseUrl) {
         this.baseUrl = baseUrl;
+    }
+
+    public CommonReq(CommonReq<T> other) {
+        this.baseUrl = other.baseUrl;
+        this.reqPath = other.reqPath;
+        this.acceptCharset = other.acceptCharset;
+        this.contentFormatter = other.contentFormatter;
+        this.headers = newArrayList(other.headers);
+        this.parameters = newArrayList(other.parameters);
+        this.requestBody = other.requestBody;
+        this.extraUrlQueryBuilder = other.extraUrlQueryBuilder;
+        this.statusFallbackMapping = newHashMap(other.statusFallbackMapping);
+        this.statusSeriesFallbackMapping = newHashMap(other.statusSeriesFallbackMapping);
     }
 
     public T req(String reqPath) {

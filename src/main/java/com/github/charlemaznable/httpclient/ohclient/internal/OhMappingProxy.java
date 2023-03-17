@@ -15,6 +15,7 @@ import com.github.charlemaznable.httpclient.common.ResponseParse;
 import com.github.charlemaznable.httpclient.common.ResponseParse.ResponseParser;
 import com.github.charlemaznable.httpclient.configurer.Configurer;
 import com.github.charlemaznable.httpclient.configurer.ExtraUrlQueryDisabledConfigurer;
+import com.github.charlemaznable.httpclient.configurer.InitializationConfigurer;
 import com.github.charlemaznable.httpclient.configurer.RequestExtendDisabledConfigurer;
 import com.github.charlemaznable.httpclient.configurer.ResponseParseDisabledConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhException;
@@ -122,10 +123,14 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         checkConfigurerIsRegisterThenRun(this.configurer, register ->
                 register.addConfigListener(this.configListener));
 
+        Elf.setUpBeforeInitialization(this.configurer, this.ohMethod, this.ohClass, this.proxy);
+
         this.requestUrls = Elf.checkRequestUrls(this.configurer, this.ohMethod, this.proxy);
 
         this.clientProxy = Elf.checkClientProxy(this.configurer, this.ohMethod, this.proxy);
         this.sslRoot = Elf.checkClientSSL(this.configurer, this.ohMethod, this.factory, this.proxy);
+        this.dispatcher = nullThen(checkDispatcher(
+                this.configurer, this.ohMethod), () -> this.proxy.dispatcher);
         this.connectionPool = nullThen(checkConnectionPool(
                 this.configurer, this.ohMethod), () -> this.proxy.connectionPool);
         this.timeoutRoot = Elf.checkClientTimeout(this.configurer, this.ohMethod, this.proxy);
@@ -133,7 +138,6 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         this.interceptors.addAll(checkClientInterceptors(this.configurer, this.ohMethod, this.factory));
         this.loggingLevel = nullThen(checkClientLoggingLevel(
                 this.configurer, this.ohMethod), () -> this.proxy.loggingLevel);
-        this.dispatcherRoot = Elf.checkClientDispatcher(this.configurer, this.ohMethod, this.proxy);
 
         this.okHttpClient = Elf.buildOkHttpClient(this, this.proxy);
 
@@ -162,6 +166,8 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         this.extraUrlQueryBuilder = Elf.checkExtraUrlQueryBuilder(this.configurer, this.ohMethod, this.factory, this.proxy);
         this.mappingBalancer = nullThen(checkMappingBalancer(
                 this.configurer, this.ohMethod, this.factory), () -> this.proxy.mappingBalancer);
+
+        Elf.tearDownAfterInitialization(this.configurer, this.ohMethod, this.ohClass, this.proxy);
     }
 
     private void processReturnType(Method method) {
@@ -369,6 +375,16 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
     @NoArgsConstructor(access = PRIVATE)
     static class Elf {
 
+        static void setUpBeforeInitialization(Configurer configurer, Method method, Class clazz, OhProxy proxy) {
+            if (configurer instanceof InitializationConfigurer initializationConfigurer) {
+                initializationConfigurer.setUpBeforeInitialization(clazz, method);
+            } else if (proxy.configurer instanceof InitializationConfigurer initializationConfigurer) {
+                initializationConfigurer.setUpBeforeInitialization(clazz, method);
+            } else {
+                InitializationConfigurer.INSTANCE.setUpBeforeInitialization(clazz, method);
+            }
+        }
+
         static List<String> checkRequestUrls(Configurer configurer, Method method, OhProxy proxy) {
             val urls = emptyThen(checkMappingUrls(configurer, method), () ->
                     newArrayList(proxy.mappingMethodNameDisabled ? "" : "/" + method.getName()));
@@ -418,15 +434,12 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
             return newArrayList(cleanup ? null : proxy.interceptors);
         }
 
-        static DispatcherRoot checkClientDispatcher(Configurer configurer, Method method, OhProxy proxy) {
-            return OhRoot.checkClientDispatcher(configurer, method, proxy.dispatcherRoot);
-        }
-
         static OkHttpClient buildOkHttpClient(OhMappingProxy mappingProxy, OhProxy proxy) {
             val sameClientProxy = mappingProxy.clientProxy == proxy.clientProxy;
             val sameSSLSocketFactory = mappingProxy.sslRoot.sslSocketFactory == proxy.sslRoot.sslSocketFactory;
             val sameX509TrustManager = mappingProxy.sslRoot.x509TrustManager == proxy.sslRoot.x509TrustManager;
             val sameHostnameVerifier = mappingProxy.sslRoot.hostnameVerifier == proxy.sslRoot.hostnameVerifier;
+            val sameDispatcher = mappingProxy.dispatcher == proxy.dispatcher;
             val sameConnectionPool = mappingProxy.connectionPool == proxy.connectionPool;
             val sameCallTimeout = mappingProxy.timeoutRoot.callTimeout == proxy.timeoutRoot.callTimeout;
             val sameConnectTimeout = mappingProxy.timeoutRoot.connectTimeout == proxy.timeoutRoot.connectTimeout;
@@ -434,14 +447,10 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
             val sameWriteTimeout = mappingProxy.timeoutRoot.writeTimeout == proxy.timeoutRoot.writeTimeout;
             val sameInterceptors = mappingProxy.interceptors.equals(proxy.interceptors);
             val sameLoggingLevel = mappingProxy.loggingLevel == proxy.loggingLevel;
-            val sameMaxRequests = mappingProxy.dispatcherRoot.maxRequests == proxy.dispatcherRoot.maxRequests;
-            val sameMaxRequestsPerHost = mappingProxy.dispatcherRoot.maxRequestsPerHost == proxy.dispatcherRoot.maxRequestsPerHost;
             if (sameClientProxy && sameSSLSocketFactory && sameX509TrustManager
-                    && sameHostnameVerifier && sameConnectionPool
-                    && sameCallTimeout && sameConnectTimeout
-                    && sameReadTimeout && sameWriteTimeout
-                    && sameInterceptors && sameLoggingLevel
-                    && sameMaxRequests && sameMaxRequestsPerHost) return proxy.okHttpClient;
+                    && sameHostnameVerifier && sameConnectionPool && sameDispatcher
+                    && sameCallTimeout && sameConnectTimeout && sameReadTimeout && sameWriteTimeout
+                    && sameInterceptors && sameLoggingLevel) return proxy.okHttpClient;
 
             return OhRoot.buildOkHttpClient(mappingProxy);
         }
@@ -471,6 +480,16 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
                     : isAnnotated(method, ExtraUrlQuery.Disabled.class)) return null;
             return nullThen(OhRoot.checkExtraUrlQueryBuilder(
                     configurer, method, factory), () -> proxy.extraUrlQueryBuilder);
+        }
+
+        static void tearDownAfterInitialization(Configurer configurer, Method method, Class clazz, OhProxy proxy) {
+            if (configurer instanceof InitializationConfigurer initializationConfigurer) {
+                initializationConfigurer.tearDownAfterInitialization(clazz, method);
+            } else if (proxy.configurer instanceof InitializationConfigurer initializationConfigurer) {
+                initializationConfigurer.tearDownAfterInitialization(clazz, method);
+            } else {
+                InitializationConfigurer.INSTANCE.tearDownAfterInitialization(clazz, method);
+            }
         }
     }
 }
