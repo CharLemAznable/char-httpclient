@@ -4,12 +4,17 @@ import com.github.charlemaznable.httpclient.common.CommonReq;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
+import com.github.charlemaznable.httpclient.ohclient.elf.OhConnectionPoolElf;
+import com.github.charlemaznable.httpclient.ohclient.elf.OhDispatcherElf;
 import com.github.charlemaznable.httpclient.ohclient.elf.SSLTrustAll;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhCallbackFuture;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhResponseBody;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.ConnectionPool;
+import okhttp3.Dispatcher;
 import okhttp3.Headers;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
@@ -42,35 +47,53 @@ import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CALL_TIMEOUT;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONNECT_TIMEOUT;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONTENT_FORMATTER;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_MAX_REQUESTS;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_MAX_REQUESTS_PER_HOST;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_READ_TIMEOUT;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_WRITE_TIMEOUT;
 import static java.util.Objects.nonNull;
 
 public class OhReq extends CommonReq<OhReq> {
 
-    private static final ConnectionPool globalConnectionPool = new ConnectionPool();
-    private final List<Interceptor> interceptors = newArrayList();
-    private final HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+    private static final Dispatcher globalDispatcher = OhDispatcherElf.newDispatcher();
+    private static final ConnectionPool globalConnectionPool = OhConnectionPoolElf.newConnectionPool();
+    private final List<Interceptor> interceptors;
+    private final HttpLoggingInterceptor loggingInterceptor;
     private Proxy clientProxy;
     private SSLSocketFactory sslSocketFactory;
     private X509TrustManager x509TrustManager;
     private HostnameVerifier hostnameVerifier;
+    private Dispatcher dispatcher;
     private ConnectionPool connectionPool;
     private long callTimeout = DEFAULT_CALL_TIMEOUT; // in milliseconds
     private long connectTimeout = DEFAULT_CONNECT_TIMEOUT; // in milliseconds
     private long readTimeout = DEFAULT_READ_TIMEOUT; // in milliseconds
     private long writeTimeout = DEFAULT_WRITE_TIMEOUT; // in milliseconds
-    private int maxRequests = DEFAULT_MAX_REQUESTS;
-    private int maxRequestsPerHost = DEFAULT_MAX_REQUESTS_PER_HOST;
 
     public OhReq() {
         super();
+        this.interceptors = newArrayList();
+        this.loggingInterceptor = new HttpLoggingInterceptor();
     }
 
     public OhReq(String baseUrl) {
         super(baseUrl);
+        this.interceptors = newArrayList();
+        this.loggingInterceptor = new HttpLoggingInterceptor();
+    }
+
+    public OhReq(OhReq other) {
+        super(other);
+        this.interceptors = newArrayList(other.interceptors);
+        this.loggingInterceptor = new HttpLoggingInterceptor().setLevel(other.loggingInterceptor.getLevel());
+        this.clientProxy = other.clientProxy;
+        this.sslSocketFactory = other.sslSocketFactory;
+        this.x509TrustManager = other.x509TrustManager;
+        this.hostnameVerifier = other.hostnameVerifier;
+        this.dispatcher = other.dispatcher;
+        this.connectionPool = other.connectionPool;
+        this.callTimeout = other.callTimeout;
+        this.connectTimeout = other.connectTimeout;
+        this.readTimeout = other.readTimeout;
+        this.writeTimeout = other.writeTimeout;
     }
 
     public OhReq clientProxy(Proxy proxy) {
@@ -90,6 +113,11 @@ public class OhReq extends CommonReq<OhReq> {
 
     public OhReq hostnameVerifier(HostnameVerifier hostnameVerifier) {
         this.hostnameVerifier = hostnameVerifier;
+        return this;
+    }
+
+    public OhReq dispatcher(Dispatcher dispatcher) {
+        this.dispatcher = dispatcher;
         return this;
     }
 
@@ -135,30 +163,20 @@ public class OhReq extends CommonReq<OhReq> {
         return this;
     }
 
-    public OhReq maxRequests(int maxRequests) {
-        this.maxRequests = maxRequests;
-        return this;
-    }
-
-    public OhReq maxRequestsPerHost(int maxRequestsPerHost) {
-        this.maxRequestsPerHost = maxRequestsPerHost;
-        return this;
-    }
-
     public String get() {
-        return this.execute(buildGetRequest());
+        return buildInstance().get();
     }
 
     public String post() {
-        return this.execute(buildPostRequest());
+        return buildInstance().post();
     }
 
     public Future<String> getFuture() {
-        return this.enqueue(buildGetRequest());
+        return buildInstance().getFuture();
     }
 
     public Future<String> postFuture() {
-        return this.enqueue(buildPostRequest());
+        return buildInstance().postFuture();
     }
 
     public OkHttpClient buildHttpClient() {
@@ -167,6 +185,7 @@ public class OhReq extends CommonReq<OhReq> {
                 () -> httpClientBuilder.sslSocketFactory(this.sslSocketFactory, SSLTrustAll.x509TrustManager()),
                 yy -> httpClientBuilder.sslSocketFactory(this.sslSocketFactory, this.x509TrustManager)));
         notNullThen(this.hostnameVerifier, httpClientBuilder::hostnameVerifier);
+        httpClientBuilder.dispatcher(nullThen(this.dispatcher, () -> globalDispatcher));
         httpClientBuilder.connectionPool(nullThen(this.connectionPool, () -> globalConnectionPool));
         httpClientBuilder.callTimeout(this.callTimeout, TimeUnit.MILLISECONDS);
         httpClientBuilder.connectTimeout(this.connectTimeout, TimeUnit.MILLISECONDS);
@@ -174,10 +193,45 @@ public class OhReq extends CommonReq<OhReq> {
         httpClientBuilder.writeTimeout(this.writeTimeout, TimeUnit.MILLISECONDS);
         this.interceptors.forEach(httpClientBuilder::addInterceptor);
         httpClientBuilder.addInterceptor(this.loggingInterceptor);
-        val httpClient = httpClientBuilder.build();
-        httpClient.dispatcher().setMaxRequests(this.maxRequests);
-        httpClient.dispatcher().setMaxRequestsPerHost(this.maxRequestsPerHost);
-        return httpClient;
+        return httpClientBuilder.build();
+    }
+
+    public Instance buildInstance() {
+        return new Instance(buildHttpClient(), new OhReq(this));
+    }
+
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    public static final class Instance {
+
+        private final OkHttpClient httpClient;
+        private final OhReq ohReq;
+
+        public String get() {
+            return this.execute(ohReq.buildGetRequest());
+        }
+
+        public String post() {
+            return this.execute(ohReq.buildPostRequest());
+        }
+
+        public Future<String> getFuture() {
+            return this.enqueue(ohReq.buildGetRequest());
+        }
+
+        public Future<String> postFuture() {
+            return this.enqueue(ohReq.buildPostRequest());
+        }
+
+        @SneakyThrows
+        private String execute(Request request) {
+            return ohReq.processResponse(httpClient.newCall(request).execute());
+        }
+
+        private Future<String> enqueue(Request request) {
+            val future = new OhCallbackFuture<>(ohReq::processResponse);
+            httpClient.newCall(request).enqueue(future);
+            return future;
+        }
     }
 
     private Request buildGetRequest() {
@@ -223,17 +277,6 @@ public class OhReq extends CommonReq<OhReq> {
                     xx -> headersBuilder.set(header.getKey(), header.getValue()));
         }
         return headersBuilder;
-    }
-
-    @SneakyThrows
-    private String execute(Request request) {
-        return processResponse(buildHttpClient().newCall(request).execute());
-    }
-
-    private Future<String> enqueue(Request request) {
-        val future = new OhCallbackFuture<>(this::processResponse);
-        buildHttpClient().newCall(request).enqueue(future);
-        return future;
     }
 
     private String processResponse(Response response) {

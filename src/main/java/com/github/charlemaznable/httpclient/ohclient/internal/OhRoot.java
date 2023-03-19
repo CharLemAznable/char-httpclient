@@ -43,22 +43,25 @@ import com.github.charlemaznable.httpclient.configurer.ResponseParseConfigurer;
 import com.github.charlemaznable.httpclient.configurer.StatusFallbacksConfigurer;
 import com.github.charlemaznable.httpclient.configurer.StatusSeriesFallbacksConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhReq;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientDispatcher;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptor;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientLoggingLevel;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientProxy;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout;
 import com.github.charlemaznable.httpclient.ohclient.annotation.IsolatedConnectionPool;
-import com.github.charlemaznable.httpclient.ohclient.configurer.ClientDispatcherConfigurer;
+import com.github.charlemaznable.httpclient.ohclient.annotation.IsolatedDispatcher;
 import com.github.charlemaznable.httpclient.ohclient.configurer.ClientInterceptorsConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.configurer.ClientLoggingLevelConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.configurer.ClientProxyConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.configurer.ClientSSLConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.configurer.ClientTimeoutConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.configurer.IsolatedConnectionPoolConfigurer;
+import com.github.charlemaznable.httpclient.ohclient.configurer.IsolatedDispatcherConfigurer;
+import com.github.charlemaznable.httpclient.ohclient.elf.OhConnectionPoolElf;
+import com.github.charlemaznable.httpclient.ohclient.elf.OhDispatcherElf;
 import lombok.val;
 import okhttp3.ConnectionPool;
+import okhttp3.Dispatcher;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor.Level;
@@ -86,8 +89,6 @@ import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CALL_TIMEOUT;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONNECT_TIMEOUT;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_MAX_REQUESTS;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_MAX_REQUESTS_PER_HOST;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_READ_TIMEOUT;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_WRITE_TIMEOUT;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.NOT_BLANK_KEY;
@@ -103,11 +104,11 @@ class OhRoot {
 
     Proxy clientProxy;
     SSLRoot sslRoot;
+    Dispatcher dispatcher;
     ConnectionPool connectionPool;
     TimeoutRoot timeoutRoot;
     List<Interceptor> interceptors;
     Level loggingLevel;
-    DispatcherRoot dispatcherRoot;
     OkHttpClient okHttpClient;
 
     Charset acceptCharset;
@@ -141,12 +142,6 @@ class OhRoot {
         long connectTimeout = DEFAULT_CONNECT_TIMEOUT; // in milliseconds
         long readTimeout = DEFAULT_READ_TIMEOUT; // in milliseconds
         long writeTimeout = DEFAULT_WRITE_TIMEOUT; // in milliseconds
-    }
-
-    static class DispatcherRoot {
-
-        int maxRequests = DEFAULT_MAX_REQUESTS;
-        int maxRequestsPerHost = DEFAULT_MAX_REQUESTS_PER_HOST;
     }
 
     static Configurer checkConfigurer(AnnotatedElement element, Factory factory) {
@@ -346,11 +341,24 @@ class OhRoot {
         sslRoot.hostnameVerifier = disabledHostnameVerifier ? null : defaultValue.hostnameVerifier;
     }
 
+    static Dispatcher checkDispatcher(Configurer configurer, AnnotatedElement element) {
+        if (configurer instanceof IsolatedDispatcherConfigurer) {
+            val dispatcherConfigurer = (IsolatedDispatcherConfigurer) configurer;
+            return dispatcherConfigurer.isolatedDispatcher() ?
+                    nullThen(dispatcherConfigurer.customDispatcher(), OhDispatcherElf::newDispatcher) : null;
+        } else {
+            return isAnnotated(element, IsolatedDispatcher.class) ? OhDispatcherElf.newDispatcher() : null;
+        }
+    }
+
     static ConnectionPool checkConnectionPool(Configurer configurer, AnnotatedElement element) {
-        val isolated = configurer instanceof IsolatedConnectionPoolConfigurer
-                ? ((IsolatedConnectionPoolConfigurer) configurer).isolatedConnectionPool()
-                : isAnnotated(element, IsolatedConnectionPool.class);
-        return isolated ? new ConnectionPool() : null;
+        if (configurer instanceof IsolatedConnectionPoolConfigurer) {
+            val poolConfigurer = (IsolatedConnectionPoolConfigurer) configurer;
+            return poolConfigurer.isolatedConnectionPool() ?
+                    nullThen(poolConfigurer.customConnectionPool(), OhConnectionPoolElf::newConnectionPool) : null;
+        } else {
+            return isAnnotated(element, IsolatedConnectionPool.class) ? OhConnectionPoolElf.newConnectionPool() : null;
+        }
     }
 
     static TimeoutRoot checkClientTimeout(Configurer configurer, AnnotatedElement element, TimeoutRoot defaultValue) {
@@ -392,30 +400,12 @@ class OhRoot {
         return notNullThen(clientLoggingLevel, ClientLoggingLevel::value);
     }
 
-    static DispatcherRoot checkClientDispatcher(Configurer configurer, AnnotatedElement element, DispatcherRoot defaultValue) {
-        val dispatchRoot = new DispatcherRoot();
-        if (configurer instanceof ClientDispatcherConfigurer) {
-            val dispatcherConfigurer = (ClientDispatcherConfigurer) configurer;
-            dispatchRoot.maxRequests = dispatcherConfigurer.maxRequests();
-            dispatchRoot.maxRequestsPerHost = dispatcherConfigurer.maxRequestsPerHost();
-        } else {
-            val clientTimeout = getMergedAnnotation(element, ClientDispatcher.class);
-            if (nonNull(clientTimeout)) {
-                dispatchRoot.maxRequests = clientTimeout.maxRequests();
-                dispatchRoot.maxRequestsPerHost = clientTimeout.maxRequestsPerHost();
-            } else {
-                dispatchRoot.maxRequests = defaultValue.maxRequests;
-                dispatchRoot.maxRequestsPerHost = defaultValue.maxRequestsPerHost;
-            }
-        }
-        return dispatchRoot;
-    }
-
     static OkHttpClient buildOkHttpClient(OhRoot root) {
         return new OhReq().clientProxy(root.clientProxy)
                 .sslSocketFactory(root.sslRoot.sslSocketFactory)
                 .x509TrustManager(root.sslRoot.x509TrustManager)
                 .hostnameVerifier(root.sslRoot.hostnameVerifier)
+                .dispatcher(root.dispatcher)
                 .connectionPool(root.connectionPool)
                 .callTimeout(root.timeoutRoot.callTimeout)
                 .connectTimeout(root.timeoutRoot.connectTimeout)
@@ -423,8 +413,6 @@ class OhRoot {
                 .writeTimeout(root.timeoutRoot.writeTimeout)
                 .addInterceptors(root.interceptors)
                 .loggingLevel(root.loggingLevel)
-                .maxRequests(root.dispatcherRoot.maxRequests)
-                .maxRequestsPerHost(root.dispatcherRoot.maxRequestsPerHost)
                 .buildHttpClient();
     }
 }

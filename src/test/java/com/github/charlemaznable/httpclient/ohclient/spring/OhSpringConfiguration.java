@@ -3,6 +3,7 @@ package com.github.charlemaznable.httpclient.ohclient.spring;
 import com.github.charlemaznable.configservice.diamond.DiamondScan;
 import com.github.charlemaznable.core.spring.ElvesImport;
 import com.github.charlemaznable.core.spring.NeoComponentScan;
+import com.github.charlemaznable.core.testing.mockito.MockitoSpyProxyEnabled;
 import com.github.charlemaznable.httpclient.ohclient.OhScan;
 import com.github.charlemaznable.httpclient.ohclient.OhScannerRegistrar;
 import com.github.charlemaznable.httpclient.ohclient.testclient.TestClientScanAnchor;
@@ -22,6 +23,7 @@ import static org.joor.Reflect.on;
 @NeoComponentScan(basePackageClasses = TestClientScanAnchor.class)
 @DiamondScan(basePackageClasses = TestClientScanAnchor.class)
 @OhScan(basePackageClasses = TestClientScanAnchor.class)
+@MockitoSpyProxyEnabled
 public class OhSpringConfiguration {
 
     @Bean

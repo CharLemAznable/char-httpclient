@@ -6,6 +6,8 @@ import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.MappingBalance;
 import com.github.charlemaznable.httpclient.common.MappingBalance.RandomBalancer;
 import com.github.charlemaznable.httpclient.common.MappingBalance.RoundRobinBalancer;
+import com.github.charlemaznable.httpclient.configurer.InitializationConfigurer;
+import com.github.charlemaznable.httpclient.configurer.InitializationContext;
 import com.github.charlemaznable.httpclient.configurer.MappingBalanceConfigurer;
 import com.github.charlemaznable.httpclient.configurer.MappingConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
@@ -24,6 +26,7 @@ import static com.github.charlemaznable.core.context.FactoryContext.ReflectFacto
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class BalancerTest {
 
@@ -149,15 +152,19 @@ public class BalancerTest {
         void cover();
     }
 
-    public static class RoundRobinBalancerConfig implements MappingConfigurer, MappingBalanceConfigurer {
+    public static class RoundRobinBalancerConfig implements MappingConfigurer, MappingBalanceConfigurer, InitializationConfigurer {
 
         @Override
         public List<String> urls() {
+            assertEquals(BalancerClientNeo.class, InitializationContext.getOhClass());
+            assertNull(InitializationContext.getOhMethod());
             return newArrayList("${root}:41240", "${root}:41250");
         }
 
         @Override
         public MappingBalance.MappingBalancer mappingBalancer() {
+            assertEquals(BalancerClientNeo.class, InitializationContext.getOhClass());
+            assertNull(InitializationContext.getOhMethod());
             return new RoundRobinBalancer();
         }
     }
@@ -166,11 +173,15 @@ public class BalancerTest {
 
         @Override
         public List<String> urls() {
+            assertEquals(BalancerClientNeo.class, InitializationContext.getOhClass());
+            assertEquals("get2", InitializationContext.getOhMethod().getName());
             return newArrayList("/sample1", "/sample2");
         }
 
         @Override
         public MappingBalance.MappingBalancer mappingBalancer() {
+            assertEquals(BalancerClientNeo.class, InitializationContext.getOhClass());
+            assertEquals("get2", InitializationContext.getOhMethod().getName());
             return new MyBalancer();
         }
     }

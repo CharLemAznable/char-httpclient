@@ -212,7 +212,7 @@ public interface MyHttpClient {
 
 指定客户端代理的类型/host/port.
 
-##### ```@ClientProxyDisabled```
+##### ```@ClientProxy.Disabled```
 
 添加在方法上, 可屏蔽添加在接口上的客户端代理配置.
 
@@ -220,7 +220,7 @@ public interface MyHttpClient {
 
 指定客户端SSL配置.
 
-##### ```@ClientSSLDisabled```
+##### ```@ClientSSL.DisabledSSLSocketFactory``` ```@ClientSSL.DisabledX509TrustManager``` ```@ClientSSL.DisabledHostnameVerifier``` ```@ClientSSL.Disabled```
 
 添加在方法上, 可屏蔽添加在接口上的客户端SSL配置.
 

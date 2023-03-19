@@ -11,6 +11,7 @@ import com.github.charlemaznable.httpclient.common.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.common.StatusErrorThrower;
 import com.github.charlemaznable.httpclient.configurer.Configurer;
 import com.github.charlemaznable.httpclient.configurer.DefaultFallbackDisabledConfigurer;
+import com.github.charlemaznable.httpclient.configurer.InitializationConfigurer;
 import com.github.charlemaznable.httpclient.configurer.MappingMethodNameDisabledConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.ohclient.OhException;
@@ -36,6 +37,7 @@ import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_HTTP_METHOD;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_LOGGING_LEVEL;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.ohConnectionPool;
+import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.ohDispatcher;
 import static com.google.common.cache.CacheLoader.from;
 import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.core.annotation.AnnotatedElementUtils.isAnnotated;
@@ -85,18 +87,21 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
         checkConfigurerIsRegisterThenRun(this.configurer, register ->
                 register.addConfigListener(this.configListener));
 
+        Elf.setUpBeforeInitialization(this.configurer, this.ohClass);
+
         this.baseUrls = emptyThen(checkMappingUrls(this.configurer, this.ohClass), () -> newArrayList(""));
         this.mappingMethodNameDisabled = Elf.checkMappingMethodNameDisabled(this.configurer, this.ohClass);
 
         this.clientProxy = checkClientProxy(this.configurer, this.ohClass);
         this.sslRoot = Elf.checkClientSSL(this.configurer, this.ohClass, this.factory);
+        this.dispatcher = nullThen(checkDispatcher(
+                this.configurer, this.ohClass), () -> ohDispatcher);
         this.connectionPool = nullThen(checkConnectionPool(
                 this.configurer, this.ohClass), () -> ohConnectionPool);
         this.timeoutRoot = Elf.checkClientTimeout(this.configurer, this.ohClass);
         this.interceptors = checkClientInterceptors(this.configurer, this.ohClass, this.factory);
         this.loggingLevel = nullThen(checkClientLoggingLevel(
                 this.configurer, this.ohClass), () -> DEFAULT_LOGGING_LEVEL);
-        this.dispatcherRoot = Elf.checkClientDispatcher(this.configurer, this.ohClass);
 
         this.okHttpClient = buildOkHttpClient(this);
 
@@ -120,6 +125,8 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
         this.extraUrlQueryBuilder = checkExtraUrlQueryBuilder(this.configurer, this.ohClass, this.factory);
         this.mappingBalancer = nullThen(checkMappingBalancer(
                 this.configurer, this.ohClass, this.factory), MappingBalance.RandomBalancer::new);
+
+        Elf.tearDownAfterInitialization(this.configurer, this.ohClass);
     }
 
     private OhMappingProxy loadMappingProxy(Method method) {
@@ -132,6 +139,14 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
         static void checkOhClient(Class clazz) {
             if (isAnnotated(clazz, OhClient.class)) return;
             throw new OhException(clazz.getName() + " has no OhClient annotation");
+        }
+
+        static void setUpBeforeInitialization(Configurer configurer, Class clazz) {
+            if (configurer instanceof InitializationConfigurer) {
+                ((InitializationConfigurer) configurer).setUpBeforeInitialization(clazz, null);
+            } else {
+                InitializationConfigurer.INSTANCE.setUpBeforeInitialization(clazz, null);
+            }
         }
 
         static boolean checkMappingMethodNameDisabled(Configurer configurer, Class clazz) {
@@ -148,10 +163,6 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
             return OhRoot.checkClientTimeout(configurer, clazz, new TimeoutRoot());
         }
 
-        static DispatcherRoot checkClientDispatcher(Configurer configurer, Class clazz) {
-            return OhRoot.checkClientDispatcher(configurer, clazz, new DispatcherRoot());
-        }
-
         static Map<HttpStatus.Series, Class<? extends FallbackFunction>> defaultFallback(Configurer configurer, Class clazz) {
             val disabled = configurer instanceof DefaultFallbackDisabledConfigurer
                     ? ((DefaultFallbackDisabledConfigurer) configurer).disabledDefaultFallback()
@@ -159,6 +170,14 @@ public final class OhProxy extends OhRoot implements MethodInterceptor, Reloadab
             return disabled ? newHashMap() : of(
                     HttpStatus.Series.CLIENT_ERROR, StatusErrorThrower.class,
                     HttpStatus.Series.SERVER_ERROR, StatusErrorThrower.class);
+        }
+
+        static void tearDownAfterInitialization(Configurer configurer, Class clazz) {
+            if (configurer instanceof InitializationConfigurer) {
+                ((InitializationConfigurer) configurer).tearDownAfterInitialization(clazz, null);
+            } else {
+                InitializationConfigurer.INSTANCE.tearDownAfterInitialization(clazz, null);
+            }
         }
     }
 }
