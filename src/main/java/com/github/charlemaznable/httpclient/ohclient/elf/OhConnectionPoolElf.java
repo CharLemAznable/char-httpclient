@@ -1,10 +1,14 @@
 package com.github.charlemaznable.httpclient.ohclient.elf;
 
+import lombok.NoArgsConstructor;
 import lombok.val;
 import okhttp3.ConnectionPool;
 
 import java.util.ServiceLoader;
 
+import static lombok.AccessLevel.PRIVATE;
+
+@NoArgsConstructor(access = PRIVATE)
 public final class OhConnectionPoolElf {
 
     private static final OhConnectionPoolSupplier instance;

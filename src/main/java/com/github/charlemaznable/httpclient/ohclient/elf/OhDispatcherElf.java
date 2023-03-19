@@ -6,7 +6,6 @@ import okhttp3.Dispatcher;
 
 import java.util.ServiceLoader;
 
-import static java.util.concurrent.Executors.newCachedThreadPool;
 import static lombok.AccessLevel.PRIVATE;
 
 @NoArgsConstructor(access = PRIVATE)
@@ -36,8 +35,7 @@ public final class OhDispatcherElf {
 
         @Override
         public Dispatcher supply() {
-            return new Dispatcher(newCachedThreadPool(r ->
-                    new Thread(r, "OhClient Dispatcher")));
+            return new Dispatcher();
         }
     }
 }
