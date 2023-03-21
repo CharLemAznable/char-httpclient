@@ -53,7 +53,7 @@ public abstract class CommonReq<T extends CommonReq<T>> {
         this.baseUrl = baseUrl;
     }
 
-    public CommonReq(CommonReq<T> other) {
+    public CommonReq(CommonReq<?> other) {
         this.baseUrl = other.baseUrl;
         this.reqPath = other.reqPath;
         this.acceptCharset = other.acceptCharset;
@@ -132,5 +132,16 @@ public abstract class CommonReq<T extends CommonReq<T>> {
         val extraUrlQuery = checkNull(this.extraUrlQueryBuilder, () -> "",
                 builder -> builder.build(parameterMap, newHashMap()));
         return concatUrlQuery(requestUrl, extraUrlQuery);
+    }
+
+    protected static final class Instance extends CommonReq<Instance> {
+
+        public Instance(CommonReq<?> other) {
+            super(other);
+        }
+
+        public Instance copy() {
+            return new Instance(this);
+        }
     }
 }

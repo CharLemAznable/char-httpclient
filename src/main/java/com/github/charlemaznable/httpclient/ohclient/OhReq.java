@@ -1,6 +1,8 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.httpclient.common.CommonReq;
+import com.github.charlemaznable.httpclient.common.ContentFormat;
+import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
@@ -30,9 +32,12 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
 import java.net.Proxy;
+import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
@@ -76,6 +81,12 @@ public class OhReq extends CommonReq<OhReq> {
 
     public OhReq(String baseUrl) {
         super(baseUrl);
+        this.interceptors = newArrayList();
+        this.loggingInterceptor = new HttpLoggingInterceptor();
+    }
+
+    public OhReq(CommonReq<?> other) {
+        super(other);
         this.interceptors = newArrayList();
         this.loggingInterceptor = new HttpLoggingInterceptor();
     }
@@ -197,39 +208,107 @@ public class OhReq extends CommonReq<OhReq> {
     }
 
     public Instance buildInstance() {
-        return new Instance(buildHttpClient(), new OhReq(this));
+        return new Instance(buildHttpClient(), new CommonReq.Instance(this));
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public static final class Instance {
+    public static final class Instance extends CommonReq<Instance> {
 
         private final OkHttpClient httpClient;
-        private final OhReq ohReq;
+        private final CommonReq.Instance req;
+
+        @Override
+        public OhReq.Instance req(String reqPath) {
+            return new OhReq.Instance(this.httpClient,
+                    this.req.copy().req(reqPath));
+        }
+
+        @Override
+        public OhReq.Instance acceptCharset(Charset acceptCharset) {
+            return new OhReq.Instance(this.httpClient,
+                    this.req.copy().acceptCharset(acceptCharset));
+        }
+
+        @Override
+        public OhReq.Instance contentFormat(ContentFormat.ContentFormatter contentFormatter) {
+            return new OhReq.Instance(this.httpClient,
+                    this.req.copy().contentFormat(contentFormatter));
+        }
+
+        @Override
+        public OhReq.Instance header(String name, String value) {
+            return new OhReq.Instance(this.httpClient,
+                    this.req.copy().header(name, value));
+        }
+
+        @Override
+        public OhReq.Instance headers(Map<String, String> headers) {
+            return new OhReq.Instance(this.httpClient,
+                    this.req.copy().headers(headers));
+        }
+
+        @Override
+        public OhReq.Instance parameter(String name, Object value) {
+            return new OhReq.Instance(this.httpClient,
+                    this.req.copy().parameter(name, value));
+        }
+
+        @Override
+        public OhReq.Instance parameters(Map<String, Object> parameters) {
+            return new OhReq.Instance(this.httpClient,
+                    this.req.copy().parameters(parameters));
+        }
+
+        @Override
+        public OhReq.Instance requestBody(String requestBody) {
+            return new OhReq.Instance(this.httpClient,
+                    this.req.copy().requestBody(requestBody));
+        }
+
+        @Override
+        public OhReq.Instance extraUrlQueryBuilder(ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder) {
+            return new OhReq.Instance(this.httpClient,
+                    this.req.copy().extraUrlQueryBuilder(extraUrlQueryBuilder));
+        }
+
+        @SuppressWarnings("rawtypes")
+        @Override
+        public OhReq.Instance statusFallback(HttpStatus httpStatus, Class<? extends FallbackFunction> errorClass) {
+            return new OhReq.Instance(this.httpClient,
+                    this.req.copy().statusFallback(httpStatus, errorClass));
+        }
+
+        @SuppressWarnings("rawtypes")
+        @Override
+        public OhReq.Instance statusSeriesFallback(HttpStatus.Series httpStatusSeries, Class<? extends FallbackFunction> errorClass) {
+            return new OhReq.Instance(this.httpClient,
+                    this.req.copy().statusSeriesFallback(httpStatusSeries, errorClass));
+        }
 
         public String get() {
-            return this.execute(ohReq.buildGetRequest());
+            return this.execute(new OhReq(this.req), OhReq::buildGetRequest);
         }
 
         public String post() {
-            return this.execute(ohReq.buildPostRequest());
+            return this.execute(new OhReq(this.req), OhReq::buildPostRequest);
         }
 
         public Future<String> getFuture() {
-            return this.enqueue(ohReq.buildGetRequest());
+            return this.enqueue(new OhReq(this.req), OhReq::buildGetRequest);
         }
 
         public Future<String> postFuture() {
-            return this.enqueue(ohReq.buildPostRequest());
+            return this.enqueue(new OhReq(this.req), OhReq::buildPostRequest);
         }
 
         @SneakyThrows
-        private String execute(Request request) {
-            return ohReq.processResponse(httpClient.newCall(request).execute());
+        private String execute(OhReq ohReq, Function<OhReq, Request> requestBuilder) {
+            return ohReq.processResponse(httpClient.newCall(requestBuilder.apply(ohReq)).execute());
         }
 
-        private Future<String> enqueue(Request request) {
+        private Future<String> enqueue(OhReq ohReq, Function<OhReq, Request> requestBuilder) {
             val future = new OhCallbackFuture<>(ohReq::processResponse);
-            httpClient.newCall(request).enqueue(future);
+            httpClient.newCall(requestBuilder.apply(ohReq)).enqueue(future);
             return future;
         }
     }

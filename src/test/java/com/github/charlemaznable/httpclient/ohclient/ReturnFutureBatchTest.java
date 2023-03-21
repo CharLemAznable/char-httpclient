@@ -161,17 +161,17 @@ public class ReturnFutureBatchTest {
     }
 
     public void vertxBatchRun(Vertx vertx, VertxTestContext test, int times, Runnable complete) {
-        val service1 = new VxReq(vertx, "http://127.0.0.1:41400/service1").buildGetInstance();
-        val service2 = new VxReq(vertx, "http://127.0.0.1:41400/service2").buildGetInstance();
-        val service3 = new VxReq(vertx, "http://127.0.0.1:41400/service3").buildGetInstance();
+        val service1 = new VxReq(vertx, "http://127.0.0.1:41400/service1").buildInstance();
+        val service2 = new VxReq(vertx, "http://127.0.0.1:41400/service2").buildInstance();
+        val service3 = new VxReq(vertx, "http://127.0.0.1:41400/service3").buildInstance();
         val futures = new ArrayList<io.vertx.core.Future<CompositeFuture>>();
         for (int i = 0; i < times; ++i) {
             futures.add(io.vertx.core.Future.future(f -> CompositeFuture.all(newArrayList(
-                    io.vertx.core.Future.<String>future(f2 -> service1.request(async ->
+                    io.vertx.core.Future.<String>future(f2 -> service1.get(async ->
                             log.debug("vertx result1 {}", async.result()), f2)),
-                    io.vertx.core.Future.<String>future(f2 -> service2.request(async ->
+                    io.vertx.core.Future.<String>future(f2 -> service2.get(async ->
                             log.debug("vertx result2 {}", async.result()), f2)),
-                    io.vertx.core.Future.<String>future(f2 -> service3.request(async ->
+                    io.vertx.core.Future.<String>future(f2 -> service3.get(async ->
                             log.debug("vertx result3 {}", async.result()), f2))
             )).onComplete(f)));
         }
