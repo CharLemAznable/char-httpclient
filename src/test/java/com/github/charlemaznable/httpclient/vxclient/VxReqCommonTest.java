@@ -47,16 +47,20 @@ public abstract class VxReqCommonTest extends CommonReqTest {
                                 .parameter("AAA", "aaa")
                                 .parameters(of("AAA", null, "BBB", "bbb"))
                                 .requestBody("CCC=ccc")
-                                .get(async -> test.verify(() ->
-                                        assertEquals("Sample3", async.result())), f)),
+                                .get()
+                                .onComplete(async -> test.verify(() ->
+                                        assertEquals("Sample3", async.result())))
+                                .andThen(f)),
                 Future.<String>future(f ->
                         new VxReq(vertx, "http://127.0.0.1:9300")
                                 .req("/sample4")
                                 .parameter("AAA", "aaa")
                                 .parameters(of("AAA", null, "BBB", "bbb"))
                                 .requestBody("CCC=ccc")
-                                .post(async -> test.verify(() ->
-                                        assertEquals("Sample4", async.result())), f)),
+                                .post()
+                                .onComplete(async -> test.verify(() ->
+                                        assertEquals("Sample4", async.result())))
+                                .andThen(f)),
                 Future.<String>future(f ->
                         new VxReq(vertx, "http://127.0.0.1:9300/sample5")
                                 .get(async -> test.verify(() -> {
@@ -134,15 +138,19 @@ public abstract class VxReqCommonTest extends CommonReqTest {
                                 .parameter("AAA", "aaa")
                                 .parameters(of("AAA", null, "BBB", "bbb"))
                                 .requestBody("CCC=ccc")
-                                .get(async -> test.verify(() ->
-                                        assertEquals("Sample3", async.result())), f)),
+                                .get()
+                                .onComplete(async -> test.verify(() ->
+                                        assertEquals("Sample3", async.result())))
+                                .andThen(f)),
                 Future.<String>future(f ->
                         instance.req("/sample4")
                                 .parameter("AAA", "aaa")
                                 .parameters(of("AAA", null, "BBB", "bbb"))
                                 .requestBody("CCC=ccc")
-                                .post(async -> test.verify(() ->
-                                        assertEquals("Sample4", async.result())), f)),
+                                .post()
+                                .onComplete(async -> test.verify(() ->
+                                        assertEquals("Sample4", async.result())))
+                                .andThen(f)),
                 Future.<String>future(f ->
                         instance.req("/sample5")
                                 .get(async -> test.verify(() -> {

@@ -7,6 +7,7 @@ import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.FallbackFunction.Response;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -107,6 +108,14 @@ public class VxReq extends CommonReq<VxReq> {
         buildInstance().post(handlers);
     }
 
+    public Future<String> get() {
+        return buildInstance().get();
+    }
+
+    public Future<String> post() {
+        return buildInstance().post();
+    }
+
     public WebClient buildWebClient() {
         return WebClient.create(requireNonNull(vertx), webClientOptions);
     }
@@ -199,6 +208,14 @@ public class VxReq extends CommonReq<VxReq> {
             request(new VxReq(this.req), VxReq::buildPostRequest, VxReq::buildPostBody, handlers);
         }
 
+        public Future<String> get() {
+            return request(new VxReq(this.req), VxReq::buildGetRequest, VxReq::buildGetBody);
+        }
+
+        public Future<String> post() {
+            return request(new VxReq(this.req), VxReq::buildPostRequest, VxReq::buildPostBody);
+        }
+
         @SafeVarargs
         private void request(VxReq vxReq,
                              BiFunction<VxReq, WebClient, HttpRequest<Buffer>> requestBuilder,
@@ -206,6 +223,15 @@ public class VxReq extends CommonReq<VxReq> {
                              Handler<AsyncResult<String>>... handlers) {
             requestBuilder.apply(vxReq, this.webClient)
                     .sendBuffer(bodyBuilder.apply(vxReq), vxReq.handle(handlers));
+        }
+
+        private Future<String> request(VxReq vxReq,
+                                       BiFunction<VxReq, WebClient, HttpRequest<Buffer>> requestBuilder,
+                                       Function<VxReq, Buffer> bodyBuilder) {
+            Promise<String> promise = Promise.promise();
+            requestBuilder.apply(vxReq, this.webClient)
+                    .sendBuffer(bodyBuilder.apply(vxReq), vxReq.handle(promise));
+            return promise.future();
         }
     }
 
@@ -283,7 +309,7 @@ public class VxReq extends CommonReq<VxReq> {
                     promise.fail(e);
                 }
             } else {
-                promise.fail(new VxException(arResponse.cause()));
+                promise.fail(new VxException(arResponse.cause())); // to remove VxException wrapper
             }
 
             iterateHandlers(promise, handlers);
