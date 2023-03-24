@@ -139,30 +139,30 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         this.okHttpClient = Elf.buildOkHttpClient(this, this.proxy);
 
         this.acceptCharset = nullThen(checkAcceptCharset(
-                this.configurer, this.ohMethod), () -> this.proxy.acceptCharset);
+                this.configurer, this.ohMethod), this.proxy::acceptCharset);
         this.contentFormatter = nullThen(checkContentFormatter(
-                this.configurer, this.ohMethod, this.factory), () -> this.proxy.contentFormatter);
+                this.configurer, this.ohMethod, this.factory), this.proxy::contentFormatter);
         this.httpMethod = nullThen(checkHttpMethod(
-                this.configurer, this.ohMethod), () -> this.proxy.httpMethod);
-        this.headers = newArrayList(this.proxy.headers);
+                this.configurer, this.ohMethod), this.proxy::httpMethod);
+        this.headers = newArrayList(this.proxy.headers());
         this.headers.addAll(checkFixedHeaders(this.configurer, this.ohMethod));
-        this.pathVars = newArrayList(this.proxy.pathVars);
+        this.pathVars = newArrayList(this.proxy.pathVars());
         this.pathVars.addAll(checkFixedPathVars(this.configurer, this.ohMethod));
-        this.parameters = newArrayList(this.proxy.parameters);
+        this.parameters = newArrayList(this.proxy.parameters());
         this.parameters.addAll(checkFixedParameters(this.configurer, this.ohMethod));
-        this.contexts = newArrayList(this.proxy.contexts);
+        this.contexts = newArrayList(this.proxy.contexts());
         this.contexts.addAll(checkFixedContexts(this.configurer, this.ohMethod));
 
-        this.statusFallbackMapping = newHashMap(this.proxy.statusFallbackMapping);
+        this.statusFallbackMapping = newHashMap(this.proxy.statusFallbackMapping());
         this.statusFallbackMapping.putAll(checkStatusFallbackMapping(this.configurer, this.ohMethod));
-        this.statusSeriesFallbackMapping = newHashMap(this.proxy.statusSeriesFallbackMapping);
+        this.statusSeriesFallbackMapping = newHashMap(this.proxy.statusSeriesFallbackMapping());
         this.statusSeriesFallbackMapping.putAll(checkStatusSeriesFallbackMapping(this.configurer, this.ohMethod));
 
         this.requestExtender = Elf.checkRequestExtender(this.configurer, this.ohMethod, this.factory, this.proxy);
         this.responseParser = Elf.checkResponseParser(this.configurer, this.ohMethod, this.factory, this.proxy);
         this.extraUrlQueryBuilder = Elf.checkExtraUrlQueryBuilder(this.configurer, this.ohMethod, this.factory, this.proxy);
         this.mappingBalancer = nullThen(checkMappingBalancer(
-                this.configurer, this.ohMethod, this.factory), () -> this.proxy.mappingBalancer);
+                this.configurer, this.ohMethod, this.factory), this.proxy::mappingBalancer);
 
         Elf.tearDownAfterInitialization(this.configurer, this.ohMethod, this.ohClass, this.proxy);
     }
@@ -383,7 +383,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         }
 
         static List<String> checkRequestUrls(Configurer configurer, Method method, OhProxy proxy) {
-            val urls = emptyThen(checkMappingUrls(configurer, method), () ->
+            val urls = emptyThen(checkMappingUrls(configurer, method, OhDummy::substitute), () ->
                     newArrayList(proxy.mappingMethodNameDisabled ? "" : "/" + method.getName()));
             Set<String> requestUrls = newHashSet();
             for (val url : urls) {
@@ -458,7 +458,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
                     ? disabledConfigurer.disabledRequestExtend()
                     : isAnnotated(method, RequestExtend.Disabled.class)) return null;
             return nullThen(OhRoot.checkRequestExtender(
-                    configurer, method, factory), () -> proxy.requestExtender);
+                    configurer, method, factory), proxy::requestExtender);
         }
 
         static ResponseParse.ResponseParser checkResponseParser(
@@ -467,7 +467,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
                     ? disabledConfigurer.disabledResponseParse()
                     : isAnnotated(method, ResponseParse.Disabled.class)) return null;
             return nullThen(OhRoot.checkResponseParser(
-                    configurer, method, factory), () -> proxy.responseParser);
+                    configurer, method, factory), proxy::responseParser);
         }
 
         static ExtraUrlQuery.ExtraUrlQueryBuilder checkExtraUrlQueryBuilder(
@@ -476,7 +476,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
                     ? disabledConfigurer.disabledExtraUrlQuery()
                     : isAnnotated(method, ExtraUrlQuery.Disabled.class)) return null;
             return nullThen(OhRoot.checkExtraUrlQueryBuilder(
-                    configurer, method, factory), () -> proxy.extraUrlQueryBuilder);
+                    configurer, method, factory), proxy::extraUrlQueryBuilder);
         }
 
         static void tearDownAfterInitialization(Configurer configurer, Method method, Class clazz, OhProxy proxy) {

@@ -89,7 +89,8 @@ public final class OhProxy extends OhRoot implements BuddyEnhancer.Delegate, Rel
 
         Elf.setUpBeforeInitialization(this.configurer, this.ohClass);
 
-        this.baseUrls = emptyThen(checkMappingUrls(this.configurer, this.ohClass), () -> newArrayList(""));
+        this.baseUrls = emptyThen(checkMappingUrls(
+                this.configurer, this.ohClass, OhDummy::substitute), () -> newArrayList(""));
         this.mappingMethodNameDisabled = Elf.checkMappingMethodNameDisabled(this.configurer, this.ohClass);
 
         this.clientProxy = checkClientProxy(this.configurer, this.ohClass);

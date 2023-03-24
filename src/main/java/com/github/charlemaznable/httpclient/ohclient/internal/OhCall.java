@@ -92,17 +92,10 @@ public final class OhCall extends OhRoot {
         this.interceptors = newArrayList(proxy.interceptors);
         this.loggingLevel = proxy.loggingLevel;
 
-        this.acceptCharset = proxy.acceptCharset;
-        this.contentFormatter = proxy.contentFormatter;
-        this.httpMethod = proxy.httpMethod;
-        this.headers = newArrayList(proxy.headers);
-        this.pathVars = newArrayList(proxy.pathVars);
-        this.parameters = newArrayList(proxy.parameters);
-        this.contexts = newArrayList(proxy.contexts);
-
-        this.requestExtender = proxy.requestExtender;
-
-        this.extraUrlQueryBuilder = proxy.extraUrlQueryBuilder;
+        this.headers = newArrayList(proxy.headers());
+        this.pathVars = newArrayList(proxy.pathVars());
+        this.parameters = newArrayList(proxy.parameters());
+        this.contexts = newArrayList(proxy.contexts());
     }
 
     private void processArguments(Method method, Object[] args) {
@@ -252,13 +245,13 @@ public final class OhCall extends OhRoot {
     private Request buildRequest(OhMappingProxy proxy) {
         val requestBuilder = new Request.Builder();
 
-        notNullThenRun(this.requestExtender, extender -> extender.extend(
+        notNullThenRun(proxy.requestExtender(), extender -> extender.extend(
                 this.headers, this.pathVars, this.parameters, this.contexts));
 
         val headersBuilder = new Headers.Builder();
-        val acceptCharsetName = this.acceptCharset.name();
+        val acceptCharsetName = proxy.acceptCharset().name();
         headersBuilder.set(ACCEPT_CHARSET, acceptCharsetName);
-        val contentType = this.contentFormatter.contentType();
+        val contentType = proxy.contentFormatter().contentType();
         headersBuilder.set(CONTENT_TYPE, contentType);
         for (val header : this.headers) {
             checkNull(header.getValue(),
@@ -273,12 +266,12 @@ public final class OhCall extends OhRoot {
 
         val pathVarSubstitutor = new StringSubstitutor(pathVarMap, "{", "}");
         val substitutedUrl = pathVarSubstitutor.replace(
-                proxy.mappingBalancer.choose(proxy.requestUrls));
-        val extraUrlQuery = checkNull(this.extraUrlQueryBuilder, () -> "",
-                builder -> builder.build(parameterMap, contextMap));
+                proxy.mappingBalancer().choose(proxy.requestUrls));
+        val extraUrlQuery = checkNull(proxy.extraUrlQueryBuilder(),
+                () -> "", builder -> builder.build(parameterMap, contextMap));
         val requestUrl = concatUrlQuery(substitutedUrl, extraUrlQuery);
 
-        val requestMethod = this.httpMethod.toString();
+        val requestMethod = proxy.httpMethod().toString();
         if (!HttpMethod.permitsRequestBody(requestMethod)) {
             requestBuilder.method(requestMethod, null);
             val query = URL_QUERY_FORMATTER.format(parameterMap, contextMap);
@@ -286,7 +279,7 @@ public final class OhCall extends OhRoot {
 
         } else {
             val content = nullThen(this.requestBodyRaw, () ->
-                    this.contentFormatter.format(parameterMap, contextMap));
+                    proxy.contentFormatter().format(parameterMap, contextMap));
             val contentTypeHeader = nullThen(headersBuilder.get(CONTENT_TYPE),
                     DEFAULT_CONTENT_FORMATTER::contentType);
             requestBuilder.method(requestMethod, RequestBody.create(
