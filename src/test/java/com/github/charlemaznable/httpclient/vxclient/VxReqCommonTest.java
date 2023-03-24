@@ -1,8 +1,7 @@
 package com.github.charlemaznable.httpclient.vxclient;
 
 import com.github.charlemaznable.httpclient.common.CommonReqTest;
-import com.github.charlemaznable.httpclient.common.ContentFormat.FormContentFormatter;
-import com.github.charlemaznable.httpclient.common.ContentFormat.JsonContentFormatter;
+import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.StatusError;
@@ -31,7 +30,7 @@ public abstract class VxReqCommonTest extends CommonReqTest {
                 Future.<String>future(f ->
                         new VxReq(vertx, "http://127.0.0.1:9300/sample1")
                                 .acceptCharset(ISO_8859_1)
-                                .contentFormat(new FormContentFormatter())
+                                .contentFormat(new ContentFormat.FormContentFormatter())
                                 .header("AAA", "aaa")
                                 .headers(of("AAA", null, "BBB", "bbb"))
                                 .parameter("CCC", "ccc")
@@ -97,14 +96,14 @@ public abstract class VxReqCommonTest extends CommonReqTest {
                                         assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), async.result())), f)),
                 Future.<String>future(f ->
                         new VxReq(vertx, "http://127.0.0.1:9300/sample7")
-                                .contentFormat(new JsonContentFormatter())
+                                .contentFormat(new ContentFormat.JsonContentFormatter())
                                 .parameter("BBB", "bbb")
                                 .extraUrlQueryBuilder((parameterMap, contextMap) -> "AAA=aaa")
                                 .get(async -> test.verify(() ->
                                         assertEquals("Sample7", async.result())), f)),
                 Future.<String>future(f ->
                         new VxReq(vertx, "http://127.0.0.1:9300/sample7")
-                                .contentFormat(new JsonContentFormatter())
+                                .contentFormat(new ContentFormat.JsonContentFormatter())
                                 .parameter("BBB", "bbb")
                                 .extraUrlQueryBuilder((parameterMap, contextMap) -> "AAA=aaa")
                                 .post(async -> test.verify(() ->
@@ -123,7 +122,7 @@ public abstract class VxReqCommonTest extends CommonReqTest {
                 Future.<String>future(f ->
                         instance.req("/sample1")
                                 .acceptCharset(ISO_8859_1)
-                                .contentFormat(new FormContentFormatter())
+                                .contentFormat(new ContentFormat.FormContentFormatter())
                                 .header("AAA", "aaa")
                                 .headers(of("AAA", null, "BBB", "bbb"))
                                 .parameter("CCC", "ccc")
@@ -187,14 +186,14 @@ public abstract class VxReqCommonTest extends CommonReqTest {
                                         assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), async.result())), f)),
                 Future.<String>future(f ->
                         instance.req("/sample7")
-                                .contentFormat(new JsonContentFormatter())
+                                .contentFormat(new ContentFormat.JsonContentFormatter())
                                 .parameter("BBB", "bbb")
                                 .extraUrlQueryBuilder((parameterMap, contextMap) -> "AAA=aaa")
                                 .get(async -> test.verify(() ->
                                         assertEquals("Sample7", async.result())), f)),
                 Future.<String>future(f ->
                         instance.req("/sample7")
-                                .contentFormat(new JsonContentFormatter())
+                                .contentFormat(new ContentFormat.JsonContentFormatter())
                                 .parameter("BBB", "bbb")
                                 .extraUrlQueryBuilder((parameterMap, contextMap) -> "AAA=aaa")
                                 .post(async -> test.verify(() ->

@@ -1,8 +1,5 @@
 package com.github.charlemaznable.httpclient.common;
 
-import com.github.charlemaznable.httpclient.common.ContentFormat.ContentFormatter;
-import com.github.charlemaznable.httpclient.common.ContentFormat.FormContentFormatter;
-import com.github.charlemaznable.httpclient.common.ExtraUrlQuery.ExtraUrlQueryBuilder;
 import lombok.val;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -23,20 +20,20 @@ import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class CommonReq<T extends CommonReq<T>> {
 
-    protected static final ContentFormatter URL_QUERY_FORMATTER = new FormContentFormatter();
+    protected static final ContentFormat.ContentFormatter URL_QUERY_FORMATTER = new ContentFormat.FormContentFormatter();
 
     protected String baseUrl;
 
     protected String reqPath;
 
     protected Charset acceptCharset = DEFAULT_ACCEPT_CHARSET;
-    protected ContentFormatter contentFormatter = DEFAULT_CONTENT_FORMATTER;
+    protected ContentFormat.ContentFormatter contentFormatter = DEFAULT_CONTENT_FORMATTER;
 
     protected List<Pair<String, String>> headers = newArrayList();
     protected List<Pair<String, Object>> parameters = newArrayList();
     protected String requestBody;
 
-    protected ExtraUrlQueryBuilder extraUrlQueryBuilder;
+    protected ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder;
 
     protected Map<HttpStatus, Class<? extends FallbackFunction>>
             statusFallbackMapping = newHashMap();
@@ -76,7 +73,7 @@ public abstract class CommonReq<T extends CommonReq<T>> {
         return (T) this;
     }
 
-    public T contentFormat(ContentFormatter contentFormatter) {
+    public T contentFormat(ContentFormat.ContentFormatter contentFormatter) {
         this.contentFormatter = contentFormatter;
         return (T) this;
     }
@@ -106,7 +103,7 @@ public abstract class CommonReq<T extends CommonReq<T>> {
         return (T) this;
     }
 
-    public T extraUrlQueryBuilder(ExtraUrlQueryBuilder extraUrlQueryBuilder) {
+    public T extraUrlQueryBuilder(ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder) {
         this.extraUrlQueryBuilder = extraUrlQueryBuilder;
         return (T) this;
     }

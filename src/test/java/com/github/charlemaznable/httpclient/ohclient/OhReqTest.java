@@ -2,8 +2,7 @@ package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.core.lang.EverythingIsNonNull;
 import com.github.charlemaznable.httpclient.common.CommonReqTest;
-import com.github.charlemaznable.httpclient.common.ContentFormat.FormContentFormatter;
-import com.github.charlemaznable.httpclient.common.ContentFormat.JsonContentFormatter;
+import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.StatusError;
 import com.github.charlemaznable.httpclient.ohclient.OhResponseMappingTest.ClientError;
@@ -41,7 +40,7 @@ public class OhReqTest extends CommonReqTest {
 
         val ohReq1 = new OhReq("http://127.0.0.1:41103/sample1")
                 .acceptCharset(ISO_8859_1)
-                .contentFormat(new FormContentFormatter())
+                .contentFormat(new ContentFormat.FormContentFormatter())
                 .header("AAA", "aaa")
                 .headers(of("AAA", null, "BBB", "bbb"))
                 .parameter("CCC", "ccc")
@@ -122,7 +121,7 @@ public class OhReqTest extends CommonReqTest {
         assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), ohReq6.parameter("AAA", "aaa").get());
 
         val ohReq7 = new OhReq("http://127.0.0.1:41103/sample7")
-                .contentFormat(new JsonContentFormatter())
+                .contentFormat(new ContentFormat.JsonContentFormatter())
                 .parameter("BBB", "bbb")
                 .extraUrlQueryBuilder((parameterMap, contextMap) -> "AAA=aaa")
                 .addInterceptor(loggingInterceptor)
@@ -149,7 +148,7 @@ public class OhReqTest extends CommonReqTest {
 
         val insReq1 = instance.req("/sample1")
                 .acceptCharset(ISO_8859_1)
-                .contentFormat(new FormContentFormatter())
+                .contentFormat(new ContentFormat.FormContentFormatter())
                 .header("AAA", "aaa")
                 .headers(of("AAA", null, "BBB", "bbb"))
                 .parameter("CCC", "ccc");
@@ -215,7 +214,7 @@ public class OhReqTest extends CommonReqTest {
         assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), insReq6.parameter("AAA", "aaa").get());
 
         val insReq7 = instance.req("/sample7")
-                .contentFormat(new JsonContentFormatter())
+                .contentFormat(new ContentFormat.JsonContentFormatter())
                 .parameter("BBB", "bbb")
                 .extraUrlQueryBuilder((parameterMap, contextMap) -> "AAA=aaa");
         assertEquals("Sample7", insReq7.get());

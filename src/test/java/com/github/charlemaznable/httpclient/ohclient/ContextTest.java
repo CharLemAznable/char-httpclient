@@ -3,17 +3,14 @@ package com.github.charlemaznable.httpclient.ohclient;
 import com.github.charlemaznable.core.lang.Mapp;
 import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
-import com.github.charlemaznable.httpclient.common.ContentFormat.ContentFormatter;
 import com.github.charlemaznable.httpclient.common.Context;
 import com.github.charlemaznable.httpclient.common.FixedContext;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.RequestExtend;
-import com.github.charlemaznable.httpclient.common.RequestExtend.RequestExtender;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
 import com.github.charlemaznable.httpclient.common.ResponseParse;
-import com.github.charlemaznable.httpclient.common.ResponseParse.ResponseParser;
 import com.github.charlemaznable.httpclient.configurer.ContentFormatConfigurer;
 import com.github.charlemaznable.httpclient.configurer.FixedContextsConfigurer;
 import com.github.charlemaznable.httpclient.configurer.MappingConfigurer;
@@ -166,7 +163,7 @@ public class ContextTest {
         String sampleNone();
     }
 
-    public static class TestContextFormatter implements ContentFormatter {
+    public static class TestContextFormatter implements ContentFormat.ContentFormatter {
 
         private final Map<String, String> contextValue = Mapp.of(
                 "V1", "CV1",
@@ -192,7 +189,7 @@ public class ContextTest {
         }
     }
 
-    public static class TestResponseParser implements ResponseParser {
+    public static class TestResponseParser implements ResponseParse.ResponseParser {
 
         @Override
         public Object parse(@Nonnull String responseContent,
@@ -213,7 +210,7 @@ public class ContextTest {
         private String response;
     }
 
-    public static class TestRequestExtender implements RequestExtender {
+    public static class TestRequestExtender implements RequestExtend.RequestExtender {
 
         @Override
         public void extend(List<Pair<String, String>> headers,
@@ -269,17 +266,17 @@ public class ContextTest {
         }
 
         @Override
-        public ContentFormatter contentFormatter() {
+        public ContentFormat.ContentFormatter contentFormatter() {
             return new TestContextFormatter();
         }
 
         @Override
-        public ResponseParser responseParser() {
+        public ResponseParse.ResponseParser responseParser() {
             return new TestResponseParser();
         }
 
         @Override
-        public RequestExtender requestExtender() {
+        public RequestExtend.RequestExtender requestExtender() {
             return new TestRequestExtender();
         }
 
@@ -300,12 +297,12 @@ public class ContextTest {
     public static class SampleMappingConfig2 extends SampleMappingConfig implements ResponseParseConfigurer, RequestExtendConfigurer {
 
         @Override
-        public ResponseParser responseParser() {
+        public ResponseParse.ResponseParser responseParser() {
             return new TestResponseParser();
         }
 
         @Override
-        public RequestExtender requestExtender() {
+        public RequestExtend.RequestExtender requestExtender() {
             return new TestRequestExtender();
         }
     }

@@ -2,9 +2,7 @@ package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
-import com.github.charlemaznable.httpclient.common.ContentFormat.JsonContentFormatter;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
-import com.github.charlemaznable.httpclient.common.ExtraUrlQuery.ExtraUrlQueryBuilder;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
@@ -84,7 +82,7 @@ public class ExtraQueryTest {
 
     @MappingBalance(MappingBalance.RoundRobinBalancer.class)
     @ExtraUrlQuery(ExtraOnClass.class)
-    @ContentFormat(JsonContentFormatter.class)
+    @ContentFormat(ContentFormat.JsonContentFormatter.class)
     @Mapping("${root}:41230")
     @OhClient
     public interface ExtraHttpClient {
@@ -99,7 +97,7 @@ public class ExtraQueryTest {
         String sampleNone(@Parameter("P1") String p);
     }
 
-    public static class ExtraOnClass implements ExtraUrlQueryBuilder {
+    public static class ExtraOnClass implements ExtraUrlQuery.ExtraUrlQueryBuilder {
 
         @Override
         public String build(@Nonnull Map<String, Object> parameterMap,
@@ -108,7 +106,7 @@ public class ExtraQueryTest {
         }
     }
 
-    public static class ExtraOnMethod implements ExtraUrlQueryBuilder {
+    public static class ExtraOnMethod implements ExtraUrlQuery.ExtraUrlQueryBuilder {
 
         @Override
         public String build(@Nonnull Map<String, Object> parameterMap,
@@ -118,7 +116,7 @@ public class ExtraQueryTest {
     }
 
     @MappingBalance(MappingBalance.RoundRobinBalancer.class)
-    @ContentFormat(JsonContentFormatter.class)
+    @ContentFormat(ContentFormat.JsonContentFormatter.class)
     @Mapping("${root}:41230")
     @OhClient
     @ConfigureWith(ExtraOnClassConfig.class)
@@ -137,7 +135,7 @@ public class ExtraQueryTest {
     public static class ExtraOnClassConfig implements ExtraUrlQueryConfigurer {
 
         @Override
-        public ExtraUrlQueryBuilder extraUrlQueryBuilder() {
+        public ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder() {
             return new ExtraOnClass();
         }
     }
@@ -145,7 +143,7 @@ public class ExtraQueryTest {
     public static class ExtraOnMethodConfig implements ExtraUrlQueryConfigurer {
 
         @Override
-        public ExtraUrlQueryBuilder extraUrlQueryBuilder() {
+        public ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder() {
             return new ExtraOnMethod();
         }
     }

@@ -3,9 +3,6 @@ package com.github.charlemaznable.httpclient.ohclient;
 import com.github.charlemaznable.httpclient.common.AcceptCharset;
 import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
-import com.github.charlemaznable.httpclient.common.ContentFormat.ApplicationXmlContentFormatter;
-import com.github.charlemaznable.httpclient.common.ContentFormat.FormContentFormatter;
-import com.github.charlemaznable.httpclient.common.ContentFormat.JsonContentFormatter;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
@@ -230,17 +227,17 @@ public class OhFactoryTest {
     }
 
     @RequestMethod(HttpMethod.POST)
-    @ContentFormat(FormContentFormatter.class)
+    @ContentFormat(ContentFormat.FormContentFormatter.class)
     @Mapping("${root}:41131")
     @OhClient
     public interface ContentFormatHttpClient {
 
         String sample();
 
-        @ContentFormat(JsonContentFormatter.class)
+        @ContentFormat(ContentFormat.JsonContentFormatter.class)
         String sample2();
 
-        @ContentFormat(ApplicationXmlContentFormatter.class)
+        @ContentFormat(ContentFormat.ApplicationXmlContentFormatter.class)
         String sample3();
     }
 
@@ -316,7 +313,7 @@ public class OhFactoryTest {
 
         @Override
         public ContentFormat.ContentFormatter contentFormatter() {
-            return new FormContentFormatter();
+            return new ContentFormat.FormContentFormatter();
         }
     }
 
@@ -324,7 +321,7 @@ public class OhFactoryTest {
 
         @Override
         public ContentFormat.ContentFormatter contentFormatter() {
-            return new JsonContentFormatter();
+            return new ContentFormat.JsonContentFormatter();
         }
     }
 
@@ -332,7 +329,7 @@ public class OhFactoryTest {
 
         @Override
         public ContentFormat.ContentFormatter contentFormatter() {
-            return new ApplicationXmlContentFormatter();
+            return new ContentFormat.ApplicationXmlContentFormatter();
         }
     }
 

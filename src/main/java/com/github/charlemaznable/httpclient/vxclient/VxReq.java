@@ -4,7 +4,6 @@ import com.github.charlemaznable.httpclient.common.CommonReq;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
-import com.github.charlemaznable.httpclient.common.FallbackFunction.Response;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -320,7 +319,7 @@ public class VxReq extends CommonReq<VxReq> {
     private String applyFallback(Class<? extends FallbackFunction> function,
                                  int statusCode, String responseBody) {
         return toStr(reflectFactory().build(function).apply(
-                new Response<>(statusCode, responseBody) {
+                new FallbackFunction.Response<>(statusCode, responseBody) {
                     @Override
                     public String responseBodyAsString() {
                         return getResponseBody();

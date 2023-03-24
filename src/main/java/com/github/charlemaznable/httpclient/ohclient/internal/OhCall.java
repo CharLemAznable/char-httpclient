@@ -4,9 +4,8 @@ import com.github.charlemaznable.core.lang.Reflectt;
 import com.github.charlemaznable.core.lang.Str;
 import com.github.charlemaznable.httpclient.common.Bundle;
 import com.github.charlemaznable.httpclient.common.CncRequest;
-import com.github.charlemaznable.httpclient.common.CncResponse.CncResponseImpl;
-import com.github.charlemaznable.httpclient.common.ContentFormat.ContentFormatter;
-import com.github.charlemaznable.httpclient.common.ContentFormat.FormContentFormatter;
+import com.github.charlemaznable.httpclient.common.CncResponse;
+import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.Context;
 import com.github.charlemaznable.httpclient.common.Header;
 import com.github.charlemaznable.httpclient.common.Parameter;
@@ -60,9 +59,9 @@ import static org.springframework.core.annotation.AnnotationUtils.findAnnotation
 @SuppressWarnings("rawtypes")
 public final class OhCall extends OhRoot {
 
-    private static final ContentFormatter URL_QUERY_FORMATTER = new FormContentFormatter();
+    private static final ContentFormat.ContentFormatter URL_QUERY_FORMATTER = new ContentFormat.FormContentFormatter();
 
-    Class responseClass = CncResponseImpl.class;
+    Class responseClass = CncResponse.CncResponseImpl.class;
     String requestBodyRaw;
     Request request;
 
@@ -139,7 +138,7 @@ public final class OhCall extends OhRoot {
             }
         } else if (CncRequest.class.isAssignableFrom(parameterType)) {
             this.responseClass = checkNull(argument,
-                    () -> CncResponseImpl.class,
+                    () -> CncResponse.CncResponseImpl.class,
                     xx -> ((CncRequest) xx).responseClass());
             return false;
         } else if (Interceptor.class.isAssignableFrom(parameterType)) {

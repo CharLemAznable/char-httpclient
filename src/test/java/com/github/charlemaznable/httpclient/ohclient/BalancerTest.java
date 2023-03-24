@@ -4,8 +4,6 @@ import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.MappingBalance;
-import com.github.charlemaznable.httpclient.common.MappingBalance.RandomBalancer;
-import com.github.charlemaznable.httpclient.common.MappingBalance.RoundRobinBalancer;
 import com.github.charlemaznable.httpclient.configurer.InitializationConfigurer;
 import com.github.charlemaznable.httpclient.configurer.InitializationContext;
 import com.github.charlemaznable.httpclient.configurer.MappingBalanceConfigurer;
@@ -115,7 +113,7 @@ public class BalancerTest {
 
     @Mapping({"${root}:41240", "${root}:41250"})
     @OhClient
-    @MappingBalance(RoundRobinBalancer.class)
+    @MappingBalance(MappingBalance.RoundRobinBalancer.class)
     public interface BalancerClient {
 
         @Mapping({"/sample1", "/sample2"})
@@ -125,12 +123,12 @@ public class BalancerTest {
         @Mapping({"/sample1", "/sample2"})
         void get2();
 
-        @MappingBalance(RandomBalancer.class)
+        @MappingBalance(MappingBalance.RandomBalancer.class)
         @Mapping({"/sample1", "/sample2", "/sample3"})
         void cover();
     }
 
-    public static class MyBalancer extends RoundRobinBalancer {
+    public static class MyBalancer extends MappingBalance.RoundRobinBalancer {
 
         @Override
         public String choose(List<String> urls) {
@@ -165,7 +163,7 @@ public class BalancerTest {
         public MappingBalance.MappingBalancer mappingBalancer() {
             assertEquals(BalancerClientNeo.class, InitializationContext.getOhClass());
             assertNull(InitializationContext.getOhMethod());
-            return new RoundRobinBalancer();
+            return new MappingBalance.RoundRobinBalancer();
         }
     }
 
@@ -195,7 +193,7 @@ public class BalancerTest {
 
         @Override
         public MappingBalance.MappingBalancer mappingBalancer() {
-            return new RandomBalancer();
+            return new MappingBalance.RandomBalancer();
         }
     }
 }

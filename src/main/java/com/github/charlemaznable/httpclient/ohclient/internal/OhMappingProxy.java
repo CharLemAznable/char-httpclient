@@ -6,13 +6,10 @@ import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.common.CncResponse;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
-import com.github.charlemaznable.httpclient.common.ExtraUrlQuery.ExtraUrlQueryBuilder;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.RequestExtend;
-import com.github.charlemaznable.httpclient.common.RequestExtend.RequestExtender;
 import com.github.charlemaznable.httpclient.common.ResponseParse;
-import com.github.charlemaznable.httpclient.common.ResponseParse.ResponseParser;
 import com.github.charlemaznable.httpclient.configurer.Configurer;
 import com.github.charlemaznable.httpclient.configurer.ExtraUrlQueryDisabledConfigurer;
 import com.github.charlemaznable.httpclient.configurer.InitializationConfigurer;
@@ -455,7 +452,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
             return OhRoot.buildOkHttpClient(mappingProxy);
         }
 
-        static RequestExtender checkRequestExtender(
+        static RequestExtend.RequestExtender checkRequestExtender(
                 Configurer configurer, Method method, Factory factory, OhProxy proxy) {
             if (configurer instanceof RequestExtendDisabledConfigurer disabledConfigurer
                     ? disabledConfigurer.disabledRequestExtend()
@@ -464,7 +461,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
                     configurer, method, factory), () -> proxy.requestExtender);
         }
 
-        static ResponseParser checkResponseParser(
+        static ResponseParse.ResponseParser checkResponseParser(
                 Configurer configurer, Method method, Factory factory, OhProxy proxy) {
             if (configurer instanceof ResponseParseDisabledConfigurer disabledConfigurer
                     ? disabledConfigurer.disabledResponseParse()
@@ -473,7 +470,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
                     configurer, method, factory), () -> proxy.responseParser);
         }
 
-        static ExtraUrlQueryBuilder checkExtraUrlQueryBuilder(
+        static ExtraUrlQuery.ExtraUrlQueryBuilder checkExtraUrlQueryBuilder(
                 Configurer configurer, Method method, Factory factory, OhProxy proxy) {
             if (configurer instanceof ExtraUrlQueryDisabledConfigurer disabledConfigurer
                     ? disabledConfigurer.disabledExtraUrlQuery()

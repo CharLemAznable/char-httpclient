@@ -1,7 +1,6 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
-import com.github.charlemaznable.httpclient.common.ContentFormat.ContentFormatter;
-import com.github.charlemaznable.httpclient.common.ContentFormat.FormContentFormatter;
+import com.github.charlemaznable.httpclient.common.ContentFormat;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.google.common.net.HttpHeaders;
 import lombok.NoArgsConstructor;
@@ -22,7 +21,7 @@ public final class OhConstant {
     public static final String ACCEPT_CHARSET = HttpHeaders.ACCEPT_CHARSET;
     public static final Charset DEFAULT_ACCEPT_CHARSET = UTF_8;
     public static final String CONTENT_TYPE = HttpHeaders.CONTENT_TYPE;
-    public static final ContentFormatter DEFAULT_CONTENT_FORMATTER = new FormContentFormatter();
+    public static final ContentFormat.ContentFormatter DEFAULT_CONTENT_FORMATTER = new ContentFormat.FormContentFormatter();
     public static final HttpMethod DEFAULT_HTTP_METHOD = GET;
 
     public static final long DEFAULT_CALL_TIMEOUT = 0;

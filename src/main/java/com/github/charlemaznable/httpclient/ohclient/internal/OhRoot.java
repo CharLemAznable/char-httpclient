@@ -7,9 +7,7 @@ import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.httpclient.common.AcceptCharset;
 import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
-import com.github.charlemaznable.httpclient.common.ContentFormat.ContentFormatter;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
-import com.github.charlemaznable.httpclient.common.ExtraUrlQuery.ExtraUrlQueryBuilder;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.FixedContext;
 import com.github.charlemaznable.httpclient.common.FixedHeader;
@@ -19,12 +17,9 @@ import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.MappingBalance;
-import com.github.charlemaznable.httpclient.common.MappingBalance.MappingBalancer;
 import com.github.charlemaznable.httpclient.common.RequestExtend;
-import com.github.charlemaznable.httpclient.common.RequestExtend.RequestExtender;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
 import com.github.charlemaznable.httpclient.common.ResponseParse;
-import com.github.charlemaznable.httpclient.common.ResponseParse.ResponseParser;
 import com.github.charlemaznable.httpclient.common.StatusFallback;
 import com.github.charlemaznable.httpclient.common.StatusSeriesFallback;
 import com.github.charlemaznable.httpclient.configurer.AcceptCharsetConfigurer;
@@ -111,7 +106,7 @@ class OhRoot {
     OkHttpClient okHttpClient;
 
     Charset acceptCharset;
-    ContentFormatter contentFormatter;
+    ContentFormat.ContentFormatter contentFormatter;
     HttpMethod httpMethod;
     List<Pair<String, String>> headers;
     List<Pair<String, String>> pathVars;
@@ -121,12 +116,12 @@ class OhRoot {
     Map<HttpStatus, Class<? extends FallbackFunction>> statusFallbackMapping;
     Map<HttpStatus.Series, Class<? extends FallbackFunction>> statusSeriesFallbackMapping;
 
-    RequestExtender requestExtender;
-    ResponseParser responseParser;
+    RequestExtend.RequestExtender requestExtender;
+    ResponseParse.ResponseParser responseParser;
 
-    ExtraUrlQueryBuilder extraUrlQueryBuilder;
+    ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder;
 
-    MappingBalancer mappingBalancer;
+    MappingBalance.MappingBalancer mappingBalancer;
 
     static class SSLRoot {
 
@@ -180,7 +175,7 @@ class OhRoot {
         return notNullThen(acceptCharset, anno -> Charset.forName(anno.value()));
     }
 
-    static ContentFormatter checkContentFormatter(Configurer configurer, AnnotatedElement element, Factory factory) {
+    static ContentFormat.ContentFormatter checkContentFormatter(Configurer configurer, AnnotatedElement element, Factory factory) {
         if (configurer instanceof ContentFormatConfigurer contentFormatConfigurer)
             return contentFormatConfigurer.contentFormatter();
         val contentFormat = getMergedAnnotation(element, ContentFormat.class);
@@ -246,28 +241,28 @@ class OhRoot {
                 .stream().collect(toMap(StatusSeriesFallback::statusSeries, StatusSeriesFallback::fallback));
     }
 
-    static RequestExtender checkRequestExtender(Configurer configurer, AnnotatedElement element, Factory factory) {
+    static RequestExtend.RequestExtender checkRequestExtender(Configurer configurer, AnnotatedElement element, Factory factory) {
         if (configurer instanceof RequestExtendConfigurer requestExtendConfigurer)
             return requestExtendConfigurer.requestExtender();
         val requestExtend = getMergedAnnotation(element, RequestExtend.class);
         return notNullThen(requestExtend, anno -> FactoryContext.build(factory, anno.value()));
     }
 
-    static ResponseParser checkResponseParser(Configurer configurer, AnnotatedElement element, Factory factory) {
+    static ResponseParse.ResponseParser checkResponseParser(Configurer configurer, AnnotatedElement element, Factory factory) {
         if (configurer instanceof ResponseParseConfigurer responseParseConfigurer)
             return responseParseConfigurer.responseParser();
         val responseParse = getMergedAnnotation(element, ResponseParse.class);
         return notNullThen(responseParse, anno -> FactoryContext.build(factory, anno.value()));
     }
 
-    static ExtraUrlQueryBuilder checkExtraUrlQueryBuilder(Configurer configurer, AnnotatedElement element, Factory factory) {
+    static ExtraUrlQuery.ExtraUrlQueryBuilder checkExtraUrlQueryBuilder(Configurer configurer, AnnotatedElement element, Factory factory) {
         if (configurer instanceof ExtraUrlQueryConfigurer extraUrlQueryConfigurer)
             return extraUrlQueryConfigurer.extraUrlQueryBuilder();
         val extraUrlQuery = getMergedAnnotation(element, ExtraUrlQuery.class);
         return notNullThen(extraUrlQuery, anno -> FactoryContext.build(factory, anno.value()));
     }
 
-    static MappingBalancer checkMappingBalancer(Configurer configurer, AnnotatedElement element, Factory factory) {
+    static MappingBalance.MappingBalancer checkMappingBalancer(Configurer configurer, AnnotatedElement element, Factory factory) {
         if (configurer instanceof MappingBalanceConfigurer mappingBalanceConfigurer)
             return mappingBalanceConfigurer.mappingBalancer();
         val mappingBalance = getMergedAnnotation(element, MappingBalance.class);

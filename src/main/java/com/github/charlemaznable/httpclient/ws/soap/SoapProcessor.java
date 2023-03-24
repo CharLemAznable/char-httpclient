@@ -1,7 +1,7 @@
 package com.github.charlemaznable.httpclient.ws.soap;
 
-import com.github.charlemaznable.httpclient.common.ContentFormat.ContentFormatter;
-import com.github.charlemaznable.httpclient.common.ResponseParse.ResponseParser;
+import com.github.charlemaznable.httpclient.common.ContentFormat;
+import com.github.charlemaznable.httpclient.common.ResponseParse;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
@@ -9,7 +9,7 @@ import java.util.Map;
 import static com.github.charlemaznable.httpclient.ws.common.Constants.CONTENT_KEY;
 import static com.google.common.net.MediaType.XML_UTF_8;
 
-public final class SoapProcessor implements ContentFormatter, ResponseParser {
+public final class SoapProcessor implements ContentFormat.ContentFormatter, ResponseParse.ResponseParser {
 
     @Override
     public String contentType() {

@@ -3,9 +3,6 @@ package com.github.charlemaznable.httpclient.ohclient;
 import com.github.charlemaznable.httpclient.common.Bundle;
 import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
-import com.github.charlemaznable.httpclient.common.ContentFormat.FormContentFormatter;
-import com.github.charlemaznable.httpclient.common.ContentFormat.JsonContentFormatter;
-import com.github.charlemaznable.httpclient.common.ContentFormat.TextXmlContentFormatter;
 import com.github.charlemaznable.httpclient.common.FixedParameter;
 import com.github.charlemaznable.httpclient.common.FixedPathVar;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
@@ -248,19 +245,19 @@ public class ParameterTest {
     @FixedParameter(name = "T1", value = "V1")
     @FixedParameter(name = "T2", value = "V2")
     @RequestMethod(HttpMethod.POST)
-    @ContentFormat(FormContentFormatter.class)
+    @ContentFormat(ContentFormat.FormContentFormatter.class)
     @Mapping("${root}:41161")
     @OhClient
     public interface PostParameterHttpClient {
 
         String sampleDefault();
 
-        @ContentFormat(JsonContentFormatter.class)
+        @ContentFormat(ContentFormat.JsonContentFormatter.class)
         @FixedParameter(name = "T2")
         @FixedParameter(name = "T3", value = "V3")
         String sampleMapping();
 
-        @ContentFormat(TextXmlContentFormatter.class)
+        @ContentFormat(ContentFormat.TextXmlContentFormatter.class)
         @FixedParameter(name = "T2")
         @FixedParameter(name = "T3", value = "V3")
         String sampleParameters(@Parameter("T3") String v3,
@@ -352,7 +349,7 @@ public class ParameterTest {
 
         @Override
         public ContentFormat.ContentFormatter contentFormatter() {
-            return new FormContentFormatter();
+            return new ContentFormat.FormContentFormatter();
         }
 
         @Override
@@ -365,7 +362,7 @@ public class ParameterTest {
 
         @Override
         public ContentFormat.ContentFormatter contentFormatter() {
-            return new JsonContentFormatter();
+            return new ContentFormat.JsonContentFormatter();
         }
 
         @Override
@@ -378,7 +375,7 @@ public class ParameterTest {
 
         @Override
         public ContentFormat.ContentFormatter contentFormatter() {
-            return new TextXmlContentFormatter();
+            return new ContentFormat.TextXmlContentFormatter();
         }
 
         @Override
