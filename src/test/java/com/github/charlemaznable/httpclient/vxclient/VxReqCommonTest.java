@@ -12,6 +12,8 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxTestContext;
 import lombok.val;
 
+import java.net.ConnectException;
+
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.of;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -115,7 +117,7 @@ public abstract class VxReqCommonTest extends CommonReqTest {
                                 .verifyHost(true)
                                 .connectTimeout(1000)
                                 .get(async -> test.verify(() -> {
-                                    assertTrue(async.cause() instanceof VxException);
+                                    assertTrue(async.cause() instanceof ConnectException);
                                     f.complete();
                                 }), null)),
                 Future.<String>future(f ->

@@ -71,7 +71,6 @@ public final class OhFactory {
                 connectTimeout, readTimeout, writeTimeout);
     }
 
-    @SuppressWarnings("unchecked")
     public static class OhLoader {
 
         private final Factory factory;
@@ -82,6 +81,7 @@ public final class OhFactory {
             this.factory = checkNotNull(factory);
         }
 
+        @SuppressWarnings("unchecked")
         public <T> T getClient(Class<T> ohClass) {
             return (T) get(ohCache, ohClass);
         }

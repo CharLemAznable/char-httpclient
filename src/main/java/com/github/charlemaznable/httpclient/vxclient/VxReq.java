@@ -309,7 +309,7 @@ public class VxReq extends CommonReq<VxReq> {
                     promise.fail(e);
                 }
             } else {
-                promise.fail(new VxException(arResponse.cause())); // to remove VxException wrapper
+                promise.fail(arResponse.cause());
             }
 
             iterateHandlers(promise, handlers);
