@@ -5,16 +5,9 @@ import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.common.CncResponse;
-import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.common.RequestExtend;
-import com.github.charlemaznable.httpclient.common.ResponseParse;
 import com.github.charlemaznable.httpclient.configurer.Configurer;
-import com.github.charlemaznable.httpclient.configurer.ExtraUrlQueryDisabledConfigurer;
-import com.github.charlemaznable.httpclient.configurer.InitializationConfigurer;
-import com.github.charlemaznable.httpclient.configurer.RequestExtendDisabledConfigurer;
-import com.github.charlemaznable.httpclient.configurer.ResponseParseDisabledConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhException;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptorCleanup;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientProxy;
@@ -43,21 +36,16 @@ import java.net.Proxy;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static com.github.charlemaznable.core.codec.Json.desc;
-import static com.github.charlemaznable.core.lang.Condition.checkBlank;
-import static com.github.charlemaznable.core.lang.Condition.emptyThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
-import static com.github.charlemaznable.core.lang.Str.isBlank;
 import static com.github.charlemaznable.core.lang.Str.toStr;
-import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Objects.nonNull;
 import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.core.annotation.AnnotatedElementUtils.isAnnotated;
@@ -120,9 +108,10 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         checkConfigurerIsRegisterThenRun(this.configurer, register ->
                 register.addConfigListener(this.configListener));
 
-        Elf.setUpBeforeInitialization(this.configurer, this.ohMethod, this.ohClass, this.proxy);
+        setUpBeforeInitialization(this.configurer, this.ohMethod, this.ohClass, this.proxy.configurer);
 
-        this.requestUrls = Elf.checkRequestUrls(this.configurer, this.ohMethod, this.proxy);
+        this.requestUrls = checkRequestUrls(this.configurer, this.ohMethod,
+                OhDummy::substitute, this.proxy.baseUrls, this.proxy.mappingMethodNameDisabled);
 
         this.clientProxy = Elf.checkClientProxy(this.configurer, this.ohMethod, this.proxy);
         this.sslRoot = Elf.checkClientSSL(this.configurer, this.ohMethod, this.factory, this.proxy);
@@ -135,36 +124,11 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         this.interceptors.addAll(checkClientInterceptors(this.configurer, this.ohMethod, this.factory));
         this.loggingLevel = nullThen(checkClientLoggingLevel(
                 this.configurer, this.ohMethod), () -> this.proxy.loggingLevel);
-
         this.okHttpClient = Elf.buildOkHttpClient(this, this.proxy);
 
-        this.acceptCharset = nullThen(checkAcceptCharset(
-                this.configurer, this.ohMethod), this.proxy::acceptCharset);
-        this.contentFormatter = nullThen(checkContentFormatter(
-                this.configurer, this.ohMethod, this.factory), this.proxy::contentFormatter);
-        this.httpMethod = nullThen(checkHttpMethod(
-                this.configurer, this.ohMethod), this.proxy::httpMethod);
-        this.headers = newArrayList(this.proxy.headers());
-        this.headers.addAll(checkFixedHeaders(this.configurer, this.ohMethod));
-        this.pathVars = newArrayList(this.proxy.pathVars());
-        this.pathVars.addAll(checkFixedPathVars(this.configurer, this.ohMethod));
-        this.parameters = newArrayList(this.proxy.parameters());
-        this.parameters.addAll(checkFixedParameters(this.configurer, this.ohMethod));
-        this.contexts = newArrayList(this.proxy.contexts());
-        this.contexts.addAll(checkFixedContexts(this.configurer, this.ohMethod));
+        initialize(this, this.factory, this.configurer, this.ohMethod, this.proxy);
 
-        this.statusFallbackMapping = newHashMap(this.proxy.statusFallbackMapping());
-        this.statusFallbackMapping.putAll(checkStatusFallbackMapping(this.configurer, this.ohMethod));
-        this.statusSeriesFallbackMapping = newHashMap(this.proxy.statusSeriesFallbackMapping());
-        this.statusSeriesFallbackMapping.putAll(checkStatusSeriesFallbackMapping(this.configurer, this.ohMethod));
-
-        this.requestExtender = Elf.checkRequestExtender(this.configurer, this.ohMethod, this.factory, this.proxy);
-        this.responseParser = Elf.checkResponseParser(this.configurer, this.ohMethod, this.factory, this.proxy);
-        this.extraUrlQueryBuilder = Elf.checkExtraUrlQueryBuilder(this.configurer, this.ohMethod, this.factory, this.proxy);
-        this.mappingBalancer = nullThen(checkMappingBalancer(
-                this.configurer, this.ohMethod, this.factory), this.proxy::mappingBalancer);
-
-        Elf.tearDownAfterInitialization(this.configurer, this.ohMethod, this.ohClass, this.proxy);
+        tearDownAfterInitialization(this.configurer, this.ohMethod, this.ohClass, this.proxy.configurer);
     }
 
     private void processReturnType(Method method) {
@@ -372,31 +336,6 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
     @NoArgsConstructor(access = PRIVATE)
     static class Elf {
 
-        static void setUpBeforeInitialization(Configurer configurer, Method method, Class clazz, OhProxy proxy) {
-            if (configurer instanceof InitializationConfigurer initializationConfigurer) {
-                initializationConfigurer.setUpBeforeInitialization(clazz, method);
-            } else if (proxy.configurer instanceof InitializationConfigurer initializationConfigurer) {
-                initializationConfigurer.setUpBeforeInitialization(clazz, method);
-            } else {
-                InitializationConfigurer.INSTANCE.setUpBeforeInitialization(clazz, method);
-            }
-        }
-
-        static List<String> checkRequestUrls(Configurer configurer, Method method, OhProxy proxy) {
-            val urls = emptyThen(checkMappingUrls(configurer, method, OhDummy::substitute), () ->
-                    newArrayList(proxy.mappingMethodNameDisabled ? "" : "/" + method.getName()));
-            Set<String> requestUrls = newHashSet();
-            for (val url : urls) {
-                if (isBlank(url)) {
-                    requestUrls.addAll(proxy.baseUrls);
-                } else {
-                    requestUrls.addAll(proxy.baseUrls.stream()
-                            .map(base -> checkBlank(base, () -> url, b -> b + url)).toList());
-                }
-            }
-            return requestUrls.stream().distinct().collect(Collectors.toList());
-        }
-
         static Proxy checkClientProxy(Configurer configurer, Method method, OhProxy proxy) {
             if (configurer instanceof ClientProxyDisabledConfigurer disabledConfigurer
                     ? disabledConfigurer.disabledClientProxy()
@@ -450,43 +389,6 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
                     && sameInterceptors && sameLoggingLevel) return proxy.okHttpClient;
 
             return OhRoot.buildOkHttpClient(mappingProxy);
-        }
-
-        static RequestExtend.RequestExtender checkRequestExtender(
-                Configurer configurer, Method method, Factory factory, OhProxy proxy) {
-            if (configurer instanceof RequestExtendDisabledConfigurer disabledConfigurer
-                    ? disabledConfigurer.disabledRequestExtend()
-                    : isAnnotated(method, RequestExtend.Disabled.class)) return null;
-            return nullThen(OhRoot.checkRequestExtender(
-                    configurer, method, factory), proxy::requestExtender);
-        }
-
-        static ResponseParse.ResponseParser checkResponseParser(
-                Configurer configurer, Method method, Factory factory, OhProxy proxy) {
-            if (configurer instanceof ResponseParseDisabledConfigurer disabledConfigurer
-                    ? disabledConfigurer.disabledResponseParse()
-                    : isAnnotated(method, ResponseParse.Disabled.class)) return null;
-            return nullThen(OhRoot.checkResponseParser(
-                    configurer, method, factory), proxy::responseParser);
-        }
-
-        static ExtraUrlQuery.ExtraUrlQueryBuilder checkExtraUrlQueryBuilder(
-                Configurer configurer, Method method, Factory factory, OhProxy proxy) {
-            if (configurer instanceof ExtraUrlQueryDisabledConfigurer disabledConfigurer
-                    ? disabledConfigurer.disabledExtraUrlQuery()
-                    : isAnnotated(method, ExtraUrlQuery.Disabled.class)) return null;
-            return nullThen(OhRoot.checkExtraUrlQueryBuilder(
-                    configurer, method, factory), proxy::extraUrlQueryBuilder);
-        }
-
-        static void tearDownAfterInitialization(Configurer configurer, Method method, Class clazz, OhProxy proxy) {
-            if (configurer instanceof InitializationConfigurer initializationConfigurer) {
-                initializationConfigurer.tearDownAfterInitialization(clazz, method);
-            } else if (proxy.configurer instanceof InitializationConfigurer initializationConfigurer) {
-                initializationConfigurer.tearDownAfterInitialization(clazz, method);
-            } else {
-                InitializationConfigurer.INSTANCE.tearDownAfterInitialization(clazz, method);
-            }
         }
     }
 }
