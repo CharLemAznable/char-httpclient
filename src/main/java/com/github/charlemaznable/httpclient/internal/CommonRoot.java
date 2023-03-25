@@ -4,9 +4,15 @@ import com.github.charlemaznable.configservice.ConfigFactory;
 import com.github.charlemaznable.configservice.ConfigListenerRegister;
 import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.Factory;
+import com.github.charlemaznable.core.lang.Reflectt;
+import com.github.charlemaznable.core.lang.Str;
 import com.github.charlemaznable.httpclient.common.AcceptCharset;
+import com.github.charlemaznable.httpclient.common.Bundle;
+import com.github.charlemaznable.httpclient.common.CncRequest;
+import com.github.charlemaznable.httpclient.common.CncResponse;
 import com.github.charlemaznable.httpclient.common.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.ContentFormat;
+import com.github.charlemaznable.httpclient.common.Context;
 import com.github.charlemaznable.httpclient.common.DefaultFallbackDisabled;
 import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
@@ -14,11 +20,15 @@ import com.github.charlemaznable.httpclient.common.FixedContext;
 import com.github.charlemaznable.httpclient.common.FixedHeader;
 import com.github.charlemaznable.httpclient.common.FixedParameter;
 import com.github.charlemaznable.httpclient.common.FixedPathVar;
+import com.github.charlemaznable.httpclient.common.Header;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.Mapping;
 import com.github.charlemaznable.httpclient.common.MappingBalance;
 import com.github.charlemaznable.httpclient.common.MappingMethodNameDisabled;
+import com.github.charlemaznable.httpclient.common.Parameter;
+import com.github.charlemaznable.httpclient.common.PathVar;
+import com.github.charlemaznable.httpclient.common.RequestBodyRaw;
 import com.github.charlemaznable.httpclient.common.RequestExtend;
 import com.github.charlemaznable.httpclient.common.RequestMethod;
 import com.github.charlemaznable.httpclient.common.ResponseParse;
@@ -46,11 +56,13 @@ import com.github.charlemaznable.httpclient.configurer.ResponseParseConfigurer;
 import com.github.charlemaznable.httpclient.configurer.ResponseParseDisabledConfigurer;
 import com.github.charlemaznable.httpclient.configurer.StatusFallbacksConfigurer;
 import com.github.charlemaznable.httpclient.configurer.StatusSeriesFallbacksConfigurer;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.val;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
@@ -58,11 +70,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.github.charlemaznable.core.codec.Json.desc;
 import static com.github.charlemaznable.core.lang.Condition.checkBlank;
+import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.emptyThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
@@ -72,6 +88,7 @@ import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.of;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.isBlank;
+import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.httpclient.internal.CommonConstant.DEFAULT_ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.internal.CommonConstant.DEFAULT_CONTENT_FORMATTER;
 import static com.github.charlemaznable.httpclient.internal.CommonConstant.DEFAULT_HTTP_METHOD;
@@ -80,14 +97,18 @@ import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.log
 import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static org.joor.Reflect.on;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedRepeatableAnnotations;
 import static org.springframework.core.annotation.AnnotatedElementUtils.isAnnotated;
+import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
 @SuppressWarnings("rawtypes")
 @Getter
 @Accessors(fluent = true)
 public class CommonRoot {
+
+    protected static final ContentFormat.ContentFormatter URL_QUERY_FORMATTER = new ContentFormat.FormContentFormatter();
 
     protected Charset acceptCharset;
     protected ContentFormat.ContentFormatter contentFormatter;
@@ -393,5 +414,128 @@ public class CommonRoot {
     static MappingBalance.MappingBalancer checkMappingBalancer(Configurer configurer, Method method,
                                                                Factory factory, CommonRoot superRoot) {
         return nullThen(checkMappingBalancer(configurer, method, factory), superRoot::mappingBalancer);
+    }
+
+    protected Class responseClass = CncResponse.CncResponseImpl.class;
+    protected String requestBodyRaw;
+
+    protected void processArguments(Method method, Object[] args,
+                                    BiFunction<Object, Class, Boolean> process) {
+        val parameterTypes = method.getParameterTypes();
+        val parameters = method.getParameters();
+        for (int i = 0; i < args.length; i++) {
+            val argument = args[i];
+            val parameterType = parameterTypes[i];
+            val parameter = parameters[i];
+
+            val configuredType = processParameterType(argument, parameterType, process);
+            if (configuredType) continue;
+            processAnnotations(argument, parameter, null);
+        }
+    }
+
+    private boolean processParameterType(Object argument, Class parameterType,
+                                         BiFunction<Object, Class, Boolean> process) {
+        if (CncRequest.class.isAssignableFrom(parameterType)) {
+            this.responseClass = checkNull(argument,
+                    () -> CncResponse.CncResponseImpl.class,
+                    xx -> ((CncRequest) xx).responseClass());
+            return false;
+        }
+        return process.apply(argument, parameterType);
+    }
+
+    private void processAnnotations(Object argument,
+                                    AnnotatedElement annotatedElement,
+                                    String defaultParameterName) {
+        final AtomicBoolean processed = new AtomicBoolean(false);
+        notNullThenRun(findAnnotation(annotatedElement, Header.class), header -> {
+            processHeader(argument, header);
+            processed.set(true);
+        });
+        notNullThenRun(findAnnotation(annotatedElement, PathVar.class), pathVar -> {
+            processPathVar(argument, pathVar);
+            processed.set(true);
+        });
+        notNullThenRun(findAnnotation(annotatedElement, Parameter.class), parameter -> {
+            processParameter(argument, parameter);
+            processed.set(true);
+        });
+        notNullThenRun(findAnnotation(annotatedElement, Context.class), context -> {
+            processContext(argument, context);
+            processed.set(true);
+        });
+        notNullThenRun(findAnnotation(annotatedElement, RequestBodyRaw.class), xx -> {
+            processRequestBodyRaw(argument);
+            processed.set(true);
+        });
+        notNullThenRun(findAnnotation(annotatedElement, Bundle.class), xx -> {
+            processBundle(argument);
+            processed.set(true);
+        });
+        if (!processed.get() && nonNull(defaultParameterName)) {
+            processParameter(argument, new ParameterImpl(defaultParameterName));
+        }
+    }
+
+    private void processHeader(Object argument, Header header) {
+        this.headers.add(Pair.of(header.value(),
+                notNullThen(argument, Str::toStr)));
+    }
+
+    private void processPathVar(Object argument, PathVar pathVar) {
+        this.pathVars.add(Pair.of(pathVar.value(),
+                notNullThen(argument, Str::toStr)));
+    }
+
+    private void processParameter(Object argument, Parameter parameter) {
+        this.parameters.add(Pair.of(parameter.value(), argument));
+    }
+
+    private void processContext(Object argument, Context context) {
+        this.contexts.add(Pair.of(context.value(), argument));
+    }
+
+    private void processRequestBodyRaw(Object argument) {
+        if (null == argument || (argument instanceof String)) {
+            // OhRequestBodyRaw参数传值null时, 则继续使用parameters构造请求
+            this.requestBodyRaw = (String) argument;
+            return;
+        }
+        log.warn("Argument annotated with @RequestBodyRaw, " +
+                "but Type is {} instead String.", argument.getClass());
+    }
+
+    private void processBundle(Object argument) {
+        if (isNull(argument)) return;
+        if (argument instanceof Map) {
+            desc(argument).forEach((key, value) ->
+                    processParameter(value, new ParameterImpl(toStr(key))));
+            return;
+        }
+
+        val clazz = argument.getClass();
+        val reflect = on(argument);
+        val fields = reflect.fields();
+        for (val fieldEntry : fields.entrySet()) {
+            val fieldName = fieldEntry.getKey();
+            processAnnotations(fieldEntry.getValue().get(),
+                    Reflectt.field0(clazz, fieldName), fieldName);
+        }
+    }
+
+    @SuppressWarnings("ClassExplicitlyAnnotation")
+    @AllArgsConstructor
+    private static class ParameterImpl implements Parameter {
+
+        @Getter
+        @Accessors(fluent = true)
+        private final Class<? extends Annotation> annotationType = Parameter.class;
+        private String value;
+
+        @Override
+        public String value() {
+            return value;
+        }
     }
 }

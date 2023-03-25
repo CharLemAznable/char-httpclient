@@ -1,20 +1,6 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
-import com.github.charlemaznable.core.lang.Reflectt;
-import com.github.charlemaznable.core.lang.Str;
-import com.github.charlemaznable.httpclient.common.Bundle;
-import com.github.charlemaznable.httpclient.common.CncRequest;
-import com.github.charlemaznable.httpclient.common.CncResponse;
-import com.github.charlemaznable.httpclient.common.ContentFormat;
-import com.github.charlemaznable.httpclient.common.Context;
-import com.github.charlemaznable.httpclient.common.Header;
-import com.github.charlemaznable.httpclient.common.Parameter;
-import com.github.charlemaznable.httpclient.common.PathVar;
-import com.github.charlemaznable.httpclient.common.RequestBodyRaw;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.experimental.Accessors;
 import lombok.val;
 import okhttp3.Call;
 import okhttp3.Headers;
@@ -31,43 +17,28 @@ import org.apache.commons.text.StringSubstitutor;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Method;
 import java.net.Proxy;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.github.charlemaznable.core.codec.Json.desc;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
-import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
-import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.internal.CommonConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.internal.CommonConstant.CONTENT_TYPE;
 import static com.github.charlemaznable.httpclient.internal.CommonConstant.DEFAULT_CONTENT_FORMATTER;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.log;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.joor.Reflect.on;
-import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
 @SuppressWarnings("rawtypes")
 public final class OhCall extends OhRoot {
 
-    private static final ContentFormat.ContentFormatter URL_QUERY_FORMATTER = new ContentFormat.FormContentFormatter();
-
-    Class responseClass = CncResponse.CncResponseImpl.class;
-    String requestBodyRaw;
     Request request;
 
     OhCall(OhMappingProxy proxy, Object[] args) {
         initial(proxy);
-        processArguments(proxy.ohMethod, args);
+        processArguments(proxy.ohMethod, args,
+                this::processOkHttpParameter);
         this.okHttpClient = buildOkHttpClient(proxy);
         this.request = buildRequest(proxy);
     }
@@ -98,21 +69,7 @@ public final class OhCall extends OhRoot {
         this.contexts = newArrayList(proxy.contexts());
     }
 
-    private void processArguments(Method method, Object[] args) {
-        val parameterTypes = method.getParameterTypes();
-        val parameters = method.getParameters();
-        for (int i = 0; i < args.length; i++) {
-            val argument = args[i];
-            val parameterType = parameterTypes[i];
-            val parameter = parameters[i];
-
-            val configuredType = processParameterType(argument, parameterType);
-            if (configuredType) continue;
-            processAnnotations(argument, parameter, null);
-        }
-    }
-
-    private boolean processParameterType(Object argument, Class parameterType) {
+    private boolean processOkHttpParameter(Object argument, Class parameterType) {
         if (Proxy.class.isAssignableFrom(parameterType)) {
             this.clientProxy = (Proxy) argument;
         } else if (SSLSocketFactory.class.isAssignableFrom(parameterType)) {
@@ -129,11 +86,6 @@ public final class OhCall extends OhRoot {
                 this.timeoutRoot.readTimeout = clientTimeout.readTimeout();
                 this.timeoutRoot.writeTimeout = clientTimeout.writeTimeout();
             }
-        } else if (CncRequest.class.isAssignableFrom(parameterType)) {
-            this.responseClass = checkNull(argument,
-                    () -> CncResponse.CncResponseImpl.class,
-                    xx -> ((CncRequest) xx).responseClass());
-            return false;
         } else if (Interceptor.class.isAssignableFrom(parameterType)) {
             this.interceptors.add((Interceptor) argument);
         } else if (argument instanceof Level) {
@@ -142,85 +94,6 @@ public final class OhCall extends OhRoot {
             return false;
         }
         return true;
-    }
-
-    private void processAnnotations(Object argument,
-                                    AnnotatedElement annotatedElement,
-                                    String defaultParameterName) {
-        final AtomicBoolean processed = new AtomicBoolean(false);
-        notNullThenRun(findAnnotation(annotatedElement, Header.class), header -> {
-            processHeader(argument, header);
-            processed.set(true);
-        });
-        notNullThenRun(findAnnotation(annotatedElement, PathVar.class), pathVar -> {
-            processPathVar(argument, pathVar);
-            processed.set(true);
-        });
-        notNullThenRun(findAnnotation(annotatedElement, Parameter.class), parameter -> {
-            processParameter(argument, parameter);
-            processed.set(true);
-        });
-        notNullThenRun(findAnnotation(annotatedElement, Context.class), context -> {
-            processContext(argument, context);
-            processed.set(true);
-        });
-        notNullThenRun(findAnnotation(annotatedElement, RequestBodyRaw.class), xx -> {
-            processRequestBodyRaw(argument);
-            processed.set(true);
-        });
-        notNullThenRun(findAnnotation(annotatedElement, Bundle.class), xx -> {
-            processBundle(argument);
-            processed.set(true);
-        });
-        if (!processed.get() && nonNull(defaultParameterName)) {
-            processParameter(argument, new ParameterImpl(defaultParameterName));
-        }
-    }
-
-    private void processHeader(Object argument, Header header) {
-        this.headers.add(Pair.of(header.value(),
-                notNullThen(argument, Str::toStr)));
-    }
-
-    private void processPathVar(Object argument, PathVar pathVar) {
-        this.pathVars.add(Pair.of(pathVar.value(),
-                notNullThen(argument, Str::toStr)));
-    }
-
-    private void processParameter(Object argument, Parameter parameter) {
-        this.parameters.add(Pair.of(parameter.value(), argument));
-    }
-
-    private void processContext(Object argument, Context context) {
-        this.contexts.add(Pair.of(context.value(), argument));
-    }
-
-    private void processRequestBodyRaw(Object argument) {
-        if (null == argument || (argument instanceof String)) {
-            // OhRequestBodyRaw参数传值null时, 则继续使用parameters构造请求
-            this.requestBodyRaw = (String) argument;
-            return;
-        }
-        log.warn("Argument annotated with @RequestBodyRaw, " +
-                "but Type is {} instead String.", argument.getClass());
-    }
-
-    private void processBundle(Object argument) {
-        if (isNull(argument)) return;
-        if (argument instanceof Map) {
-            desc(argument).forEach((key, value) ->
-                    processParameter(value, new ParameterImpl(toStr(key))));
-            return;
-        }
-
-        val clazz = argument.getClass();
-        val reflect = on(argument);
-        val fields = reflect.fields();
-        for (val fieldEntry : fields.entrySet()) {
-            val fieldName = fieldEntry.getKey();
-            processAnnotations(fieldEntry.getValue().get(),
-                    Reflectt.field0(clazz, fieldName), fieldName);
-        }
     }
 
     private OkHttpClient buildOkHttpClient(OhMappingProxy proxy) {
@@ -287,20 +160,5 @@ public final class OhCall extends OhRoot {
             requestBuilder.url(requestUrl);
         }
         return requestBuilder.build();
-    }
-
-    @SuppressWarnings("ClassExplicitlyAnnotation")
-    @AllArgsConstructor
-    private static class ParameterImpl implements Parameter {
-
-        @Getter
-        @Accessors(fluent = true)
-        private final Class<? extends Annotation> annotationType = Parameter.class;
-        private String value;
-
-        @Override
-        public String value() {
-            return value;
-        }
     }
 }

@@ -85,7 +85,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
     Object execute(Object[] args) {
         val ohCall = new OhCall(this, args);
         val call = ohCall.newCall();
-        val responseClass = ohCall.responseClass;
+        val responseClass = ohCall.responseClass();
 
         if (this.returnFuture) {
             val future = new OhCallbackFuture<>(response ->
@@ -131,6 +131,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         tearDownAfterInitialization(this.configurer, this.ohMethod, this.ohClass, this.proxy.configurer);
     }
 
+    @SuppressWarnings("DuplicatedCode")
     private void processReturnType(Method method) {
         Class<?> returnType = method.getReturnType();
         this.returnFuture = Future.class == returnType;
@@ -193,6 +194,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         }
     }
 
+    @SuppressWarnings("DuplicatedCode")
     private List<Class> processActualTypeArguments(Type[] actualTypeArguments) {
         List<Class> result = newArrayList();
         for (Type actualTypeArgument : actualTypeArguments) {
