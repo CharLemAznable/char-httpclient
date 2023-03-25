@@ -23,8 +23,8 @@ import javax.annotation.Nonnull;
 import java.nio.charset.Charset;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.ACCEPT_CHARSET;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.CONTENT_TYPE;
+import static com.github.charlemaznable.httpclient.internal.CommonConstant.ACCEPT_CHARSET;
+import static com.github.charlemaznable.httpclient.internal.CommonConstant.CONTENT_TYPE;
 import static com.google.common.net.MediaType.APPLICATION_XML_UTF_8;
 import static com.google.common.net.MediaType.FORM_DATA;
 import static com.google.common.net.MediaType.JSON_UTF_8;

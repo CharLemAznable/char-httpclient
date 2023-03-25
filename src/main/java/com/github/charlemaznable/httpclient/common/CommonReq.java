@@ -14,8 +14,8 @@ import static com.github.charlemaznable.core.lang.Mapp.of;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_ACCEPT_CHARSET;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONTENT_FORMATTER;
+import static com.github.charlemaznable.httpclient.internal.CommonConstant.DEFAULT_ACCEPT_CHARSET;
+import static com.github.charlemaznable.httpclient.internal.CommonConstant.DEFAULT_CONTENT_FORMATTER;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class CommonReq<T extends CommonReq<T>> {

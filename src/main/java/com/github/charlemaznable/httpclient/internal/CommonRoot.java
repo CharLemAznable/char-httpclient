@@ -56,7 +56,7 @@ import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.NOT_BLANK_KEY;
+import static com.github.charlemaznable.httpclient.internal.CommonConstant.NOT_BLANK_KEY;
 import static com.github.charlemaznable.httpclient.ohclient.internal.OhDummy.log;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
