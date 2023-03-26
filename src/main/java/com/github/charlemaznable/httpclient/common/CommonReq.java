@@ -1,6 +1,7 @@
 package com.github.charlemaznable.httpclient.common;
 
 import lombok.val;
+import okhttp3.MediaType;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.nio.charset.Charset;
@@ -16,6 +17,7 @@ import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.internal.CommonConstant.DEFAULT_ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.internal.CommonConstant.DEFAULT_CONTENT_FORMATTER;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class CommonReq<T extends CommonReq<T>> {
@@ -41,6 +43,15 @@ public abstract class CommonReq<T extends CommonReq<T>> {
             statusSeriesFallbackMapping = of(
             HttpStatus.Series.CLIENT_ERROR, StatusErrorThrower.class,
             HttpStatus.Series.SERVER_ERROR, StatusErrorThrower.class);
+
+    public static Boolean permitsRequestBody(String requestMethod) {
+        return okhttp3.internal.http.HttpMethod.permitsRequestBody(requestMethod);
+    }
+
+    public static String parseCharset(String contentType) {
+        return checkNull(MediaType.parse(contentType), UTF_8::name, mediaType ->
+                checkNull(mediaType.charset(), UTF_8::name, Charset::name));
+    }
 
     public CommonReq() {
         this((String) null);

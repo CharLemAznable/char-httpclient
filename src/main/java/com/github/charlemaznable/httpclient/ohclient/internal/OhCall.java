@@ -28,7 +28,6 @@ import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.internal.CommonConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.internal.CommonConstant.CONTENT_TYPE;
 import static com.github.charlemaznable.httpclient.internal.CommonConstant.DEFAULT_CONTENT_FORMATTER;
-import static java.util.Objects.nonNull;
 
 @SuppressWarnings("rawtypes")
 public final class OhCall extends OhRoot {
@@ -78,18 +77,15 @@ public final class OhCall extends OhRoot {
             this.sslRoot.x509TrustManager = (X509TrustManager) argument;
         } else if (HostnameVerifier.class.isAssignableFrom(parameterType)) {
             this.sslRoot.hostnameVerifier = (HostnameVerifier) argument;
-        } else if (ClientTimeout.class.isAssignableFrom(parameterType)) {
-            if (nonNull(argument)) {
-                ClientTimeout clientTimeout = (ClientTimeout) argument;
-                this.timeoutRoot.callTimeout = clientTimeout.callTimeout();
-                this.timeoutRoot.connectTimeout = clientTimeout.connectTimeout();
-                this.timeoutRoot.readTimeout = clientTimeout.readTimeout();
-                this.timeoutRoot.writeTimeout = clientTimeout.writeTimeout();
-            }
-        } else if (Interceptor.class.isAssignableFrom(parameterType)) {
-            this.interceptors.add((Interceptor) argument);
-        } else if (argument instanceof Level) {
-            this.loggingLevel = (Level) argument;
+        } else if (argument instanceof ClientTimeout clientTimeout) {
+            this.timeoutRoot.callTimeout = clientTimeout.callTimeout();
+            this.timeoutRoot.connectTimeout = clientTimeout.connectTimeout();
+            this.timeoutRoot.readTimeout = clientTimeout.readTimeout();
+            this.timeoutRoot.writeTimeout = clientTimeout.writeTimeout();
+        } else if (argument instanceof Interceptor interceptor) {
+            this.interceptors.add(interceptor);
+        } else if (argument instanceof Level level) {
+            this.loggingLevel = level;
         } else {
             return false;
         }

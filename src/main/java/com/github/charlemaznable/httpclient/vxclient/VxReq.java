@@ -22,7 +22,6 @@ import io.vertx.ext.web.client.WebClientOptions;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.val;
-import okhttp3.MediaType;
 
 import java.nio.charset.Charset;
 import java.util.Map;
@@ -39,7 +38,6 @@ import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.internal.CommonConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.internal.CommonConstant.CONTENT_TYPE;
 import static com.google.common.collect.Iterators.forArray;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
@@ -272,11 +270,6 @@ public class VxReq extends CommonReq<VxReq> {
                     xx -> headersMap.set(header.getKey(), header.getValue()));
         }
         return headersMap;
-    }
-
-    private String parseCharset(String contentType) {
-        return checkNull(MediaType.parse(contentType), UTF_8::name, mediaType ->
-                checkNull(mediaType.charset(), UTF_8::name, Charset::name));
     }
 
     @SafeVarargs
