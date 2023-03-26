@@ -84,9 +84,9 @@ public class CncTest {
 
             val errorClient = ohLoader.getClient(CncErrorClient.class);
 
-            assertThrows(OhException.class, errorClient::sample1);
-            assertThrows(OhException.class, () -> errorClient.sample2(null));
-            assertThrows(OhException.class, errorClient::sample3);
+            assertThrows(IllegalStateException.class, errorClient::sample1);
+            assertThrows(IllegalStateException.class, () -> errorClient.sample2(null));
+            assertThrows(IllegalStateException.class, errorClient::sample3);
         }
     }
 

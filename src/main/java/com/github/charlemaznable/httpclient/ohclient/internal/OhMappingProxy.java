@@ -1,14 +1,10 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
 import com.github.charlemaznable.configservice.ConfigListener;
-import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.core.lang.Reloadable;
-import com.github.charlemaznable.httpclient.common.CncResponse;
-import com.github.charlemaznable.httpclient.common.FallbackFunction;
-import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.configurer.Configurer;
-import com.github.charlemaznable.httpclient.ohclient.OhException;
+import com.github.charlemaznable.httpclient.internal.ResponseProcessor;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientInterceptorCleanup;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientProxy;
 import com.github.charlemaznable.httpclient.ohclient.annotation.ClientSSL;
@@ -24,28 +20,18 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.BufferedSource;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 
 import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.net.Proxy;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 
-import static com.github.charlemaznable.core.codec.Json.desc;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
-import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
-import static com.github.charlemaznable.core.lang.Str.toStr;
 import static java.util.Objects.nonNull;
 import static lombok.AccessLevel.PRIVATE;
 import static org.springframework.core.annotation.AnnotatedElementUtils.isAnnotated;
@@ -63,12 +49,7 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
     Configurer configurer;
     List<String> requestUrls;
 
-    boolean returnFuture; // Future<V>
-    boolean returnCollection; // Collection<E>
-    boolean returnMap; // Map<K, V>
-    boolean returnPair; // Pair<L, R>
-    boolean returnTriple; // Triple<L, M, R>
-    List<Class> returnTypes;
+    OhResponseProcessor responseProcessor;
 
     OhMappingProxy(Class ohClass, Method ohMethod,
                    Factory factory, OhProxy proxy) {
@@ -86,14 +67,17 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         val ohCall = new OhCall(this, args);
         val call = ohCall.newCall();
         val responseClass = ohCall.responseClass();
+        val contexts = ohCall.contexts();
 
-        if (this.returnFuture) {
+        if (this.responseProcessor.isReturnFuture()) {
             val future = new OhCallbackFuture<>(response ->
-                    processResponse(response, responseClass));
+                    this.responseProcessor.processResponse(
+                            response, responseClass, contexts));
             call.enqueue(future);
             return future;
         }
-        return processResponse(call.execute(), responseClass);
+        return this.responseProcessor.processResponse(
+                call.execute(), responseClass, contexts);
     }
 
     @Override
@@ -131,208 +115,57 @@ public final class OhMappingProxy extends OhRoot implements Reloadable {
         tearDownAfterInitialization(this.configurer, this.ohMethod, this.ohClass, this.proxy.configurer);
     }
 
-    @SuppressWarnings("DuplicatedCode")
     private void processReturnType(Method method) {
-        Class<?> returnType = method.getReturnType();
-        this.returnFuture = Future.class == returnType;
-        this.returnCollection = Collection.class.isAssignableFrom(returnType);
-        this.returnMap = Map.class.isAssignableFrom(returnType);
-        this.returnPair = Pair.class.isAssignableFrom(returnType);
-        this.returnTriple = Triple.class.isAssignableFrom(returnType);
-
-        val genericReturnType = method.getGenericReturnType();
-        if (!(genericReturnType instanceof ParameterizedType parameterizedType)) {
-            // 错误的泛型时
-            if (this.returnFuture || this.returnCollection ||
-                    this.returnPair || this.returnTriple) {
-                // 如返回支持的泛型类型则抛出异常
-                // 不包括Map<K, V>
-                throw new OhException(RETURN_GENERIC_ERROR);
-            } else if (genericReturnType instanceof TypeVariable) {
-                // 返回类型变量指定的类型时
-                // 检查是否为<T extend CncResponse>类型
-                checkTypeVariableBounds(genericReturnType);
-                this.returnTypes = newArrayList(CncResponse.class);
-                return;
-            } else {
-                // 否则以方法返回类型作为实际返回类型
-                // 返回Map时, 可直接解析返回值为Map
-                this.returnTypes = newArrayList(returnType);
-                return;
-            }
-        }
-
-        // 方法返回泛型时
-        Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-        if (this.returnFuture) {
-            // 返回Future类型, 则多处理一层泛型
-            val futureTypeArgument = actualTypeArguments[0];
-            if (!(futureTypeArgument instanceof ParameterizedType)) {
-                if (futureTypeArgument instanceof TypeVariable) {
-                    checkTypeVariableBounds(futureTypeArgument);
-                    this.returnTypes = newArrayList(CncResponse.class);
-                    return;
-                }
-                this.returnTypes = newArrayList((Class) futureTypeArgument);
-                return;
-            }
-
-            parameterizedType = (ParameterizedType) futureTypeArgument;
-            returnType = (Class) parameterizedType.getRawType();
-            this.returnCollection = Collection.class.isAssignableFrom(returnType);
-            this.returnMap = Map.class.isAssignableFrom(returnType);
-            this.returnPair = Pair.class.isAssignableFrom(returnType);
-            this.returnTriple = Triple.class.isAssignableFrom(returnType);
-            actualTypeArguments = parameterizedType.getActualTypeArguments();
-        }
-        if (this.returnCollection || this.returnPair || this.returnTriple) {
-            // 以泛型参数类型作为返回值解析目标类型
-            this.returnTypes = processActualTypeArguments(actualTypeArguments);
-        } else {
-            // 以泛型类型作为返回值解析目标类型
-            this.returnTypes = newArrayList(returnType);
-        }
+        this.responseProcessor = new OhResponseProcessor();
+        this.responseProcessor.setFactory(this.factory);
+        this.responseProcessor.setRoot(this);
+        this.responseProcessor.processReturnType(method, Future.class);
     }
 
-    @SuppressWarnings("DuplicatedCode")
-    private List<Class> processActualTypeArguments(Type[] actualTypeArguments) {
-        List<Class> result = newArrayList();
-        for (Type actualTypeArgument : actualTypeArguments) {
-            if (actualTypeArgument instanceof TypeVariable) {
-                checkTypeVariableBounds(actualTypeArgument);
-                result.add(CncResponse.class);
-                continue;
-            }
-            result.add((Class) actualTypeArgument);
-        }
-        return result;
-    }
+    static class OhResponseProcessor extends ResponseProcessor<Response, ResponseBody> {
 
-    private void checkTypeVariableBounds(Type type) {
-        val bounds = ((TypeVariable) type).getBounds();
-        if (bounds.length != 1 || !CncResponse.class
-                .isAssignableFrom((Class) bounds[0])) {
-            throw new OhException(RETURN_GENERIC_ERROR);
-        }
-    }
-
-    private Object processResponse(Response response, Class responseClass) {
-        val statusCode = response.code();
-        val responseBody = notNullThen(response.body(), OhResponseBody::new);
-        if (nonNull(response.body())) response.close();
-
-        val statusFallback = this.statusFallbackMapping
-                .get(HttpStatus.valueOf(statusCode));
-        if (nonNull(statusFallback)) {
-            return applyFallback(statusFallback, statusCode, responseBody);
+        @Override
+        protected int getResponseCode(Response response) {
+            return response.code();
         }
 
-        val statusSeriesFallback = this.statusSeriesFallbackMapping
-                .get(HttpStatus.Series.valueOf(statusCode));
-        if (nonNull(statusSeriesFallback)) {
-            return applyFallback(statusSeriesFallback, statusCode, responseBody);
-        }
-
-        val responseObjs = processResponseBody(
-                statusCode, responseBody, responseClass);
-        if (this.returnCollection) {
-            val responseObj = responseObjs.get(0);
-            if (responseObj instanceof Collection) {
-                return newArrayList((Collection) responseObj);
-            } else {
-                return newArrayList(responseObj);
-            }
-
-        } else if (this.returnMap) {
-            val responseObj = responseObjs.get(0);
-            if (responseObj instanceof Map) {
-                return newHashMap((Map) responseObj);
-            } else {
-                return desc(responseObj);
-            }
-
-        } else if (this.returnPair) {
-            return Pair.of(responseObjs.get(0),
-                    responseObjs.get(1));
-
-        } else if (this.returnTriple) {
-            return Triple.of(responseObjs.get(0),
-                    responseObjs.get(1), responseObjs.get(2));
-
-        } else {
-            return responseObjs.get(0);
-        }
-    }
-
-    private Object applyFallback(Class<? extends FallbackFunction> function,
-                                 int statusCode, ResponseBody responseBody) {
-        return FactoryContext.apply(factory, function,
-                f -> f.apply(new FallbackFunction.Response<>(statusCode, responseBody) {
-                    @Override
-                    public String responseBodyAsString() {
-                        return toStr(notNullThen(getResponseBody(),
-                                ResponseBodyExtractor::string));
-                    }
-                }));
-    }
-
-    private List<Object> processResponseBody(int statusCode,
-                                             ResponseBody responseBody,
-                                             Class responseClass) {
-        return this.returnTypes.stream().map(returnType ->
-                        processReturnTypeValue(statusCode, responseBody,
-                                CncResponse.class == returnType ? responseClass : returnType))
-                .collect(Collectors.toList());
-    }
-
-    private Object processReturnTypeValue(int statusCode,
-                                          ResponseBody responseBody,
-                                          Class returnType) {
-        if (returnVoid(returnType)) {
-            return null;
-        } else if (returnInteger(returnType)) {
-            return statusCode;
-        } else if (HttpStatus.class == returnType) {
-            return HttpStatus.valueOf(statusCode);
-        } else if (HttpStatus.Series.class == returnType) {
-            return HttpStatus.Series.valueOf(statusCode);
-        } else if (returnBoolean(returnType)) {
-            return HttpStatus.valueOf(statusCode).is2xxSuccessful();
-        } else if (ResponseBody.class.isAssignableFrom(returnType)) {
+        @Override
+        protected ResponseBody getResponseBody(Response response) {
+            val responseBody = notNullThen(response.body(), OhResponseBody::new);
+            if (nonNull(response.body())) response.close();
             return responseBody;
-        } else if (InputStream.class == returnType) {
-            return notNullThen(responseBody, ResponseBodyExtractor::byteStream);
-        } else if (BufferedSource.class.isAssignableFrom(returnType)) {
-            return (notNullThen(responseBody, ResponseBodyExtractor::source));
-        } else if (byte[].class == returnType) {
-            return notNullThen(responseBody, ResponseBodyExtractor::bytes);
-        } else if (Reader.class.isAssignableFrom(returnType)) {
-            return notNullThen(responseBody, ResponseBodyExtractor::charStream);
-        } else if (returnUnCollectionString(returnType)) {
-            return notNullThen(responseBody, ResponseBodyExtractor::string);
-        } else {
-            return notNullThen(responseBody, body ->
-                    ResponseBodyExtractor.object(body, notNullThen(this.responseParser, parser -> {
-                        val contextMap = this.contexts.stream().collect(toMap(Pair::getKey, Pair::getValue));
-                        return content -> parser.parse(content, returnType, contextMap);
-                    }), returnType));
         }
-    }
 
-    private boolean returnVoid(Class returnType) {
-        return void.class == returnType || Void.class == returnType;
-    }
+        @Override
+        protected String responseBodyToString(ResponseBody responseBody) {
+            return ResponseBodyExtractor.string(responseBody);
+        }
 
-    private boolean returnInteger(Class returnType) {
-        return int.class == returnType || Integer.class == returnType;
-    }
-
-    private boolean returnBoolean(Class returnType) {
-        return boolean.class == returnType || Boolean.class == returnType;
-    }
-
-    private boolean returnUnCollectionString(Class returnType) {
-        return String.class == returnType && !this.returnCollection;
+        @Override
+        protected Object customProcessReturnTypeValue(int statusCode,
+                                                      ResponseBody responseBody,
+                                                      Class returnType,
+                                                      List<Pair<String, Object>> contexts) {
+            if (ResponseBody.class.isAssignableFrom(returnType)) {
+                return responseBody;
+            } else if (InputStream.class == returnType) {
+                return notNullThen(responseBody, ResponseBodyExtractor::byteStream);
+            } else if (BufferedSource.class.isAssignableFrom(returnType)) {
+                return (notNullThen(responseBody, ResponseBodyExtractor::source));
+            } else if (byte[].class == returnType) {
+                return notNullThen(responseBody, ResponseBodyExtractor::bytes);
+            } else if (Reader.class.isAssignableFrom(returnType)) {
+                return notNullThen(responseBody, ResponseBodyExtractor::charStream);
+            } else if (returnUnCollectionString(returnType)) {
+                return notNullThen(responseBody, ResponseBodyExtractor::string);
+            } else {
+                return notNullThen(responseBody, body ->
+                        ResponseBodyExtractor.object(body, notNullThen(getRoot().responseParser(), parser -> {
+                            val contextMap = contexts.stream().collect(toMap(Pair::getKey, Pair::getValue));
+                            return content -> parser.parse(content, returnType, contextMap);
+                        }), returnType));
+            }
+        }
     }
 
     @NoArgsConstructor(access = PRIVATE)

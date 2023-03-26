@@ -57,15 +57,15 @@ public class ReturnErrorTest {
             mockWebServer.start(41196);
             val httpClient = ohLoader.getClient(ErrorHttpClient.class);
 
-            assertThrows(OhException.class, httpClient::sampleFuture);
-            assertThrows(OhException.class, httpClient::sampleList);
+            assertThrows(IllegalStateException.class, httpClient::sampleFuture);
+            assertThrows(IllegalStateException.class, httpClient::sampleList);
             assertThrows(IllegalArgumentException.class, httpClient::sampleMapError);
 
             val map = httpClient.sampleMap();
             assertEquals("Doe", map.get("John"));
 
-            assertThrows(OhException.class, httpClient::samplePair);
-            assertThrows(OhException.class, httpClient::sampleTriple);
+            assertThrows(IllegalStateException.class, httpClient::samplePair);
+            assertThrows(IllegalStateException.class, httpClient::sampleTriple);
         }
     }
 
