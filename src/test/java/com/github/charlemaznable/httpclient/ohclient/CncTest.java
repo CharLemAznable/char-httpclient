@@ -1,41 +1,30 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.core.config.Arguments;
+import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.common.CncRequest;
 import com.github.charlemaznable.httpclient.common.CncResponse;
 import com.github.charlemaznable.httpclient.common.CncResponse.CncResponseImpl;
+import com.github.charlemaznable.httpclient.common.CommonCncTest;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.val;
-import okhttp3.mockwebserver.Dispatcher;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import static com.github.charlemaznable.core.codec.Json.json;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class CncTest {
-
-    private static final String CONTENT = "content";
-    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+public class CncTest extends CommonCncTest {
 
     @BeforeAll
     public static void beforeAll() {
@@ -50,44 +39,37 @@ public class CncTest {
     @SneakyThrows
     @Test
     public void testCncClient() {
-        try (val mockWebServer = new MockWebServer()) {
-            mockWebServer.setDispatcher(new Dispatcher() {
-                @Nonnull
-                @Override
-                public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                    val testResponse = new TestResponse();
-                    testResponse.setContent(CONTENT);
-                    return new MockResponse().setBody(json(testResponse));
-                }
-            });
-            mockWebServer.start(41200);
+        startMockWebServer();
 
-            val client = ohLoader.getClient(CncClient.class);
+        val ohLoader = OhFactory.ohLoader(reflectFactory());
 
-            val response = client.sample1(new TestRequest());
-            assertEquals(CONTENT, response.getContent());
-            val nullResponse = client.sample1(null);
-            assertTrue(nullResponse instanceof CncResponseImpl);
+        val client = ohLoader.getClient(CncClient.class);
 
-            val futureResponse = client.sample2(new TestRequest());
-            await().forever().pollDelay(Duration.ofMillis(100)).until(futureResponse::isDone);
-            assertEquals(CONTENT, futureResponse.get().getContent());
+        val response = client.sample1(new TestRequest());
+        assertEquals(CONTENT, response.getContent());
+        val nullResponse = client.sample1(null);
+        assertTrue(nullResponse instanceof CncResponseImpl);
 
-            val pair = client.sample3(new TestRequest());
-            assertEquals(HttpStatus.OK, pair.getLeft());
-            assertEquals(CONTENT, pair.getRight().getContent());
+        val futureResponse = client.sample2(new TestRequest());
+        await().forever().pollDelay(Duration.ofMillis(100)).until(futureResponse::isDone);
+        assertEquals(CONTENT, futureResponse.get().getContent());
 
-            val futurePair = client.sample4(new TestRequest());
-            await().forever().pollDelay(Duration.ofMillis(100)).until(futurePair::isDone);
-            assertEquals(HttpStatus.OK, futurePair.get().getLeft());
-            assertEquals(CONTENT, futurePair.get().getRight().getContent());
+        val pair = client.sample3(new TestRequest());
+        assertEquals(HttpStatus.OK, pair.getLeft());
+        assertEquals(CONTENT, pair.getRight().getContent());
 
-            val errorClient = ohLoader.getClient(CncErrorClient.class);
+        val futurePair = client.sample4(new TestRequest());
+        await().forever().pollDelay(Duration.ofMillis(100)).until(futurePair::isDone);
+        assertEquals(HttpStatus.OK, futurePair.get().getLeft());
+        assertEquals(CONTENT, futurePair.get().getRight().getContent());
 
-            assertThrows(IllegalStateException.class, errorClient::sample1);
-            assertThrows(IllegalStateException.class, () -> errorClient.sample2(null));
-            assertThrows(IllegalStateException.class, errorClient::sample3);
-        }
+        val errorClient = ohLoader.getClient(CncErrorClient.class);
+
+        assertThrows(IllegalStateException.class, errorClient::sample1);
+        assertThrows(IllegalStateException.class, () -> errorClient.sample2(null));
+        assertThrows(IllegalStateException.class, errorClient::sample3);
+
+        shutdownMockWebServer();
     }
 
     @OhClient
@@ -113,27 +95,5 @@ public class CncTest {
         <T extends OtherResponse> Future<T> sample2(OtherRequest<T> request);
 
         <T extends Map> Pair<HttpStatus, T> sample3();
-    }
-
-    public interface OtherRequest<T extends OtherResponse> {
-
-        Class<T> getResponseClass();
-    }
-
-    public interface OtherResponse {}
-
-    public static class TestRequest implements CncRequest<TestResponse> {
-
-        @Override
-        public Class<? extends TestResponse> responseClass() {
-            return TestResponse.class;
-        }
-    }
-
-    public static class TestResponse implements CncResponse {
-
-        @Getter
-        @Setter
-        private String content;
     }
 }

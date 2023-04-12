@@ -1,7 +1,7 @@
 package com.github.charlemaznable.httpclient.vxclient;
 
 import com.github.charlemaznable.httpclient.common.CommonReqTest;
-import com.github.charlemaznable.httpclient.common.ContentFormat;
+import com.github.charlemaznable.httpclient.annotation.ContentFormat;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.StatusError;
@@ -24,7 +24,7 @@ public abstract class VxReqCommonTest extends CommonReqTest {
     public void testVxReq(Vertx vertx, VertxTestContext test) {
         startMockWebServer(9300);
 
-        val instance = new VxReq(new VxReq(vertx, "http://127.0.0.1:9300")).buildInstance();
+        val instance = new VxReq(vertx, "http://127.0.0.1:9300").buildInstance();
 
         CompositeFuture.all(newArrayList(
                 Future.<String>future(f ->
@@ -83,15 +83,15 @@ public abstract class VxReqCommonTest extends CommonReqTest {
                                 }))),
                 Future.<String>future(f ->
                         new VxReq(vertx, "http://127.0.0.1:9300/sample6")
-                                .statusFallback(HttpStatus.NOT_FOUND, NotFound.class)
-                                .statusSeriesFallback(HttpStatus.Series.CLIENT_ERROR, ClientError.class)
+                                .statusFallback(HttpStatus.NOT_FOUND, new NotFound())
+                                .statusSeriesFallback(HttpStatus.Series.CLIENT_ERROR, new ClientError())
                                 .get(async -> test.verify(() ->
                                         assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), async.result())), f)),
                 Future.<String>future(f ->
                         new VxReq(vertx, "http://127.0.0.1:9300/sample6")
                                 .parameter("AAA", "aaa")
-                                .statusFallback(HttpStatus.NOT_FOUND, NotFound.class)
-                                .statusSeriesFallback(HttpStatus.Series.CLIENT_ERROR, ClientError.class)
+                                .statusFallback(HttpStatus.NOT_FOUND, new NotFound())
+                                .statusSeriesFallback(HttpStatus.Series.CLIENT_ERROR, new ClientError())
                                 .get(async -> test.verify(() ->
                                         assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), async.result())), f)),
                 Future.<String>future(f ->
@@ -110,11 +110,6 @@ public abstract class VxReqCommonTest extends CommonReqTest {
                                         assertEquals("Sample7", async.result())), f)),
                 Future.<String>future(f ->
                         new VxReq(vertx, "http://127.0.0.1:9399/error")
-                                .proxyOptions(null)
-                                .keyCertOptions(null)
-                                .trustOptions(null)
-                                .verifyHost(true)
-                                .connectTimeout(1000)
                                 .get(async -> test.verify(() -> {
                                     assertTrue(async.cause() instanceof ConnectException);
                                     f.complete();
@@ -173,15 +168,15 @@ public abstract class VxReqCommonTest extends CommonReqTest {
                                 }))),
                 Future.<String>future(f ->
                         instance.req("/sample6")
-                                .statusFallback(HttpStatus.NOT_FOUND, NotFound.class)
-                                .statusSeriesFallback(HttpStatus.Series.CLIENT_ERROR, ClientError.class)
+                                .statusFallback(HttpStatus.NOT_FOUND, new NotFound())
+                                .statusSeriesFallback(HttpStatus.Series.CLIENT_ERROR, new ClientError())
                                 .get(async -> test.verify(() ->
                                         assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), async.result())), f)),
                 Future.<String>future(f ->
                         instance.req("/sample6")
                                 .parameter("AAA", "aaa")
-                                .statusFallback(HttpStatus.NOT_FOUND, NotFound.class)
-                                .statusSeriesFallback(HttpStatus.Series.CLIENT_ERROR, ClientError.class)
+                                .statusFallback(HttpStatus.NOT_FOUND, new NotFound())
+                                .statusSeriesFallback(HttpStatus.Series.CLIENT_ERROR, new ClientError())
                                 .get(async -> test.verify(() ->
                                         assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), async.result())), f)),
                 Future.<String>future(f ->

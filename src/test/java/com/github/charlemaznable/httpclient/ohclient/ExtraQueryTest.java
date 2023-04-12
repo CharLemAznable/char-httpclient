@@ -1,83 +1,40 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
-import com.github.charlemaznable.httpclient.common.ConfigureWith;
-import com.github.charlemaznable.httpclient.common.ContentFormat;
-import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
+import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
+import com.github.charlemaznable.httpclient.annotation.ContentFormat;
+import com.github.charlemaznable.httpclient.annotation.ExtraUrlQuery;
+import com.github.charlemaznable.httpclient.annotation.Mapping;
+import com.github.charlemaznable.httpclient.annotation.MappingBalance;
+import com.github.charlemaznable.httpclient.annotation.Parameter;
+import com.github.charlemaznable.httpclient.annotation.RequestMethod;
+import com.github.charlemaznable.httpclient.common.CommonExtraQueryTest;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
-import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.common.MappingBalance;
-import com.github.charlemaznable.httpclient.common.Parameter;
-import com.github.charlemaznable.httpclient.common.RequestMethod;
-import com.github.charlemaznable.httpclient.configurer.ExtraUrlQueryConfigurer;
-import com.github.charlemaznable.httpclient.configurer.ExtraUrlQueryDisabledConfigurer;
-import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
-import lombok.SneakyThrows;
 import lombok.val;
-import okhttp3.mockwebserver.Dispatcher;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
-import javax.annotation.Nonnull;
-import java.util.Map;
-
-import static com.github.charlemaznable.core.codec.Json.unJson;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
-import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class ExtraQueryTest {
+public class ExtraQueryTest extends CommonExtraQueryTest {
 
-    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
-
-    @SneakyThrows
     @Test
     public void testExtraQuery() {
-        try (val mockWebServer = new MockWebServer()) {
-            mockWebServer.setDispatcher(new Dispatcher() {
-                @Nonnull
-                @Override
-                public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                    val requestUrl = requireNonNull(request.getRequestUrl());
-                    switch (requestUrl.encodedPath()) {
-                        case "/sampleGet":
-                            assertEquals("GET", request.getMethod());
-                            assertEquals("EQV1", requestUrl.queryParameter("EQ1"));
-                            assertEquals("PV1", requestUrl.queryParameter("P1"));
-                            return new MockResponse().setBody("OK");
-                        case "/samplePost":
-                            assertEquals("POST", request.getMethod());
-                            assertEquals("EQV2", requestUrl.queryParameter("EQ1"));
-                            val body = unJson(request.getBody().readUtf8());
-                            assertEquals("PV1", body.get("P1"));
-                            return new MockResponse().setBody("OK");
-                        case "/sampleNone":
-                            assertEquals("GET", request.getMethod());
-                            assertNull(requestUrl.queryParameter("EQ1"));
-                            assertEquals("PV1", requestUrl.queryParameter("P1"));
-                            return new MockResponse().setBody("OK");
-                        default:
-                            return new MockResponse()
-                                    .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                    .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                    }
-                }
-            });
-            mockWebServer.start(41230);
+        startMockWebServer();
 
-            val httpClient = ohLoader.getClient(ExtraHttpClient.class);
-            assertEquals("OK", httpClient.sampleGet("PV1"));
-            assertEquals("OK", httpClient.samplePost("PV1"));
-            assertEquals("OK", httpClient.sampleNone("PV1"));
+        val ohLoader = OhFactory.ohLoader(reflectFactory());
 
-            val httpClientNeo = ohLoader.getClient(ExtraHttpClientNeo.class);
-            assertEquals("OK", httpClientNeo.sampleGet("PV1"));
-            assertEquals("OK", httpClientNeo.samplePost("PV1"));
-            assertEquals("OK", httpClientNeo.sampleNone("PV1"));
-        }
+        val httpClient = ohLoader.getClient(ExtraHttpClient.class);
+        assertEquals("OK", httpClient.sampleGet("PV1"));
+        assertEquals("OK", httpClient.samplePost("PV1"));
+        assertEquals("OK", httpClient.samplePost("PV1", new ExtraOnMethod()));
+        assertEquals("OK", httpClient.sampleNone("PV1"));
+
+        val httpClientNeo = ohLoader.getClient(ExtraHttpClientNeo.class);
+        assertEquals("OK", httpClientNeo.sampleGet("PV1"));
+        assertEquals("OK", httpClientNeo.samplePost("PV1"));
+        assertEquals("OK", httpClientNeo.sampleNone("PV1"));
+
+        shutdownMockWebServer();
     }
 
     @MappingBalance(MappingBalance.RoundRobinBalancer.class)
@@ -93,26 +50,11 @@ public class ExtraQueryTest {
         @ExtraUrlQuery(ExtraOnMethod.class)
         String samplePost(@Parameter("P1") String p);
 
+        @RequestMethod(HttpMethod.POST)
+        String samplePost(@Parameter("P1") String p, ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder);
+
         @ExtraUrlQuery.Disabled
         String sampleNone(@Parameter("P1") String p);
-    }
-
-    public static class ExtraOnClass implements ExtraUrlQuery.ExtraUrlQueryBuilder {
-
-        @Override
-        public String build(@Nonnull Map<String, Object> parameterMap,
-                            @Nonnull Map<String, Object> contextMap) {
-            return "EQ1=EQV1";
-        }
-    }
-
-    public static class ExtraOnMethod implements ExtraUrlQuery.ExtraUrlQueryBuilder {
-
-        @Override
-        public String build(@Nonnull Map<String, Object> parameterMap,
-                            @Nonnull Map<String, Object> contextMap) {
-            return "EQ1=EQV2";
-        }
     }
 
     @MappingBalance(MappingBalance.RoundRobinBalancer.class)
@@ -131,22 +73,4 @@ public class ExtraQueryTest {
         @ConfigureWith(ExtraNoneConfig.class)
         String sampleNone(@Parameter("P1") String p);
     }
-
-    public static class ExtraOnClassConfig implements ExtraUrlQueryConfigurer {
-
-        @Override
-        public ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder() {
-            return new ExtraOnClass();
-        }
-    }
-
-    public static class ExtraOnMethodConfig implements ExtraUrlQueryConfigurer {
-
-        @Override
-        public ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder() {
-            return new ExtraOnMethod();
-        }
-    }
-
-    public static class ExtraNoneConfig implements ExtraUrlQueryDisabledConfigurer {}
 }

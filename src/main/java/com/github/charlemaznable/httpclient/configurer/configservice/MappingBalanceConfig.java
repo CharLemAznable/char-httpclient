@@ -1,7 +1,7 @@
 package com.github.charlemaznable.httpclient.configurer.configservice;
 
 import com.github.charlemaznable.configservice.Config;
-import com.github.charlemaznable.httpclient.common.MappingBalance;
+import com.github.charlemaznable.httpclient.annotation.MappingBalance;
 import com.github.charlemaznable.httpclient.configurer.MappingBalanceConfigurer;
 
 import java.util.Optional;

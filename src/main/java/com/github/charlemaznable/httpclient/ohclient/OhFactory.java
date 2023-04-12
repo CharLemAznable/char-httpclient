@@ -4,19 +4,14 @@ import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.BuddyEnhancer;
 import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.core.lang.Reloadable;
-import com.github.charlemaznable.httpclient.ohclient.annotation.ClientTimeout;
 import com.github.charlemaznable.httpclient.ohclient.enhancer.OhClientEnhancer;
+import com.github.charlemaznable.httpclient.ohclient.internal.OhClass;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhDummy;
-import com.github.charlemaznable.httpclient.ohclient.internal.OhProxy;
 import com.google.common.cache.LoadingCache;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
 import lombok.val;
 
 import javax.annotation.Nonnull;
-import java.lang.annotation.Annotation;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -27,10 +22,6 @@ import static com.github.charlemaznable.core.lang.Condition.checkNotNull;
 import static com.github.charlemaznable.core.lang.LoadingCachee.get;
 import static com.github.charlemaznable.core.lang.LoadingCachee.simpleCache;
 import static com.github.charlemaznable.core.spring.SpringFactory.springFactory;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CALL_TIMEOUT;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_CONNECT_TIMEOUT;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_READ_TIMEOUT;
-import static com.github.charlemaznable.httpclient.ohclient.internal.OhConstant.DEFAULT_WRITE_TIMEOUT;
 import static com.google.common.cache.CacheLoader.from;
 import static lombok.AccessLevel.PRIVATE;
 
@@ -58,17 +49,6 @@ public final class OhFactory {
 
     public static OhLoader ohLoader(Factory factory) {
         return get(ohLoaderCache, factory);
-    }
-
-    public static ClientTimeout timeout() {
-        return new ClientTimeoutImpl();
-    }
-
-    public static ClientTimeout timeout(
-            long callTimeout, long connectTimeout,
-            long readTimeout, long writeTimeout) {
-        return new ClientTimeoutImpl(callTimeout,
-                connectTimeout, readTimeout, writeTimeout);
     }
 
     public static class OhLoader {
@@ -100,7 +80,7 @@ public final class OhFactory {
                                 return 0;
                             },
                             new BuddyEnhancer.Delegate[]{
-                                    new OhProxy(ohClass, factory),
+                                    new OhClass(factory, ohClass),
                                     BuddyEnhancer.CALL_SUPER
                             }));
         }
@@ -118,24 +98,6 @@ public final class OhFactory {
                 }
             }
             return enhancedImpl;
-        }
-    }
-
-    @SuppressWarnings("ClassExplicitlyAnnotation")
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Getter
-    @Accessors(fluent = true)
-    private static class ClientTimeoutImpl implements ClientTimeout {
-
-        private long callTimeout = DEFAULT_CALL_TIMEOUT; // in milliseconds
-        private long connectTimeout = DEFAULT_CONNECT_TIMEOUT; // in milliseconds
-        private long readTimeout = DEFAULT_READ_TIMEOUT; // in milliseconds
-        private long writeTimeout = DEFAULT_WRITE_TIMEOUT; // in milliseconds
-
-        @Override
-        public Class<? extends Annotation> annotationType() {
-            return ClientTimeout.class;
         }
     }
 }

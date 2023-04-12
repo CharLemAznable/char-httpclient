@@ -1,11 +1,11 @@
 package com.github.charlemaznable.httpclient.ws;
 
-import com.github.charlemaznable.httpclient.common.ContentFormat;
+import com.github.charlemaznable.httpclient.annotation.ContentFormat;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
-import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.common.MappingMethodNameDisabled;
-import com.github.charlemaznable.httpclient.common.RequestMethod;
-import com.github.charlemaznable.httpclient.common.ResponseParse;
+import com.github.charlemaznable.httpclient.annotation.Mapping;
+import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
+import com.github.charlemaznable.httpclient.annotation.RequestMethod;
+import com.github.charlemaznable.httpclient.annotation.ResponseParse;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import org.springframework.core.annotation.AliasFor;
 

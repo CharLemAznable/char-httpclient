@@ -1,7 +1,7 @@
 package com.github.charlemaznable.httpclient.ws.soap12;
 
-import com.github.charlemaznable.httpclient.common.ContentFormat;
-import com.github.charlemaznable.httpclient.common.ResponseParse;
+import com.github.charlemaznable.httpclient.annotation.ContentFormat;
+import com.github.charlemaznable.httpclient.annotation.ResponseParse;
 
 import javax.annotation.Nonnull;
 import java.util.Map;

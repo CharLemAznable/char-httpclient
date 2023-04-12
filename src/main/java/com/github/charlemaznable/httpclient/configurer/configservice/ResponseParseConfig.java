@@ -2,7 +2,7 @@ package com.github.charlemaznable.httpclient.configurer.configservice;
 
 import com.github.charlemaznable.configservice.Config;
 import com.github.charlemaznable.core.lang.Objectt;
-import com.github.charlemaznable.httpclient.common.ResponseParse;
+import com.github.charlemaznable.httpclient.annotation.ResponseParse;
 import com.github.charlemaznable.httpclient.configurer.ResponseParseConfigurer;
 
 public interface ResponseParseConfig extends ResponseParseConfigurer {

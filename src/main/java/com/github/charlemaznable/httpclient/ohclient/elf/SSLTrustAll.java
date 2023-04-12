@@ -1,6 +1,5 @@
 package com.github.charlemaznable.httpclient.ohclient.elf;
 
-import com.github.charlemaznable.httpclient.ohclient.configurer.ClientSSLConfigurer;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -68,24 +67,6 @@ public final class SSLTrustAll {
 
     public static HostnameVerifier hostnameVerifier() {
         return (s, sslSession) -> true;
-    }
-
-    public static class Configurer implements ClientSSLConfigurer {
-
-        @Override
-        public SSLSocketFactory sslSocketFactory() {
-            return SSLTrustAll.sslSocketFactory();
-        }
-
-        @Override
-        public X509TrustManager x509TrustManager() {
-            return SSLTrustAll.x509TrustManager();
-        }
-
-        @Override
-        public HostnameVerifier hostnameVerifier() {
-            return SSLTrustAll.hostnameVerifier();
-        }
     }
 
     @NoArgsConstructor(access = PRIVATE)

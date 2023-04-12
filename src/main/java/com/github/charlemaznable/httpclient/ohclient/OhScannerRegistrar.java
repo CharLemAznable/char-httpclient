@@ -2,7 +2,6 @@ package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.core.spring.SpringFactoryBean;
 import com.github.charlemaznable.core.spring.SpringScannerRegistrar;
-import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
 import lombok.Setter;
 import lombok.val;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -12,7 +11,7 @@ import static com.github.charlemaznable.httpclient.ohclient.OhFactory.springOhLo
 
 public final class OhScannerRegistrar extends SpringScannerRegistrar {
 
-    private final OhLoader ohLoader;
+    private final OhFactory.OhLoader ohLoader;
 
     public OhScannerRegistrar() {
         super(OhScan.class, OhClientFactoryBean.class, OhClient.class);
@@ -40,7 +39,7 @@ public final class OhScannerRegistrar extends SpringScannerRegistrar {
     public static class OhClientFactoryBean extends SpringFactoryBean {
 
         @Setter
-        private OhLoader ohLoader;
+        private OhFactory.OhLoader ohLoader;
 
         @Override
         public Object buildObject(Class<?> xyzInterface) {

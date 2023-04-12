@@ -1,76 +1,51 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.httpclient.annotation.Mapping;
+import com.github.charlemaznable.httpclient.common.CommonReturnPairTest;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.val;
-import okhttp3.mockwebserver.Dispatcher;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
-import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.concurrent.Future;
 
 import static com.github.charlemaznable.core.codec.Json.json;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
-import static java.util.Objects.requireNonNull;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ReturnPairTest {
-
-    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+public class ReturnPairTest extends CommonReturnPairTest {
 
     @SneakyThrows
     @Test
     public void testPair() {
-        try (val mockWebServer = new MockWebServer()) {
-            mockWebServer.setDispatcher(new Dispatcher() {
-                @Nonnull
-                @Override
-                public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                    return switch (requireNonNull(request.getPath())) {
-                        case "/sampleStatusAndBean", "/sampleFutureStatusAndBean" -> new MockResponse()
-                                .setResponseCode(HttpStatus.OK.value())
-                                .setBody(json(new Bean("John")));
-                        case "/sampleRawAndBean", "/sampleFutureRawAndBean" -> new MockResponse()
-                                .setResponseCode(HttpStatus.OK.value())
-                                .setBody(json(new Bean("Doe")));
-                        default -> new MockResponse()
-                                .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                    };
-                }
-            });
-            mockWebServer.start(41194);
-            val httpClient = ohLoader.getClient(PairHttpClient.class);
+        startMockWebServer();
 
-            Pair<Integer, Bean> pair = httpClient.sampleStatusAndBean();
-            assertEquals(HttpStatus.OK.value(), pair.getKey());
-            assertEquals("John", pair.getValue().getName());
-            val futurePair = httpClient.sampleFutureStatusAndBean();
-            await().forever().pollDelay(Duration.ofMillis(100)).until(futurePair::isDone);
-            pair = futurePair.get();
-            assertEquals(HttpStatus.OK.value(), pair.getKey());
-            assertEquals("John", pair.getValue().getName());
+        val ohLoader = OhFactory.ohLoader(reflectFactory());
 
-            Pair<String, Bean> rawPair = httpClient.sampleRawAndBean();
-            assertEquals(json(new Bean("Doe")), rawPair.getKey());
-            assertEquals("Doe", rawPair.getValue().getName());
-            val futureRawPair = httpClient.sampleFutureRawAndBean();
-            await().forever().pollDelay(Duration.ofMillis(100)).until(futureRawPair::isDone);
-            rawPair = futureRawPair.get();
-            assertEquals(json(new Bean("Doe")), rawPair.getKey());
-            assertEquals("Doe", rawPair.getValue().getName());
-        }
+        val httpClient = ohLoader.getClient(PairHttpClient.class);
+
+        Pair<Integer, Bean> pair = httpClient.sampleStatusAndBean();
+        assertEquals(HttpStatus.OK.value(), pair.getKey());
+        assertEquals("John", pair.getValue().getName());
+        val futurePair = httpClient.sampleFutureStatusAndBean();
+        await().forever().pollDelay(Duration.ofMillis(100)).until(futurePair::isDone);
+        pair = futurePair.get();
+        assertEquals(HttpStatus.OK.value(), pair.getKey());
+        assertEquals("John", pair.getValue().getName());
+
+        Pair<String, Bean> rawPair = httpClient.sampleRawAndBean();
+        assertEquals(json(new Bean("Doe")), rawPair.getKey());
+        assertEquals("Doe", rawPair.getValue().getName());
+        val futureRawPair = httpClient.sampleFutureRawAndBean();
+        await().forever().pollDelay(Duration.ofMillis(100)).until(futureRawPair::isDone);
+        rawPair = futureRawPair.get();
+        assertEquals(json(new Bean("Doe")), rawPair.getKey());
+        assertEquals("Doe", rawPair.getValue().getName());
+
+        shutdownMockWebServer();
     }
 
     @OhClient
@@ -84,13 +59,5 @@ public class ReturnPairTest {
         Pair<String, Bean> sampleRawAndBean();
 
         Future<Pair<String, Bean>> sampleFutureRawAndBean();
-    }
-
-    @AllArgsConstructor
-    @Getter
-    @Setter
-    public static class Bean {
-
-        private String name;
     }
 }

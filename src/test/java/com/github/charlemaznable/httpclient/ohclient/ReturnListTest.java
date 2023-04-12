@@ -1,93 +1,63 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
+import com.github.charlemaznable.httpclient.annotation.Mapping;
+import com.github.charlemaznable.httpclient.common.CommonReturnListTest;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.val;
-import okhttp3.mockwebserver.Dispatcher;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import okio.BufferedSource;
 import org.junit.jupiter.api.Test;
 
-import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import static com.github.charlemaznable.core.codec.Json.json;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
-import static com.github.charlemaznable.core.lang.Listt.newArrayList;
-import static java.util.Objects.requireNonNull;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ReturnListTest {
-
-    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
+public class ReturnListTest extends CommonReturnListTest {
 
     @SneakyThrows
     @Test
     public void testList() {
-        try (val mockWebServer = new MockWebServer()) {
-            mockWebServer.setDispatcher(new Dispatcher() {
-                @Nonnull
-                @Override
-                public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                    return switch (requireNonNull(request.getPath())) {
-                        case "/sampleListBean", "/sampleFutureListBean" -> new MockResponse()
-                                .setResponseCode(HttpStatus.OK.value())
-                                .setBody(json(newArrayList(new Bean("John"), new Bean("Doe"))));
-                        case "/sampleListString", "/sampleFutureListString" -> new MockResponse()
-                                .setResponseCode(HttpStatus.OK.value())
-                                .setBody(json(newArrayList("John", "Doe")));
-                        case "/sampleListBufferedSource" -> new MockResponse()
-                                .setResponseCode(HttpStatus.OK.value())
-                                .setBody(HttpStatus.OK.getReasonPhrase());
-                        default -> new MockResponse()
-                                .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                    };
-                }
-            });
-            mockWebServer.start(41192);
-            val httpClient = ohLoader.getClient(ListHttpClient.class);
+        startMockWebServer();
 
-            List<Bean> beans = httpClient.sampleListBean();
-            Bean bean1 = beans.get(0);
-            Bean bean2 = beans.get(1);
-            assertEquals("John", bean1.getName());
-            assertEquals("Doe", bean2.getName());
-            val futureBeans = httpClient.sampleFutureListBean();
-            await().forever().pollDelay(Duration.ofMillis(100)).until(futureBeans::isDone);
-            beans = futureBeans.get();
-            bean1 = beans.get(0);
-            bean2 = beans.get(1);
-            assertEquals("John", bean1.getName());
-            assertEquals("Doe", bean2.getName());
+        val ohLoader = OhFactory.ohLoader(reflectFactory());
 
-            List<String> strs = httpClient.sampleListString();
-            String str1 = strs.get(0);
-            String str2 = strs.get(1);
-            assertEquals("John", str1);
-            assertEquals("Doe", str2);
-            val futureStrs = httpClient.sampleFutureListString();
-            await().forever().pollDelay(Duration.ofMillis(100)).until(futureStrs::isDone);
-            strs = futureStrs.get();
-            str1 = strs.get(0);
-            str2 = strs.get(1);
-            assertEquals("John", str1);
-            assertEquals("Doe", str2);
+        val httpClient = ohLoader.getClient(ListHttpClient.class);
 
-            val bufferedSources = httpClient.sampleListBufferedSource();
-            assertEquals(1, bufferedSources.size());
-            assertEquals(HttpStatus.OK.getReasonPhrase(), bufferedSources.get(0).readUtf8());
-        }
+        List<Bean> beans = httpClient.sampleListBean();
+        Bean bean1 = beans.get(0);
+        Bean bean2 = beans.get(1);
+        assertEquals("John", bean1.getName());
+        assertEquals("Doe", bean2.getName());
+        val futureBeans = httpClient.sampleFutureListBean();
+        await().forever().pollDelay(Duration.ofMillis(100)).until(futureBeans::isDone);
+        beans = futureBeans.get();
+        bean1 = beans.get(0);
+        bean2 = beans.get(1);
+        assertEquals("John", bean1.getName());
+        assertEquals("Doe", bean2.getName());
+
+        List<String> strs = httpClient.sampleListString();
+        String str1 = strs.get(0);
+        String str2 = strs.get(1);
+        assertEquals("John", str1);
+        assertEquals("Doe", str2);
+        val futureStrs = httpClient.sampleFutureListString();
+        await().forever().pollDelay(Duration.ofMillis(100)).until(futureStrs::isDone);
+        strs = futureStrs.get();
+        str1 = strs.get(0);
+        str2 = strs.get(1);
+        assertEquals("John", str1);
+        assertEquals("Doe", str2);
+
+        val bufferedSources = httpClient.sampleListBufferedSource();
+        assertEquals(1, bufferedSources.size());
+        assertEquals(HttpStatus.OK.getReasonPhrase(), bufferedSources.get(0).readUtf8());
+
+        shutdownMockWebServer();
     }
 
     @OhClient
@@ -103,13 +73,5 @@ public class ReturnListTest {
         Future<List<String>> sampleFutureListString();
 
         List<BufferedSource> sampleListBufferedSource();
-    }
-
-    @AllArgsConstructor
-    @Getter
-    @Setter
-    public static class Bean {
-
-        private String name;
     }
 }

@@ -1,48 +1,29 @@
 package com.github.charlemaznable.httpclient.common;
 
+import com.github.charlemaznable.httpclient.annotation.ContentFormat;
+import com.github.charlemaznable.httpclient.annotation.ExtraUrlQuery;
+import lombok.NoArgsConstructor;
 import lombok.val;
 import okhttp3.MediaType;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.nio.charset.Charset;
-import java.util.List;
 import java.util.Map;
 
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
-import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
-import static com.github.charlemaznable.core.lang.Mapp.of;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
-import static com.github.charlemaznable.httpclient.internal.CommonConstant.DEFAULT_ACCEPT_CHARSET;
-import static com.github.charlemaznable.httpclient.internal.CommonConstant.DEFAULT_CONTENT_FORMATTER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-@SuppressWarnings({"unchecked", "rawtypes"})
-public abstract class CommonReq<T extends CommonReq<T>> {
-
-    protected static final ContentFormat.ContentFormatter URL_QUERY_FORMATTER = new ContentFormat.FormContentFormatter();
+@SuppressWarnings("unchecked")
+@NoArgsConstructor
+public abstract class CommonReq<T extends CommonReq<T>> extends CommonBase<CommonReq<T>> {
 
     protected String baseUrl;
-
     protected String reqPath;
-
-    protected Charset acceptCharset = DEFAULT_ACCEPT_CHARSET;
-    protected ContentFormat.ContentFormatter contentFormatter = DEFAULT_CONTENT_FORMATTER;
-
-    protected List<Pair<String, String>> headers = newArrayList();
-    protected List<Pair<String, Object>> parameters = newArrayList();
     protected String requestBody;
-
-    protected ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder;
-
-    protected Map<HttpStatus, Class<? extends FallbackFunction>>
-            statusFallbackMapping = newHashMap();
-    protected Map<HttpStatus.Series, Class<? extends FallbackFunction>>
-            statusSeriesFallbackMapping = of(
-            HttpStatus.Series.CLIENT_ERROR, StatusErrorThrower.class,
-            HttpStatus.Series.SERVER_ERROR, StatusErrorThrower.class);
 
     public static Boolean permitsRequestBody(String requestMethod) {
         return okhttp3.internal.http.HttpMethod.permitsRequestBody(requestMethod);
@@ -53,29 +34,25 @@ public abstract class CommonReq<T extends CommonReq<T>> {
                 checkNull(mediaType.charset(), UTF_8::name, Charset::name));
     }
 
-    public CommonReq() {
-        this((String) null);
-    }
-
     public CommonReq(String baseUrl) {
+        this();
         this.baseUrl = baseUrl;
     }
 
-    public CommonReq(CommonReq<?> other) {
+    public <U extends CommonReq<U>> CommonReq(CommonReq<U> other) {
+        super(other);
         this.baseUrl = other.baseUrl;
         this.reqPath = other.reqPath;
-        this.acceptCharset = other.acceptCharset;
-        this.contentFormatter = other.contentFormatter;
-        this.headers = newArrayList(other.headers);
-        this.parameters = newArrayList(other.parameters);
         this.requestBody = other.requestBody;
-        this.extraUrlQueryBuilder = other.extraUrlQueryBuilder;
-        this.statusFallbackMapping = newHashMap(other.statusFallbackMapping);
-        this.statusSeriesFallbackMapping = newHashMap(other.statusSeriesFallbackMapping);
     }
 
     public T req(String reqPath) {
         this.reqPath = reqPath;
+        return (T) this;
+    }
+
+    public T requestBody(String requestBody) {
+        this.requestBody = requestBody;
         return (T) this;
     }
 
@@ -109,25 +86,18 @@ public abstract class CommonReq<T extends CommonReq<T>> {
         return (T) this;
     }
 
-    public T requestBody(String requestBody) {
-        this.requestBody = requestBody;
+    public T statusFallback(HttpStatus httpStatus, FallbackFunction<?> fallbackFunction) {
+        this.statusFallbackMapping.put(httpStatus, fallbackFunction);
+        return (T) this;
+    }
+
+    public T statusSeriesFallback(HttpStatus.Series httpStatusSeries, FallbackFunction<?> fallbackFunction) {
+        this.statusSeriesFallbackMapping.put(httpStatusSeries, fallbackFunction);
         return (T) this;
     }
 
     public T extraUrlQueryBuilder(ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder) {
         this.extraUrlQueryBuilder = extraUrlQueryBuilder;
-        return (T) this;
-    }
-
-    public T statusFallback(HttpStatus httpStatus,
-                            Class<? extends FallbackFunction> errorClass) {
-        this.statusFallbackMapping.put(httpStatus, errorClass);
-        return (T) this;
-    }
-
-    public T statusSeriesFallback(HttpStatus.Series httpStatusSeries,
-                                  Class<? extends FallbackFunction> errorClass) {
-        this.statusSeriesFallbackMapping.put(httpStatusSeries, errorClass);
         return (T) this;
     }
 
@@ -142,14 +112,80 @@ public abstract class CommonReq<T extends CommonReq<T>> {
         return concatUrlQuery(requestUrl, extraUrlQuery);
     }
 
-    protected static final class Instance extends CommonReq<Instance> {
+    public static abstract class Instance<T extends Instance<T>> extends CommonReq<Instance<T>> {
 
-        public Instance(CommonReq<?> other) {
+        public <U extends CommonReq<U>> Instance(CommonReq<U> other) {
             super(other);
         }
 
-        public Instance copy() {
-            return new Instance(this);
+        public abstract T copy();
+
+        public T req(String reqPath) {
+            val copy = copy();
+            copy.reqPath = reqPath;
+            return copy;
+        }
+
+        public T requestBody(String requestBody) {
+            val copy = copy();
+            copy.requestBody = requestBody;
+            return copy;
+        }
+
+        public T acceptCharset(Charset acceptCharset) {
+            val copy = copy();
+            copy.acceptCharset = acceptCharset;
+            return copy;
+        }
+
+        public T contentFormat(ContentFormat.ContentFormatter contentFormatter) {
+            val copy = copy();
+            copy.contentFormatter = contentFormatter;
+            return copy;
+        }
+
+        public T header(String name, String value) {
+            val copy = copy();
+            copy.headers.add(Pair.of(name, value));
+            return copy;
+        }
+
+        public T headers(Map<String, String> headers) {
+            val copy = copy();
+            headers.forEach((name, value) ->
+                    copy.headers.add(Pair.of(name, value)));
+            return copy;
+        }
+
+        public T parameter(String name, Object value) {
+            val copy = copy();
+            copy.parameters.add(Pair.of(name, value));
+            return copy;
+        }
+
+        public T parameters(Map<String, Object> parameters) {
+            val copy = copy();
+            parameters.forEach((name, value) ->
+                    copy.parameters.add(Pair.of(name, value)));
+            return copy;
+        }
+
+        public T statusFallback(HttpStatus httpStatus, FallbackFunction<?> fallbackFunction) {
+            val copy = copy();
+            copy.statusFallbackMapping.put(httpStatus, fallbackFunction);
+            return copy;
+        }
+
+        public T statusSeriesFallback(HttpStatus.Series httpStatusSeries, FallbackFunction<?> fallbackFunction) {
+            val copy = copy();
+            copy.statusSeriesFallbackMapping.put(httpStatusSeries, fallbackFunction);
+            return copy;
+        }
+
+        public T extraUrlQueryBuilder(ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder) {
+            val copy = copy();
+            copy.extraUrlQueryBuilder = extraUrlQueryBuilder;
+            return copy;
         }
     }
 }

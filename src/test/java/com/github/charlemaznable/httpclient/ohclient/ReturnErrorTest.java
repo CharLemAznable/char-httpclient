@@ -1,72 +1,50 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
-import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.common.Mapping;
-import com.github.charlemaznable.httpclient.ohclient.OhFactory.OhLoader;
-import lombok.SneakyThrows;
+import com.github.charlemaznable.httpclient.annotation.Mapping;
+import com.github.charlemaznable.httpclient.common.CommonReturnErrorTest;
 import lombok.val;
-import okhttp3.mockwebserver.Dispatcher;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.junit.jupiter.api.Test;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import static com.github.charlemaznable.core.codec.Json.json;
-import static com.github.charlemaznable.core.codec.Json.jsonOf;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
-import static com.github.charlemaznable.core.lang.Listt.newArrayList;
-import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class ReturnErrorTest {
+public class ReturnErrorTest extends CommonReturnErrorTest {
 
-    private static final OhLoader ohLoader = OhFactory.ohLoader(reflectFactory());
-
-    @SneakyThrows
     @Test
     public void testError() {
-        try (val mockWebServer = new MockWebServer()) {
-            mockWebServer.setDispatcher(new Dispatcher() {
-                @Nonnull
-                @Override
-                public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                    return switch (requireNonNull(request.getPath())) {
-                        case "/sampleFuture", "/sampleList" -> new MockResponse()
-                                .setResponseCode(HttpStatus.OK.value())
-                                .setBody(json(newArrayList("John", "Doe")));
-                        case "/sampleMapError" -> new MockResponse()
-                                .setResponseCode(HttpStatus.OK.value())
-                                .setBody("John Doe");
-                        case "/sampleMap", "/samplePair", "/sampleTriple" -> new MockResponse()
-                                .setResponseCode(HttpStatus.OK.value())
-                                .setBody(jsonOf("John", "Doe"));
-                        default -> new MockResponse()
-                                .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                    };
-                }
-            });
-            mockWebServer.start(41196);
-            val httpClient = ohLoader.getClient(ErrorHttpClient.class);
+        startMockWebServer();
 
-            assertThrows(IllegalStateException.class, httpClient::sampleFuture);
-            assertThrows(IllegalStateException.class, httpClient::sampleList);
-            assertThrows(IllegalArgumentException.class, httpClient::sampleMapError);
+        val ohLoader = OhFactory.ohLoader(reflectFactory());
 
-            val map = httpClient.sampleMap();
-            assertEquals("Doe", map.get("John"));
+        val httpClient = ohLoader.getClient(ErrorHttpClient.class);
 
-            assertThrows(IllegalStateException.class, httpClient::samplePair);
-            assertThrows(IllegalStateException.class, httpClient::sampleTriple);
-        }
+        assertThrows(IllegalStateException.class, httpClient::sampleFuture);
+        assertThrows(IllegalStateException.class, httpClient::sampleFutureT);
+        assertThrows(IllegalStateException.class, httpClient::sampleList);
+        assertThrows(IllegalStateException.class, httpClient::sampleListT);
+        assertThrows(IllegalStateException.class, httpClient::sampleFutureList);
+        assertThrows(IllegalStateException.class, httpClient::sampleFutureListT);
+        assertThrows(IllegalStateException.class, httpClient::samplePair);
+        assertThrows(IllegalStateException.class, httpClient::samplePairTU);
+        assertThrows(IllegalStateException.class, httpClient::sampleFuturePair);
+        assertThrows(IllegalStateException.class, httpClient::sampleFuturePairTU);
+        assertThrows(IllegalStateException.class, httpClient::sampleTriple);
+        assertThrows(IllegalStateException.class, httpClient::sampleTripleTUV);
+        assertThrows(IllegalStateException.class, httpClient::sampleFutureTriple);
+        assertThrows(IllegalStateException.class, httpClient::sampleFutureTripleTUV);
+
+        assertThrows(IllegalArgumentException.class, httpClient::sampleMapError);
+        val map = httpClient.sampleMap();
+        assertEquals("Doe", map.get("John"));
+
+        shutdownMockWebServer();
     }
 
     @SuppressWarnings({"UnusedReturnValue", "rawtypes"})
@@ -76,14 +54,34 @@ public class ReturnErrorTest {
 
         Future sampleFuture();
 
+        <T> Future<T> sampleFutureT();
+
         List sampleList();
+
+        <T> List<T> sampleListT();
+
+        Future<List> sampleFutureList();
+
+        <T> Future<List<T>> sampleFutureListT();
+
+        Pair samplePair();
+
+        <T, U> Pair<T, U> samplePairTU();
+
+        Future<Pair> sampleFuturePair();
+
+        <T, U> Future<Pair<T, U>> sampleFuturePairTU();
+
+        Triple sampleTriple();
+
+        <T, U, V> Triple<T, U, V> sampleTripleTUV();
+
+        Future<Triple> sampleFutureTriple();
+
+        <T, U, V> Future<Triple<T, U, V>> sampleFutureTripleTUV();
 
         Map sampleMapError();
 
         Map sampleMap();
-
-        Pair samplePair();
-
-        Triple sampleTriple();
     }
 }

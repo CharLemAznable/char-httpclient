@@ -1,8 +1,6 @@
 package com.github.charlemaznable.httpclient.vxclient;
 
 import com.github.charlemaznable.httpclient.common.CommonReq;
-import com.github.charlemaznable.httpclient.common.ContentFormat;
-import com.github.charlemaznable.httpclient.common.ExtraUrlQuery;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import io.vertx.core.AsyncResult;
@@ -12,31 +10,25 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.TrustOptions;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.experimental.Delegate;
 import lombok.val;
 
-import java.nio.charset.Charset;
-import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
-import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
-import static com.github.charlemaznable.httpclient.internal.CommonConstant.ACCEPT_CHARSET;
-import static com.github.charlemaznable.httpclient.internal.CommonConstant.CONTENT_TYPE;
+import static com.github.charlemaznable.httpclient.common.CommonConstant.ACCEPT_CHARSET;
+import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT_TYPE;
+import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUERY_FORMATTER;
 import static com.google.common.collect.Iterators.forArray;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -44,6 +36,7 @@ import static java.util.Objects.requireNonNull;
 public class VxReq extends CommonReq<VxReq> {
 
     private final Vertx vertx;
+    @Delegate
     private final WebClientOptions webClientOptions;
 
     public VxReq(Vertx vertx) {
@@ -58,41 +51,12 @@ public class VxReq extends CommonReq<VxReq> {
         this.webClientOptions = new WebClientOptions();
     }
 
-    public VxReq(CommonReq<?> other) {
-        super(other);
-        this.vertx = null;
-        this.webClientOptions = new WebClientOptions();
+    public WebClient buildWebClient() {
+        return WebClient.create(requireNonNull(vertx), webClientOptions);
     }
 
-    public VxReq(VxReq other) {
-        super(other);
-        this.vertx = other.vertx;
-        this.webClientOptions = new WebClientOptions(other.webClientOptions);
-    }
-
-    public VxReq proxyOptions(ProxyOptions proxyOptions) {
-        webClientOptions.setProxyOptions(proxyOptions);
-        return this;
-    }
-
-    public VxReq keyCertOptions(KeyCertOptions keyCertOptions) {
-        webClientOptions.setKeyCertOptions(keyCertOptions);
-        return this;
-    }
-
-    public VxReq trustOptions(TrustOptions trustOptions) {
-        webClientOptions.setTrustOptions(trustOptions);
-        return this;
-    }
-
-    public VxReq verifyHost(boolean verifyHost) {
-        webClientOptions.setVerifyHost(verifyHost);
-        return this;
-    }
-
-    public VxReq connectTimeout(int connectTimeout) {
-        webClientOptions.setConnectTimeout(connectTimeout);
-        return this;
+    public VxReq.Instance buildInstance() {
+        return new Instance(this, buildWebClient());
     }
 
     @SafeVarargs
@@ -113,217 +77,146 @@ public class VxReq extends CommonReq<VxReq> {
         return buildInstance().post();
     }
 
-    public WebClient buildWebClient() {
-        return WebClient.create(requireNonNull(vertx), webClientOptions);
-    }
-
-    public VxReq.Instance buildInstance() {
-        return new Instance(buildWebClient(), new CommonReq.Instance(this));
-    }
-
-    @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public static final class Instance extends CommonReq<Instance> {
+    public static final class Instance extends CommonReq.Instance<Instance> {
 
         private final WebClient webClient;
-        private final CommonReq.Instance req;
 
-        @Override
-        public VxReq.Instance req(String reqPath) {
-            return new VxReq.Instance(this.webClient,
-                    this.req.copy().req(reqPath));
+        public <U extends CommonReq<U>> Instance(CommonReq<U> other, WebClient webClient) {
+            super(other);
+            this.webClient = webClient;
         }
 
         @Override
-        public VxReq.Instance acceptCharset(Charset acceptCharset) {
-            return new VxReq.Instance(this.webClient,
-                    this.req.copy().acceptCharset(acceptCharset));
-        }
-
-        @Override
-        public VxReq.Instance contentFormat(ContentFormat.ContentFormatter contentFormatter) {
-            return new VxReq.Instance(this.webClient,
-                    this.req.copy().contentFormat(contentFormatter));
-        }
-
-        @Override
-        public VxReq.Instance header(String name, String value) {
-            return new VxReq.Instance(this.webClient,
-                    this.req.copy().header(name, value));
-        }
-
-        @Override
-        public VxReq.Instance headers(Map<String, String> headers) {
-            return new VxReq.Instance(this.webClient,
-                    this.req.copy().headers(headers));
-        }
-
-        @Override
-        public VxReq.Instance parameter(String name, Object value) {
-            return new VxReq.Instance(this.webClient,
-                    this.req.copy().parameter(name, value));
-        }
-
-        @Override
-        public VxReq.Instance parameters(Map<String, Object> parameters) {
-            return new VxReq.Instance(this.webClient,
-                    this.req.copy().parameters(parameters));
-        }
-
-        @Override
-        public VxReq.Instance requestBody(String requestBody) {
-            return new VxReq.Instance(this.webClient,
-                    this.req.copy().requestBody(requestBody));
-        }
-
-        @Override
-        public VxReq.Instance extraUrlQueryBuilder(ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder) {
-            return new VxReq.Instance(this.webClient,
-                    this.req.copy().extraUrlQueryBuilder(extraUrlQueryBuilder));
-        }
-
-        @SuppressWarnings("rawtypes")
-        @Override
-        public VxReq.Instance statusFallback(HttpStatus httpStatus, Class<? extends FallbackFunction> errorClass) {
-            return new VxReq.Instance(this.webClient,
-                    this.req.copy().statusFallback(httpStatus, errorClass));
-        }
-
-        @SuppressWarnings("rawtypes")
-        @Override
-        public VxReq.Instance statusSeriesFallback(HttpStatus.Series httpStatusSeries, Class<? extends FallbackFunction> errorClass) {
-            return new VxReq.Instance(this.webClient,
-                    this.req.copy().statusSeriesFallback(httpStatusSeries, errorClass));
+        public VxReq.Instance copy() {
+            return new VxReq.Instance(this, webClient);
         }
 
         @SafeVarargs
         public final void get(Handler<AsyncResult<String>>... handlers) {
-            request(new VxReq(this.req), VxReq::buildGetRequest, VxReq::buildGetBody, handlers);
+            request(this::buildGetRequest, this::buildGetBody, handlers);
         }
 
         @SafeVarargs
         public final void post(Handler<AsyncResult<String>>... handlers) {
-            request(new VxReq(this.req), VxReq::buildPostRequest, VxReq::buildPostBody, handlers);
+            request(this::buildPostRequest, this::buildPostBody, handlers);
         }
 
         public Future<String> get() {
-            return request(new VxReq(this.req), VxReq::buildGetRequest, VxReq::buildGetBody);
+            return request(this::buildGetRequest, this::buildGetBody);
         }
 
         public Future<String> post() {
-            return request(new VxReq(this.req), VxReq::buildPostRequest, VxReq::buildPostBody);
+            return request(this::buildPostRequest, this::buildPostBody);
         }
 
         @SafeVarargs
-        private void request(VxReq vxReq,
-                             BiFunction<VxReq, WebClient, HttpRequest<Buffer>> requestBuilder,
-                             Function<VxReq, Buffer> bodyBuilder,
+        private void request(Function<WebClient, HttpRequest<Buffer>> requestBuilder,
+                             Supplier<Buffer> bodySupplier,
                              Handler<AsyncResult<String>>... handlers) {
-            requestBuilder.apply(vxReq, this.webClient)
-                    .sendBuffer(bodyBuilder.apply(vxReq), vxReq.handle(handlers));
+            requestBuilder.apply(this.webClient)
+                    .sendBuffer(bodySupplier.get(), handle(handlers));
         }
 
-        private Future<String> request(VxReq vxReq,
-                                       BiFunction<VxReq, WebClient, HttpRequest<Buffer>> requestBuilder,
-                                       Function<VxReq, Buffer> bodyBuilder) {
+        private Future<String> request(Function<WebClient, HttpRequest<Buffer>> requestBuilder,
+                                       Supplier<Buffer> bodySupplier) {
             Promise<String> promise = Promise.promise();
-            requestBuilder.apply(vxReq, this.webClient)
-                    .sendBuffer(bodyBuilder.apply(vxReq), vxReq.handle(promise));
+            requestBuilder.apply(this.webClient)
+                    .sendBuffer(bodySupplier.get(), handle(promise));
             return promise.future();
         }
-    }
 
-    private HttpRequest<Buffer> buildGetRequest(WebClient webClient) {
-        val parameterMap = fetchParameterMap();
-        val requestUrl = concatRequestUrl(parameterMap);
-        val headersMap = fetchHeaderMap();
-        val query = URL_QUERY_FORMATTER.format(parameterMap, newHashMap());
-        return webClient.getAbs(concatUrlQuery(requestUrl, query)).putHeaders(headersMap);
-    }
-
-    private Buffer buildGetBody() {
-        return null;
-    }
-
-    private HttpRequest<Buffer> buildPostRequest(WebClient webClient) {
-        val parameterMap = fetchParameterMap();
-        val requestUrl = concatRequestUrl(parameterMap);
-        val headersMap = fetchHeaderMap();
-        return webClient.postAbs(requestUrl).putHeaders(headersMap);
-    }
-
-    private Buffer buildPostBody() {
-        val content = nullThen(this.requestBody, () ->
-                this.contentFormatter.format(fetchParameterMap(), newHashMap()));
-        val charset = parseCharset(this.contentFormatter.contentType());
-        return Buffer.buffer(content, charset);
-    }
-
-    private MultiMap fetchHeaderMap() {
-        val headersMap = MultiMap.caseInsensitiveMultiMap();
-        val acceptCharsetName = this.acceptCharset.name();
-        headersMap.set(ACCEPT_CHARSET, acceptCharsetName);
-        val contentType = this.contentFormatter.contentType();
-        headersMap.set(CONTENT_TYPE, contentType);
-        for (val header : this.headers) {
-            checkNull(header.getValue(),
-                    () -> headersMap.remove(header.getKey()),
-                    xx -> headersMap.set(header.getKey(), header.getValue()));
+        private HttpRequest<Buffer> buildGetRequest(WebClient webClient) {
+            val parameterMap = fetchParameterMap();
+            val requestUrl = concatRequestUrl(parameterMap);
+            val headersMap = fetchHeaderMap();
+            val query = URL_QUERY_FORMATTER.format(parameterMap, newHashMap());
+            return webClient.getAbs(concatUrlQuery(requestUrl, query)).putHeaders(headersMap);
         }
-        return headersMap;
-    }
 
-    @SafeVarargs
-    private Handler<AsyncResult<HttpResponse<Buffer>>> handle(
-            Handler<AsyncResult<String>>... handlers) {
-        return arResponse -> {
-            val promise = Promise.<String>promise();
-            if (arResponse.succeeded()) {
-                try {
-                    val response = arResponse.result();
-                    val statusCode = response.statusCode();
-                    val responseBody = response.bodyAsString(acceptCharset.name());
+        private Buffer buildGetBody() {
+            return null;
+        }
 
-                    val statusFallback = statusFallbackMapping
-                            .get(HttpStatus.valueOf(statusCode));
-                    val statusSeriesFallback = statusSeriesFallbackMapping
-                            .get(HttpStatus.Series.valueOf(statusCode));
+        private HttpRequest<Buffer> buildPostRequest(WebClient webClient) {
+            val parameterMap = fetchParameterMap();
+            val requestUrl = concatRequestUrl(parameterMap);
+            val headersMap = fetchHeaderMap();
+            return webClient.postAbs(requestUrl).putHeaders(headersMap);
+        }
 
-                    if (nonNull(statusFallback)) {
-                        promise.complete(applyFallback(statusFallback,
-                                statusCode, responseBody));
+        private Buffer buildPostBody() {
+            val content = nullThen(this.requestBody, () ->
+                    this.contentFormatter().format(fetchParameterMap(), newHashMap()));
+            val charset = parseCharset(this.contentFormatter().contentType());
+            return Buffer.buffer(content, charset);
+        }
 
-                    } else if (nonNull(statusSeriesFallback)) {
-                        promise.complete(applyFallback(statusSeriesFallback,
-                                statusCode, responseBody));
-
-                    } else promise.complete(responseBody);
-                } catch (Exception e) {
-                    promise.fail(e);
-                }
-            } else {
-                promise.fail(arResponse.cause());
+        private MultiMap fetchHeaderMap() {
+            val headersMap = MultiMap.caseInsensitiveMultiMap();
+            val acceptCharsetName = this.acceptCharset().name();
+            headersMap.set(ACCEPT_CHARSET, acceptCharsetName);
+            val contentType = this.contentFormatter().contentType();
+            headersMap.set(CONTENT_TYPE, contentType);
+            for (val header : this.headers()) {
+                checkNull(header.getValue(),
+                        () -> headersMap.remove(header.getKey()),
+                        xx -> headersMap.set(header.getKey(), header.getValue()));
             }
+            return headersMap;
+        }
 
-            iterateHandlers(promise, handlers);
-        };
-    }
+        @SafeVarargs
+        private Handler<AsyncResult<HttpResponse<Buffer>>> handle(
+                Handler<AsyncResult<String>>... handlers) {
+            return arResponse -> {
+                val promise = Promise.<String>promise();
+                if (arResponse.succeeded()) {
+                    try {
+                        val response = arResponse.result();
+                        val statusCode = response.statusCode();
+                        val responseBody = response.bodyAsString(this.acceptCharset().name());
 
-    @SuppressWarnings("rawtypes")
-    private String applyFallback(Class<? extends FallbackFunction> function,
-                                 int statusCode, String responseBody) {
-        return toStr(reflectFactory().build(function).apply(
-                new FallbackFunction.Response<>(statusCode, responseBody) {
-                    @Override
-                    public String responseBodyAsString() {
-                        return getResponseBody();
+                        val statusFallback = this.statusFallbackMapping()
+                                .get(HttpStatus.valueOf(statusCode));
+                        val statusSeriesFallback = this.statusSeriesFallbackMapping()
+                                .get(HttpStatus.Series.valueOf(statusCode));
+
+                        if (nonNull(statusFallback)) {
+                            promise.complete(applyFallback(statusFallback,
+                                    statusCode, responseBody));
+
+                        } else if (nonNull(statusSeriesFallback)) {
+                            promise.complete(applyFallback(statusSeriesFallback,
+                                    statusCode, responseBody));
+
+                        } else promise.complete(responseBody);
+                    } catch (Exception e) {
+                        promise.fail(e);
                     }
-                }));
-    }
+                } else {
+                    promise.fail(arResponse.cause());
+                }
 
-    @SafeVarargs
-    private void iterateHandlers(Promise<String> promise,
-                                 Handler<AsyncResult<String>>... handlers) {
-        forArray(handlers).forEachRemaining(handler ->
-                notNullThenRun(handler, h -> h.handle(promise.future())));
+                iterateHandlers(promise, handlers);
+            };
+        }
+
+        private String applyFallback(FallbackFunction<?> function,
+                                     int statusCode, String responseBody) {
+            return toStr(function.apply(
+                    new FallbackFunction.Response<>(statusCode, responseBody) {
+                        @Override
+                        public String responseBodyAsString() {
+                            return getResponseBody();
+                        }
+                    }));
+        }
+
+        @SafeVarargs
+        private void iterateHandlers(Promise<String> promise,
+                                     Handler<AsyncResult<String>>... handlers) {
+            forArray(handlers).forEachRemaining(handler ->
+                    notNullThenRun(handler, h -> h.handle(promise.future())));
+        }
     }
 }

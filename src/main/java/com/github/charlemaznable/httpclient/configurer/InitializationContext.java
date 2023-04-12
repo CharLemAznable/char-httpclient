@@ -9,30 +9,30 @@ import static lombok.AccessLevel.PRIVATE;
 @NoArgsConstructor(access = PRIVATE)
 public final class InitializationContext {
 
-    private static final ThreadLocal<Class<?>> ohClassLocal = new InheritableThreadLocal<>();
-    private static final ThreadLocal<Method> ohMethodLocal = new InheritableThreadLocal<>();
+    private static final ThreadLocal<Class<?>> initializingClassLocal = new InheritableThreadLocal<>();
+    private static final ThreadLocal<Method> initializingMethodLocal = new InheritableThreadLocal<>();
 
-    public static void setOhClass(Class<?> ohClass) {
-        ohClassLocal.set(ohClass);
+    public static void setInitializingClass(Class<?> ohClass) {
+        initializingClassLocal.set(ohClass);
     }
 
-    public static void setOhMethod(Method ohMethod) {
-        ohMethodLocal.set(ohMethod);
+    public static void setInitializingMethod(Method ohMethod) {
+        initializingMethodLocal.set(ohMethod);
     }
 
-    public static Class<?> getOhClass() {
-        return ohClassLocal.get();
+    public static Class<?> getInitializingClass() {
+        return initializingClassLocal.get();
     }
 
-    public static Method getOhMethod() {
-        return ohMethodLocal.get();
+    public static Method getInitializingMethod() {
+        return initializingMethodLocal.get();
     }
 
-    public static void clearOhClass() {
-        ohClassLocal.remove();
+    public static void clearInitializingClass() {
+        initializingClassLocal.remove();
     }
 
-    public static void clearOhMethod() {
-        ohMethodLocal.remove();
+    public static void clearInitializingMethod() {
+        initializingMethodLocal.remove();
     }
 }

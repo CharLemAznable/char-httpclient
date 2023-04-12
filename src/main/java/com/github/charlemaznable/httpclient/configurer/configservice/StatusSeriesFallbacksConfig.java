@@ -15,15 +15,15 @@ import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.intOf;
 import static java.util.Objects.nonNull;
+import static org.joor.Reflect.onClass;
 
 public interface StatusSeriesFallbacksConfig extends StatusSeriesFallbacksConfigurer {
 
     @Config("statusSeriesFallbackMapping")
     String statusSeriesFallbackMappingString();
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
-    default Map<HttpStatus.Series, Class<? extends FallbackFunction>> statusSeriesFallbackMapping() {
+    default Map<HttpStatus.Series, FallbackFunction<?>> statusSeriesFallbackMapping() {
         return notNullThen(statusSeriesFallbackMappingString(), v -> {
             val mapping = Splitter.on("&").omitEmptyStrings()
                     .trimResults().withKeyValueSeparator("=").split(v);
@@ -31,7 +31,7 @@ public interface StatusSeriesFallbacksConfig extends StatusSeriesFallbacksConfig
                     .filter(e -> nonNull(HttpStatus.Series.resolve(intOf(e.getKey()))))
                     .filter(e -> isAssignable(findClass(e.getValue()), FallbackFunction.class))
                     .collect(toMap(e -> HttpStatus.Series.valueOf(intOf(e.getKey())),
-                            e -> (Class<? extends FallbackFunction>) findClass(e.getValue())));
+                            e -> onClass(e.getValue()).create().get()));
         });
     }
 }

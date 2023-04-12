@@ -1,7 +1,7 @@
 package com.github.charlemaznable.httpclient.ohclient.westcache;
 
 import com.github.bingoohuang.westcache.WestCacheable;
-import com.github.charlemaznable.httpclient.common.Mapping;
+import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 
 import java.util.concurrent.Future;

@@ -10,8 +10,8 @@ import okhttp3.mockwebserver.RecordedRequest;
 import javax.annotation.Nonnull;
 
 import static com.github.charlemaznable.core.lang.Str.isNull;
-import static com.github.charlemaznable.httpclient.internal.CommonConstant.ACCEPT_CHARSET;
-import static com.github.charlemaznable.httpclient.internal.CommonConstant.CONTENT_TYPE;
+import static com.github.charlemaznable.httpclient.common.CommonConstant.ACCEPT_CHARSET;
+import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT_TYPE;
 import static com.google.common.net.MediaType.FORM_DATA;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.util.Objects.requireNonNull;

@@ -1,7 +1,7 @@
 package com.github.charlemaznable.httpclient.configurer.configservice;
 
 import com.github.charlemaznable.configservice.Config;
-import com.github.charlemaznable.httpclient.common.ContentFormat;
+import com.github.charlemaznable.httpclient.annotation.ContentFormat;
 import com.github.charlemaznable.httpclient.configurer.ContentFormatConfigurer;
 
 import java.util.Optional;

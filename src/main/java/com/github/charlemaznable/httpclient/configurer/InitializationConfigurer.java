@@ -6,13 +6,13 @@ public interface InitializationConfigurer extends Configurer {
 
     InitializationConfigurer INSTANCE = new InitializationConfigurer() {};
 
-    default void setUpBeforeInitialization(Class<?> ohClass, Method ohMethod) {
-        InitializationContext.setOhClass(ohClass);
-        InitializationContext.setOhMethod(ohMethod);
+    default void setUpBeforeInitialization(Class<?> clazz, Method method) {
+        InitializationContext.setInitializingClass(clazz);
+        InitializationContext.setInitializingMethod(method);
     }
 
-    default void tearDownAfterInitialization(Class<?> ohClass, Method ohMethod) {
-        InitializationContext.clearOhClass();
-        InitializationContext.clearOhMethod();
+    default void tearDownAfterInitialization(Class<?> clazz, Method method) {
+        InitializationContext.clearInitializingClass();
+        InitializationContext.clearInitializingMethod();
     }
 }
