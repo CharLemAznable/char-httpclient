@@ -25,7 +25,7 @@ final class VxMethod extends CommonMethod<VxBase> {
     }
 
     @Override
-    public Object execute(Object[] args) throws Exception {
+    public Object execute(Object[] args) {
         val vxExecute = new VxExecute(this);
         vxExecute.prepareArguments(args);
         return vxExecute.execute();

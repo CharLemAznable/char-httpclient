@@ -57,7 +57,6 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
         initializeReturnTypes();
     }
 
-    @SuppressWarnings("ConstantConditions")
     private void initializeReturnTypes() {
         Class<?> returnType = method.getReturnType();
         returnFuture = checkReturnFuture(returnType);
@@ -69,23 +68,8 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
         val genericReturnType = method.getGenericReturnType();
         if (!(genericReturnType instanceof ParameterizedType parameterizedType)) {
             // 错误的泛型时
-            if (returnFuture || returnCollection ||
-                    returnPair || returnTriple) {
-                // 如返回支持的泛型类型则抛出异常
-                // 不包括Map<K, V>
-                throw new IllegalStateException(RETURN_GENERIC_ERROR);
-            } else if (genericReturnType instanceof TypeVariable) {
-                // 返回类型变量指定的类型时
-                // 检查是否为<T extend CncResponse>类型
-                checkTypeVariableBounds(genericReturnType);
-                returnTypes = newArrayList(CncResponse.class);
-                return;
-            } else {
-                // 否则以方法返回类型作为实际返回类型
-                // 返回Map时, 可直接解析返回值为Map
-                returnTypes = newArrayList(returnType);
-                return;
-            }
+            checkUnParameterizedType(genericReturnType, returnFuture);
+            return;
         }
 
         // 方法返回泛型时
@@ -101,18 +85,8 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
                 returnTriple = Triple.class.isAssignableFrom(returnType);
             }
             if (!(futureTypeArgument instanceof ParameterizedType)) {
-                if (returnCollection || returnPair || returnTriple) {
-                    // 如返回支持的泛型类型则抛出异常
-                    // 不包括Map<K, V>
-                    throw new IllegalStateException(RETURN_GENERIC_ERROR);
-                } else if (futureTypeArgument instanceof TypeVariable) {
-                    // 返回类型变量指定的类型时
-                    // 检查是否为<T extend CncResponse>类型
-                    checkTypeVariableBounds(futureTypeArgument);
-                    returnTypes = newArrayList(CncResponse.class);
-                    return;
-                }
-                returnTypes = newArrayList((Class<?>) futureTypeArgument);
+                // 错误的泛型时
+                checkUnParameterizedType(futureTypeArgument, false);
                 return;
             }
             parameterizedType = (ParameterizedType) futureTypeArgument;
@@ -134,6 +108,23 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
     }
 
     protected abstract boolean checkReturnFuture(Class<?> returnType);
+
+    private void checkUnParameterizedType(Type type, boolean checkReturnFutureOrNot) {
+        if (checkReturnFutureOrNot || returnCollection || returnPair || returnTriple) {
+            // 如返回支持的泛型类型则抛出异常
+            // 不包括Map<K, V>
+            throw new IllegalStateException(RETURN_GENERIC_ERROR);
+        } else if (type instanceof TypeVariable) {
+            // 返回类型变量指定的类型时
+            // 检查是否为<T extend CncResponse>类型
+            checkTypeVariableBounds(type);
+            returnTypes = newArrayList(CncResponse.class);
+        } else {
+            // 否则以方法返回类型作为实际返回类型
+            // 返回Map时, 可直接解析返回值为Map
+            returnTypes = newArrayList((Class<?>) type);
+        }
+    }
 
     private void checkTypeVariableBounds(Type type) {
         val bounds = ((TypeVariable<?>) type).getBounds();
@@ -167,16 +158,16 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
     private List<String> buildRequestUrls() {
         val urls = emptyThen(element.buildMappingUrls(method), () ->
                 newArrayList(defaultClass.mappingMethodNameDisabled ? "" : "/" + method.getName()));
-        Set<String> requestUrls = newHashSet();
+        Set<String> requestUrlsSet = newHashSet();
         for (val url : urls) {
             if (isBlank(url)) {
-                requestUrls.addAll(defaultClass.baseUrls);
+                requestUrlsSet.addAll(defaultClass.baseUrls);
             } else {
-                requestUrls.addAll(defaultClass.baseUrls.stream()
+                requestUrlsSet.addAll(defaultClass.baseUrls.stream()
                         .map(base -> checkBlank(base, () -> url, b -> b + url)).toList());
             }
         }
-        return requestUrls.stream().distinct().collect(Collectors.toList());
+        return requestUrlsSet.stream().distinct().collect(Collectors.toList());
     }
 
     @Override
@@ -186,5 +177,5 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
         }
     }
 
-    public abstract Object execute(Object[] args) throws Exception;
+    public abstract Object execute(Object[] args);
 }

@@ -112,7 +112,7 @@ public abstract class CommonReq<T extends CommonReq<T>> extends CommonBase<Commo
         return concatUrlQuery(requestUrl, extraUrlQuery);
     }
 
-    public static abstract class Instance<T extends Instance<T>> extends CommonReq<Instance<T>> {
+    public abstract static class Instance<T extends Instance<T>> extends CommonReq<Instance<T>> {
 
         public <U extends CommonReq<U>> Instance(CommonReq<U> other) {
             super(other);
@@ -120,36 +120,42 @@ public abstract class CommonReq<T extends CommonReq<T>> extends CommonBase<Commo
 
         public abstract T copy();
 
+        @Override
         public T req(String reqPath) {
             val copy = copy();
             copy.reqPath = reqPath;
             return copy;
         }
 
+        @Override
         public T requestBody(String requestBody) {
             val copy = copy();
             copy.requestBody = requestBody;
             return copy;
         }
 
+        @Override
         public T acceptCharset(Charset acceptCharset) {
             val copy = copy();
             copy.acceptCharset = acceptCharset;
             return copy;
         }
 
+        @Override
         public T contentFormat(ContentFormat.ContentFormatter contentFormatter) {
             val copy = copy();
             copy.contentFormatter = contentFormatter;
             return copy;
         }
 
+        @Override
         public T header(String name, String value) {
             val copy = copy();
             copy.headers.add(Pair.of(name, value));
             return copy;
         }
 
+        @Override
         public T headers(Map<String, String> headers) {
             val copy = copy();
             headers.forEach((name, value) ->
@@ -157,12 +163,14 @@ public abstract class CommonReq<T extends CommonReq<T>> extends CommonBase<Commo
             return copy;
         }
 
+        @Override
         public T parameter(String name, Object value) {
             val copy = copy();
             copy.parameters.add(Pair.of(name, value));
             return copy;
         }
 
+        @Override
         public T parameters(Map<String, Object> parameters) {
             val copy = copy();
             parameters.forEach((name, value) ->
@@ -170,18 +178,21 @@ public abstract class CommonReq<T extends CommonReq<T>> extends CommonBase<Commo
             return copy;
         }
 
+        @Override
         public T statusFallback(HttpStatus httpStatus, FallbackFunction<?> fallbackFunction) {
             val copy = copy();
             copy.statusFallbackMapping.put(httpStatus, fallbackFunction);
             return copy;
         }
 
+        @Override
         public T statusSeriesFallback(HttpStatus.Series httpStatusSeries, FallbackFunction<?> fallbackFunction) {
             val copy = copy();
             copy.statusSeriesFallbackMapping.put(httpStatusSeries, fallbackFunction);
             return copy;
         }
 
+        @Override
         public T extraUrlQueryBuilder(ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder) {
             val copy = copy();
             copy.extraUrlQueryBuilder = extraUrlQueryBuilder;

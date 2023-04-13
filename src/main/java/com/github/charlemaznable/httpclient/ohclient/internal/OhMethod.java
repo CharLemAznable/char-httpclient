@@ -19,7 +19,7 @@ final class OhMethod extends CommonMethod<OhBase> {
     }
 
     @Override
-    public Object execute(Object[] args) throws Exception {
+    public Object execute(Object[] args) {
         val ohExecute = new OhExecute(this);
         ohExecute.prepareArguments(args);
         return ohExecute.execute();

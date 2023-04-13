@@ -2,6 +2,7 @@ package com.github.charlemaznable.httpclient.westcache;
 
 import com.github.bingoohuang.westcache.base.WestCacheItem;
 import com.github.bingoohuang.westcache.utils.WestCacheOption;
+import com.google.common.base.Optional;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -22,7 +23,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static java.util.Objects.isNull;
@@ -44,6 +44,7 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
         }
     }
 
+    @SuppressWarnings("Guava")
     private void handleCreateRequest(HttpContext<Buffer> context) {
         val option = context.<WestCacheOption>get(WestCacheOption.class.getName());
         val cacheKey = context.<WestCacheKey>get(WestCacheKey.class.getName());
@@ -55,7 +56,7 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
         vertx.executeBlocking(block -> block.complete(
                 option.getManager().get(option, cacheKey.getKey())), promise);
         promise.future()
-                .map(item -> Optional.ofNullable((CacheResponse) item.orNull()))
+                .map(item -> Optional.fromNullable((CacheResponse) item.orNull()))
                 .onComplete(result -> {
                     if (result.succeeded() && result.result().isPresent()) {
                         context.set(IS_CACHE_DISPATCH, true);
@@ -76,6 +77,7 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
                 });
     }
 
+    @SuppressWarnings("Guava")
     private void handleDispatchResponse(HttpContext<Buffer> context) {
         if (context.get(IS_CACHE_DISPATCH) == Boolean.TRUE) {
             context.next();
@@ -98,8 +100,9 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
             val cacheResponseBody = new CacheResponseBody();
             cacheResponseBody.readFromBuffer(responseBody);
             cacheResponse.setBody(cacheResponseBody);
-            @SuppressWarnings("Guava") val optional = com.google.common.base.Optional.of(cacheResponse);
-            option.getManager().put(option, cacheKey.getKey(), new WestCacheItem(optional, option));
+            val optional = Optional.of(cacheResponse);
+            option.getManager().put(option, cacheKey.getKey(),
+                    new WestCacheItem(optional, option));
             block.complete();
         }, result -> context.next());
     }
@@ -114,26 +117,26 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
         private CacheResponseBody body;
 
         public void readFromResponseHeaders(MultiMap responseHeaders) {
-            val headers = new HashMap<String, List<String>>();
+            val headersMap = new HashMap<String, List<String>>();
             responseHeaders.forEach((key, value) -> {
-                List<String> values = headers.get(key);
+                List<String> values = headersMap.get(key);
                 if (isNull(values)) {
                     values = new ArrayList<>();
-                    headers.put(key, values);
+                    headersMap.put(key, values);
                 }
                 values.add(value);
             });
-            setResponseHeaders(headers);
+            setResponseHeaders(headersMap);
         }
 
         public MultiMap buildResponseHeaders() {
-            val responseHeaders = HeadersMultiMap.httpHeaders();
+            val headersMultiMap = HeadersMultiMap.httpHeaders();
             for (val entry : getResponseHeaders().entrySet()) {
                 for (val value : entry.getValue()) {
-                    responseHeaders.add(entry.getKey(), value);
+                    headersMultiMap.add(entry.getKey(), value);
                 }
             }
-            return responseHeaders;
+            return headersMultiMap;
         }
     }
 

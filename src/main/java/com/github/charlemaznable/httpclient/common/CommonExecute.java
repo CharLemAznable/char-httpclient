@@ -193,7 +193,7 @@ public abstract class CommonExecute<T extends CommonBase<T>, R/* Response Type *
         }
     }
 
-    public abstract Object execute() throws Exception;
+    public abstract Object execute();
 
     @Getter
     @Accessors(fluent = true)

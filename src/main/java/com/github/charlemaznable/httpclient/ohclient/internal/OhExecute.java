@@ -3,6 +3,7 @@ package com.github.charlemaznable.httpclient.ohclient.internal;
 import com.github.bingoohuang.westcache.utils.WestCacheOption;
 import com.github.charlemaznable.httpclient.common.CommonExecute;
 import com.github.charlemaznable.httpclient.westcache.WestCacheKey;
+import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.Headers;
 import okhttp3.MediaType;
@@ -47,8 +48,9 @@ final class OhExecute extends CommonExecute<OhBase, Response, ResponseBody> {
         }
     }
 
+    @SneakyThrows
     @Override
-    public Object execute() throws Exception {
+    public Object execute() {
         val call = base().client.newCall(buildRequest());
         if (executeMethod().returnFuture()) {
             val future = new OhCallbackFuture<>(this::processResponse);

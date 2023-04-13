@@ -153,8 +153,8 @@ public abstract class CommonElement<T extends CommonBase<T>> {
         val configureWith = getMergedAnnotation(element, ConfigureWith.class);
         if (isNull(configureWith)) return null;
         val configurerClass = configureWith.value();
-        val configurer = FactoryContext.build(factory, configurerClass);
-        if (nonNull(configurer)) return configurer;
+        val buildConfigurer = FactoryContext.build(factory, configurerClass);
+        if (nonNull(buildConfigurer)) return buildConfigurer;
         try {
             return ConfigFactory.configLoader(factory).getConfig(configurerClass);
         } catch (Exception e) {

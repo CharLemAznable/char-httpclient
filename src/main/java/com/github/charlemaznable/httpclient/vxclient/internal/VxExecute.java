@@ -54,12 +54,12 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
     }
 
     private static final class Request {
-        private HttpRequest<Buffer> request;
-        private Buffer requestBody;
+        private HttpRequest<Buffer> bufferHttpRequest;
+        private Buffer buffer;
     }
 
     @Override
-    public Object execute() throws Exception {
+    public Object execute() {
         val request = buildRequest();
         val promise = Promise.<HttpResponse<Buffer>>promise();
         val client = (WebClientInternal) base().client;
@@ -77,7 +77,7 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
             }
         }
 
-        context.prepareRequest(request.request, null, request.requestBody);
+        context.prepareRequest(request.bufferHttpRequest, null, request.buffer);
         return promise.future().map(this::processResponse);
     }
 
@@ -102,7 +102,7 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
             val query = URL_QUERY_FORMATTER.format(
                     executeParams.parameterMap(), executeParams.contextMap());
             val url = concatUrlQuery(executeParams.requestUrl(), query);
-            request.request = base().client.requestAbs(
+            request.bufferHttpRequest = base().client.requestAbs(
                     HttpMethod.valueOf(executeParams.requestMethod()), url);
         } else {
             val content = nullThen(requestBodyRaw(), () ->
@@ -111,11 +111,11 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
             val contentTypeHeader = nullThen(httpHeaders.get(CONTENT_TYPE),
                     DEFAULT_CONTENT_FORMATTER::contentType);
             val charset = parseCharset(contentTypeHeader);
-            request.request = base().client.requestAbs(
+            request.bufferHttpRequest = base().client.requestAbs(
                     HttpMethod.valueOf(executeParams.requestMethod()), executeParams.requestUrl());
-            request.requestBody = Buffer.buffer(content, charset);
+            request.buffer = Buffer.buffer(content, charset);
         }
-        request.request.putHeaders(httpHeaders);
+        request.bufferHttpRequest.putHeaders(httpHeaders);
 
         return request;
     }
