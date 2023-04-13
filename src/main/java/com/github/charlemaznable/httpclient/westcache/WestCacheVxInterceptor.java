@@ -1,18 +1,16 @@
 package com.github.charlemaznable.httpclient.westcache;
 
-import com.github.bingoohuang.westcache.base.WestCacheItem;
-import com.github.bingoohuang.westcache.utils.WestCacheOption;
-import com.google.common.base.Optional;
+import com.github.charlemaznable.core.lang.LoadingCachee;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Maps;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.ext.web.client.impl.HttpContext;
 import io.vertx.ext.web.client.impl.HttpResponseImpl;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -23,74 +21,102 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
+import static com.google.common.cache.CacheBuilder.newBuilder;
+import static com.google.common.cache.CacheLoader.from;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
-@AllArgsConstructor
 public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
 
     private static final String IS_CACHE_DISPATCH = "cache.dispatch";
 
     private final Vertx vertx;
+    private final LoadingCache<WestCacheContext, Optional<CacheResponse>> localCache;
+    private final Map<WestCacheContext, WestCacheContext> lockMap = Maps.newConcurrentMap();
+
+    public WestCacheVxInterceptor(Vertx vertx) {
+        this(vertx, 2 ^ 8, 60);
+    }
+
+    public WestCacheVxInterceptor(Vertx vertx, long localMaximumSize, long localExpireSeconds) {
+        this.vertx = vertx;
+        this.localCache = newBuilder()
+                .maximumSize(localMaximumSize)
+                .expireAfterWrite(localExpireSeconds, TimeUnit.SECONDS)
+                .build(from(context -> {
+                    val cachedItem = context.cacheGet();
+                    if (nonNull(cachedItem) && cachedItem.getObject().isPresent()) {
+                        // westcache命中, 且缓存非空
+                        return Optional.of((CacheResponse) cachedItem.getObject().get());
+                    }
+                    return Optional.empty();
+                }));
+    }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void handle(HttpContext<?> context) {
-        switch (context.phase()) {
-            case CREATE_REQUEST -> handleCreateRequest((HttpContext<Buffer>) context);
-            case DISPATCH_RESPONSE -> handleDispatchResponse((HttpContext<Buffer>) context);
-            default -> context.next();
+    public void handle(HttpContext<?> httpContext) {
+        switch (httpContext.phase()) {
+            case CREATE_REQUEST -> handleCreateRequest((HttpContext<Buffer>) httpContext);
+            case DISPATCH_RESPONSE -> handleDispatchResponse((HttpContext<Buffer>) httpContext);
+            default -> httpContext.next();
         }
     }
 
-    @SuppressWarnings("Guava")
-    private void handleCreateRequest(HttpContext<Buffer> context) {
-        val option = context.<WestCacheOption>get(WestCacheOption.class.getName());
-        val cacheKey = context.<WestCacheKey>get(WestCacheKey.class.getName());
-        if (isNull(option) || isNull(cacheKey)) {
-            context.next();
+    private void handleCreateRequest(HttpContext<Buffer> httpContext) {
+        val context = httpContext.<WestCacheContext>get(WestCacheContext.class.getName());
+        if (isNull(context)) {
+            httpContext.next();
             return;
         }
-        val promise = Promise.<WestCacheItem>promise();
-        vertx.executeBlocking(block -> block.complete(
-                option.getManager().get(option, cacheKey.getKey())), promise);
-        promise.future()
-                .map(item -> Optional.fromNullable((CacheResponse) item.orNull()))
-                .onComplete(result -> {
-                    if (result.succeeded() && result.result().isPresent()) {
-                        context.set(IS_CACHE_DISPATCH, true);
-                        val cacheResponse = result.result().get();
-                        context.dispatchResponse(new HttpResponseImpl<>(
-                                HttpVersion.valueOf(cacheResponse.getVersion()),
-                                cacheResponse.getStatusCode(),
-                                cacheResponse.getStatusMessage(),
-                                cacheResponse.buildResponseHeaders(),
-                                MultiMap.caseInsensitiveMultiMap(),
-                                Collections.emptyList(),
-                                cacheResponse.getBody().buildBuffer(),
-                                Collections.emptyList()
-                        ));
+        vertx.<Optional<CacheResponse>>executeBlocking(block -> {
+            val cachedOptional = LoadingCachee.get(localCache, context);
+            if (cachedOptional.isEmpty()) lockMap.putIfAbsent(context, context);
+            block.complete(cachedOptional);
+        }, result -> {
+            if (result.succeeded()) {
+                if (result.result().isPresent()) {
+                    httpContext.set(IS_CACHE_DISPATCH, true);
+                    val cacheResponse = result.result().get();
+                    httpContext.dispatchResponse(new HttpResponseImpl<>(
+                            HttpVersion.valueOf(cacheResponse.getVersion()),
+                            cacheResponse.getStatusCode(),
+                            cacheResponse.getStatusMessage(),
+                            cacheResponse.buildResponseHeaders(),
+                            MultiMap.caseInsensitiveMultiMap(),
+                            Collections.emptyList(),
+                            cacheResponse.getBody().buildBuffer(),
+                            Collections.emptyList()
+                    ));
+                } else {
+                    if (lockMap.get(context) == context) {
+                        httpContext.next();
                     } else {
-                        context.next();
+                        httpContext.createRequest(httpContext.requestOptions());
                     }
-                });
+                }
+            } else {
+                httpContext.next();
+            }
+        });
     }
 
-    @SuppressWarnings("Guava")
-    private void handleDispatchResponse(HttpContext<Buffer> context) {
-        if (context.get(IS_CACHE_DISPATCH) == Boolean.TRUE) {
-            context.next();
+    private void handleDispatchResponse(HttpContext<Buffer> httpContext) {
+        if (httpContext.get(IS_CACHE_DISPATCH) == Boolean.TRUE) {
+            httpContext.next();
             return;
         }
-        val option = context.<WestCacheOption>get(WestCacheOption.class.getName());
-        val cacheKey = context.<WestCacheKey>get(WestCacheKey.class.getName());
-        if (isNull(option) || isNull(cacheKey)) {
-            context.next();
+        val context = httpContext.<WestCacheContext>get(WestCacheContext.class.getName());
+        if (isNull(context)) {
+            httpContext.next();
             return;
         }
-        val response = context.response();
-        vertx.executeBlocking(block -> {
+        val response = httpContext.response();
+        vertx.<Void>executeBlocking(block -> {
             val cacheResponse = new CacheResponse();
             cacheResponse.setVersion(response.version().name());
             cacheResponse.setStatusCode(response.statusCode());
@@ -100,11 +126,11 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
             val cacheResponseBody = new CacheResponseBody();
             cacheResponseBody.readFromBuffer(responseBody);
             cacheResponse.setBody(cacheResponseBody);
-            val optional = Optional.of(cacheResponse);
-            option.getManager().put(option, cacheKey.getKey(),
-                    new WestCacheItem(optional, option));
+            context.cachePut(cacheResponse);
+            localCache.put(context, Optional.of(cacheResponse));
+            lockMap.remove(context);
             block.complete();
-        }, result -> context.next());
+        }, result -> httpContext.next());
     }
 
     @Getter

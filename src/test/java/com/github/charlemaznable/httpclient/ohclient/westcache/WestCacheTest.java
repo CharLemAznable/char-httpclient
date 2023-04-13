@@ -1,6 +1,5 @@
 package com.github.charlemaznable.httpclient.ohclient.westcache;
 
-import com.github.charlemaznable.core.lang.Await;
 import com.github.charlemaznable.httpclient.common.westcache.CommonWestCacheTest;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -27,22 +26,18 @@ public class WestCacheTest extends CommonWestCacheTest {
         startMockWebServer();
 
         val noCacheSample1 = noWestCacheClient.sample();
-        Await.awaitForMillis(100);
         val noCacheSample2 = noWestCacheClient.sample();
         assertNotEquals(noCacheSample1, noCacheSample2);
 
         val noneCacheSample1 = westCacheClient.sampleNone();
-        Await.awaitForMillis(100);
         val noneCacheSample2 = westCacheClient.sampleNone();
         assertNotEquals(noCacheSample1, noCacheSample2);
 
         val cacheSample1 = westCacheClient.sample();
-        Await.awaitForMillis(100);
         val cacheSample2 = westCacheClient.sample();
         assertEquals(cacheSample1, cacheSample2);
 
         val cacheSampleFuture1 = westCacheClient.sampleFuture();
-        Await.awaitForMillis(100);
         val cacheSampleFuture2 = westCacheClient.sampleFuture();
         assertNotSame(cacheSampleFuture1, cacheSampleFuture2);
         val cacheGet1 = cacheSampleFuture1.get();

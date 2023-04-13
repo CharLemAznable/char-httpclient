@@ -2,7 +2,7 @@ package com.github.charlemaznable.httpclient.vxclient.internal;
 
 import com.github.bingoohuang.westcache.utils.WestCacheOption;
 import com.github.charlemaznable.httpclient.common.CommonExecute;
-import com.github.charlemaznable.httpclient.westcache.WestCacheKey;
+import com.github.charlemaznable.httpclient.westcache.WestCacheContext;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
@@ -70,10 +70,9 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
             val method = executeMethod().method();
             val option = WestCacheOption.parseWestCacheable(method);
             if (nonNull(option)) {
-                context.set(WestCacheOption.class.getName(), option);
                 val cacheKey = option.getKeyer().getCacheKey(option,
                         method, executeMethod().defaultClass(), args());
-                context.set(WestCacheKey.class.getName(), new WestCacheKey(cacheKey));
+                context.set(WestCacheContext.class.getName(), new WestCacheContext(option, cacheKey));
             }
         }
 

@@ -10,13 +10,11 @@ import java.util.concurrent.Future;
 @OhClient
 public interface WestCacheClient {
 
-    @Mapping("/sample")
     String sampleNone();
 
     @WestCacheable
     String sample();
 
-    @Mapping("/sample")
     @WestCacheable
     Future<String> sampleFuture();
 }

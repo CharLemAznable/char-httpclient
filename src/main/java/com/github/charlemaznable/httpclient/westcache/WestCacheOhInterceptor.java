@@ -1,9 +1,8 @@
 package com.github.charlemaznable.httpclient.westcache;
 
-import com.github.bingoohuang.westcache.base.WestCacheItem;
-import com.github.bingoohuang.westcache.utils.WestCacheOption;
+import com.github.charlemaznable.core.lang.LoadingCachee;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhResponseBody;
-import com.google.common.base.Optional;
+import com.google.common.cache.Cache;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -20,9 +19,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Str.toStr;
+import static com.google.common.cache.CacheBuilder.newBuilder;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static okio.Okio.buffer;
@@ -30,15 +32,33 @@ import static okio.Okio.source;
 
 public final class WestCacheOhInterceptor implements Interceptor {
 
+    private final Cache<WestCacheContext, Optional<CacheResponse>> localCache;
+
+    public WestCacheOhInterceptor() {
+        this(2 ^ 8, 60);
+    }
+
+    public WestCacheOhInterceptor(long localMaximumSize, long localExpireSeconds) {
+        this.localCache = newBuilder()
+                .maximumSize(localMaximumSize)
+                .expireAfterWrite(localExpireSeconds, TimeUnit.SECONDS)
+                .build();
+    }
+
     @NotNull
     @Override
     public Response intercept(@NotNull Interceptor.Chain chain) throws IOException {
         val request = chain.request();
-        val option = request.tag(WestCacheOption.class);
-        val cacheKey = request.tag(WestCacheKey.class);
-        if (isNull(option) || isNull(cacheKey)) return chain.proceed(request);
+        val context = request.tag(WestCacheContext.class);
+        if (isNull(context)) return chain.proceed(request);
 
-        val item = option.getManager().get(option, cacheKey.getKey(), () -> {
+        val cachedOptional = LoadingCachee.get(localCache, context, () -> {
+            val cachedItem = context.cacheGet();
+            if (nonNull(cachedItem) && cachedItem.getObject().isPresent()) {
+                // westcache命中, 且缓存非空
+                return Optional.of((CacheResponse) cachedItem.getObject().get());
+            }
+
             val response = chain.proceed(request);
             val cacheResponse = new CacheResponse();
             cacheResponse.setProtocol(response.protocol().toString());
@@ -52,12 +72,12 @@ public final class WestCacheOhInterceptor implements Interceptor {
             cacheResponseBody.setContentLength(responseBody.contentLength());
             cacheResponseBody.readFromResponseBody(responseBody);
             cacheResponse.setBody(cacheResponseBody);
-            @SuppressWarnings("Guava") val optional = Optional.of(cacheResponse);
-            return new WestCacheItem(optional, option);
+            context.cachePut(cacheResponse);
+            return Optional.of(cacheResponse);
         });
-        val cacheResponse = (CacheResponse) item.orNull();
-        if (isNull(cacheResponse)) return chain.proceed(request);
+        if (cachedOptional.isEmpty()) return chain.proceed(request);
 
+        val cacheResponse = cachedOptional.get();
         return new Response.Builder()
                 .request(request)
                 .protocol(Protocol.get(cacheResponse.getProtocol()))

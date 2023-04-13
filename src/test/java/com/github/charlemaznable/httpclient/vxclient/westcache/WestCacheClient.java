@@ -9,7 +9,6 @@ import io.vertx.core.Future;
 @VxClient
 public interface WestCacheClient {
 
-    @Mapping("/sample")
     Future<String> sampleNone();
 
     @WestCacheable

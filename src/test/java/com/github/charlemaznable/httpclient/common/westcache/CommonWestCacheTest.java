@@ -1,21 +1,20 @@
 package com.github.charlemaznable.httpclient.common.westcache;
 
-import com.github.charlemaznable.httpclient.common.HttpStatus;
 import lombok.SneakyThrows;
-import lombok.val;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.charlemaznable.core.lang.Str.toStr;
-import static java.util.Objects.requireNonNull;
 
 public abstract class CommonWestCacheTest {
 
     protected MockWebServer mockWebServer;
+    protected AtomicInteger counter = new AtomicInteger();
 
     @SneakyThrows
     protected void startMockWebServer() {
@@ -24,13 +23,7 @@ public abstract class CommonWestCacheTest {
             @Nonnull
             @Override
             public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                val requestUrl = requireNonNull(request.getRequestUrl());
-                if ("/sample".equals(requestUrl.encodedPath())) {
-                    return new MockResponse().setBody(toStr(System.currentTimeMillis()));
-                }
-                return new MockResponse()
-                        .setResponseCode(HttpStatus.NOT_FOUND.value())
-                        .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                return new MockResponse().setBody(toStr(counter.incrementAndGet()));
             }
         });
         mockWebServer.start(41260);

@@ -2,7 +2,7 @@ package com.github.charlemaznable.httpclient.ohclient.internal;
 
 import com.github.bingoohuang.westcache.utils.WestCacheOption;
 import com.github.charlemaznable.httpclient.common.CommonExecute;
-import com.github.charlemaznable.httpclient.westcache.WestCacheKey;
+import com.github.charlemaznable.httpclient.westcache.WestCacheContext;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.Headers;
@@ -100,10 +100,9 @@ final class OhExecute extends CommonExecute<OhBase, Response, ResponseBody> {
             val method = executeMethod().method();
             val option = WestCacheOption.parseWestCacheable(method);
             if (nonNull(option)) {
-                requestBuilder.tag(WestCacheOption.class, option);
                 val cacheKey = option.getKeyer().getCacheKey(option,
                         method, executeMethod().defaultClass(), args());
-                requestBuilder.tag(WestCacheKey.class, new WestCacheKey(cacheKey));
+                requestBuilder.tag(WestCacheContext.class, new WestCacheContext(option, cacheKey));
             }
         }
 
