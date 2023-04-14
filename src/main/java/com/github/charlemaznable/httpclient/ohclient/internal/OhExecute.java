@@ -1,8 +1,7 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
-import com.github.bingoohuang.westcache.utils.WestCacheOption;
 import com.github.charlemaznable.httpclient.common.CommonExecute;
-import com.github.charlemaznable.httpclient.westcache.WestCacheContext;
+import com.github.charlemaznable.httpclient.ohclient.elf.RequestBuilderConfigElf;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.Headers;
@@ -29,7 +28,6 @@ import static com.github.charlemaznable.httpclient.common.CommonConstant.ACCEPT_
 import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT_TYPE;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.DEFAULT_CONTENT_FORMATTER;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUERY_FORMATTER;
-import static com.github.charlemaznable.httpclient.westcache.WestCacheConstant.HAS_WESTCACHE;
 import static java.util.Objects.nonNull;
 
 final class OhExecute extends CommonExecute<OhBase, Response, ResponseBody> {
@@ -94,18 +92,7 @@ final class OhExecute extends CommonExecute<OhBase, Response, ResponseBody> {
                     content, MediaType.parse(contentTypeHeader)));
             requestBuilder.url(executeParams.requestUrl());
         }
-
-        // westcache supported
-        if (HAS_WESTCACHE) {
-            val method = executeMethod().method();
-            val option = WestCacheOption.parseWestCacheable(method);
-            if (nonNull(option)) {
-                val cacheKey = option.getKeyer().getCacheKey(option,
-                        method, executeMethod().defaultClass(), args());
-                requestBuilder.tag(WestCacheContext.class, new WestCacheContext(option, cacheKey));
-            }
-        }
-
+        RequestBuilderConfigElf.configRequestBuilder(requestBuilder, this);
         return requestBuilder.build();
     }
 

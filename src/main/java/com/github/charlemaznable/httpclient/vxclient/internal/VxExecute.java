@@ -1,15 +1,13 @@
 package com.github.charlemaznable.httpclient.vxclient.internal;
 
-import com.github.bingoohuang.westcache.utils.WestCacheOption;
 import com.github.charlemaznable.httpclient.common.CommonExecute;
-import com.github.charlemaznable.httpclient.westcache.WestCacheContext;
+import com.github.charlemaznable.httpclient.vxclient.elf.HttpContextConfigElf;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.impl.WebClientInternal;
@@ -34,7 +32,6 @@ import static com.github.charlemaznable.httpclient.common.CommonConstant.DEFAULT
 import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUERY_FORMATTER;
 import static com.github.charlemaznable.httpclient.common.CommonReq.parseCharset;
 import static com.github.charlemaznable.httpclient.common.CommonReq.permitsRequestBody;
-import static com.github.charlemaznable.httpclient.westcache.WestCacheConstant.HAS_WESTCACHE;
 import static java.util.Objects.nonNull;
 
 final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer> {
@@ -53,34 +50,18 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
         }
     }
 
-    private static final class Request {
-        private HttpRequest<Buffer> bufferHttpRequest;
-        private Buffer buffer;
-    }
-
     @Override
     public Object execute() {
         val request = buildRequest();
         val promise = Promise.<HttpResponse<Buffer>>promise();
         val client = (WebClientInternal) base().client;
         val context = client.createContext(promise);
-
-        // westcache supported
-        if (HAS_WESTCACHE) {
-            val method = executeMethod().method();
-            val option = WestCacheOption.parseWestCacheable(method);
-            if (nonNull(option)) {
-                val cacheKey = option.getKeyer().getCacheKey(option,
-                        method, executeMethod().defaultClass(), args());
-                context.set(WestCacheContext.class.getName(), new WestCacheContext(option, cacheKey));
-            }
-        }
-
+        HttpContextConfigElf.configHttpContext(context, this, request);
         context.prepareRequest(request.bufferHttpRequest, null, request.buffer);
         return promise.future().map(this::processResponse);
     }
 
-    private Request buildRequest() {
+    private VxExecuteRequest buildRequest() {
         notNullThenRun(base().requestExtender(), extender -> extender.extend(
                 base().headers(), base().pathVars(), base().parameters(), base().contexts()));
 
@@ -96,13 +77,13 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
         }
 
         val executeParams = buildCommonExecuteParams();
-        val request = new Request();
+        val request = new VxExecuteRequest();
         if (!permitsRequestBody(executeParams.requestMethod())) {
             val query = URL_QUERY_FORMATTER.format(
                     executeParams.parameterMap(), executeParams.contextMap());
-            val url = concatUrlQuery(executeParams.requestUrl(), query);
+            request.requestUrl = concatUrlQuery(executeParams.requestUrl(), query);
             request.bufferHttpRequest = base().client.requestAbs(
-                    HttpMethod.valueOf(executeParams.requestMethod()), url);
+                    HttpMethod.valueOf(executeParams.requestMethod()), request.requestUrl);
         } else {
             val content = nullThen(requestBodyRaw(), () ->
                     base().contentFormatter().format(
@@ -110,8 +91,9 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
             val contentTypeHeader = nullThen(httpHeaders.get(CONTENT_TYPE),
                     DEFAULT_CONTENT_FORMATTER::contentType);
             val charset = parseCharset(contentTypeHeader);
+            request.requestUrl = executeParams.requestUrl();
             request.bufferHttpRequest = base().client.requestAbs(
-                    HttpMethod.valueOf(executeParams.requestMethod()), executeParams.requestUrl());
+                    HttpMethod.valueOf(executeParams.requestMethod()), request.requestUrl);
             request.buffer = Buffer.buffer(content, charset);
         }
         request.bufferHttpRequest.putHeaders(httpHeaders);

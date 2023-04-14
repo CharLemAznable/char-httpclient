@@ -60,19 +60,19 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
     @SuppressWarnings("unchecked")
     @Override
     public void handle(HttpContext<?> httpContext) {
-        switch (httpContext.phase()) {
-            case CREATE_REQUEST -> handleCreateRequest((HttpContext<Buffer>) httpContext);
-            case DISPATCH_RESPONSE -> handleDispatchResponse((HttpContext<Buffer>) httpContext);
-            default -> httpContext.next();
-        }
-    }
-
-    private void handleCreateRequest(HttpContext<Buffer> httpContext) {
         val context = httpContext.<WestCacheContext>get(WestCacheContext.class.getName());
         if (isNull(context)) {
             httpContext.next();
             return;
         }
+        switch (httpContext.phase()) {
+            case CREATE_REQUEST -> handleCreateRequest((HttpContext<Buffer>) httpContext, context);
+            case DISPATCH_RESPONSE -> handleDispatchResponse((HttpContext<Buffer>) httpContext, context);
+            default -> httpContext.next();
+        }
+    }
+
+    private void handleCreateRequest(HttpContext<Buffer> httpContext, WestCacheContext context) {
         vertx.<Optional<CacheResponse>>executeBlocking(block -> {
             val cachedOptional = LoadingCachee.get(localCache, context);
             if (cachedOptional.isEmpty()) lockMap.putIfAbsent(context, context);
@@ -96,6 +96,7 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
                     if (lockMap.get(context) == context) {
                         httpContext.next();
                     } else {
+                        // re-create request for waiting
                         httpContext.createRequest(httpContext.requestOptions());
                     }
                 }
@@ -105,13 +106,8 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
         });
     }
 
-    private void handleDispatchResponse(HttpContext<Buffer> httpContext) {
+    private void handleDispatchResponse(HttpContext<Buffer> httpContext, WestCacheContext context) {
         if (httpContext.get(IS_CACHE_DISPATCH) == Boolean.TRUE) {
-            httpContext.next();
-            return;
-        }
-        val context = httpContext.<WestCacheContext>get(WestCacheContext.class.getName());
-        if (isNull(context)) {
             httpContext.next();
             return;
         }

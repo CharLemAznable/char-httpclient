@@ -1,5 +1,6 @@
 package com.github.charlemaznable.httpclient.ohclient.elf;
 
+import com.github.charlemaznable.httpclient.logging.LoggingOhInterceptor;
 import com.github.charlemaznable.httpclient.westcache.WestCacheOhInterceptor;
 import lombok.NoArgsConstructor;
 import lombok.val;
@@ -38,6 +39,7 @@ public final class GlobalClientElf {
         @Override
         public OkHttpClient supply() {
             val builder = new OkHttpClient.Builder();
+            builder.addInterceptor(new LoggingOhInterceptor());
             if (HAS_WESTCACHE) builder.addInterceptor(new WestCacheOhInterceptor());
             return builder.build();
         }

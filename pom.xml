@@ -51,7 +51,9 @@
             src/main/java/com/github/charlemaznable/httpclient/ohclient/elf/SSLTrustAll.java,
             src/main/java/com/github/charlemaznable/httpclient/vxclient/elf/VertxScopeClientElf.java,
             src/main/java/com/github/charlemaznable/httpclient/ohclient/OhScan.java,
-            src/main/java/com/github/charlemaznable/httpclient/vxclient/VxScan.java
+            src/main/java/com/github/charlemaznable/httpclient/vxclient/VxScan.java,
+            src/main/java/com/github/charlemaznable/httpclient/logging/LoggingOhInterceptor.java,
+            src/main/java/com/github/charlemaznable/httpclient/logging/LoggingVxInterceptor.java
         </sonar.exclusions>
 
         <char-configservice.version>2023.0.5-SNAPSHOT</char-configservice.version>

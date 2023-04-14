@@ -40,7 +40,6 @@ import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
-import static com.github.charlemaznable.httpclient.common.CommonConstant.log;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.joor.Reflect.on;
@@ -156,8 +155,9 @@ public abstract class CommonExecute<T extends CommonBase<T>, R/* Response Type *
             this.requestBodyRaw = (String) argument;
             return;
         }
-        log.warn("Argument annotated with @RequestBodyRaw, " +
-                "but Type is {} instead String.", argument.getClass());
+        executeMethod.defaultClass.logger.warn(
+                "Argument annotated with @RequestBodyRaw, " +
+                        "but Type is {} instead String.", argument.getClass());
     }
 
     private void processBundle(Object argument) {

@@ -7,6 +7,8 @@ import com.google.common.cache.LoadingCache;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.val;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -27,6 +29,9 @@ public abstract class CommonClass<T extends CommonBase<T>> implements Reloadable
     @Getter
     @Accessors(fluent = true)
     final Class<?> clazz;
+    @Getter
+    @Accessors(fluent = true)
+    final Logger logger;
 
     List<String> baseUrls;
     boolean mappingMethodNameDisabled;
@@ -39,6 +44,7 @@ public abstract class CommonClass<T extends CommonBase<T>> implements Reloadable
         this.element = element;
         this.defaultBase = defaultBase;
         this.clazz = clazz;
+        this.logger = LoggerFactory.getLogger(clazz);
         this.element.initializeConfigListener(this::reload);
     }
 
