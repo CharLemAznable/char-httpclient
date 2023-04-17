@@ -17,7 +17,6 @@ import io.vertx.ext.web.codec.impl.BodyCodecImpl;
 import io.vertx.rx.java.SingleOnSubscribeAdapter;
 import lombok.val;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.NotNull;
 
 import static com.github.charlemaznable.core.codec.Json.spec;
 import static com.github.charlemaznable.core.codec.Json.unJson;
@@ -37,60 +36,9 @@ import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUE
 import static com.github.charlemaznable.httpclient.common.CommonReq.parseCharset;
 import static com.github.charlemaznable.httpclient.common.CommonReq.permitsRequestBody;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 
 final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer> {
-
-    private static final rx.Subscriber<Object> NULL_RX_SUBSCRIBER =
-            new rx.Subscriber<>() {
-                @Override
-                public void onCompleted() {
-                    // empty method
-                }
-
-                @Override
-                public void onError(Throwable throwable) {
-                    // empty method
-                }
-
-                @Override
-                public void onNext(Object o) {
-                    // empty method
-                }
-            };
-    private static final io.reactivex.SingleObserver<Object> NULL_RX2_SINGLEOBSERVER =
-            new io.reactivex.SingleObserver<>() {
-                @Override
-                public void onSubscribe(@NotNull io.reactivex.disposables.Disposable disposable) {
-                    // empty method
-                }
-
-                @Override
-                public void onSuccess(@NotNull Object o) {
-                    // empty method
-                }
-
-                @Override
-                public void onError(@NotNull Throwable throwable) {
-                    // empty method
-                }
-            };
-    private static final io.reactivex.rxjava3.core.SingleObserver<Object> NULL_RX3_SINGLEOBSERVER =
-            new io.reactivex.rxjava3.core.SingleObserver<>() {
-                @Override
-                public void onSubscribe(@io.reactivex.rxjava3.annotations.NonNull io.reactivex.rxjava3.disposables.Disposable d) {
-                    // empty method
-                }
-
-                @Override
-                public void onSuccess(@io.reactivex.rxjava3.annotations.NonNull Object o) {
-                    // empty method
-                }
-
-                @Override
-                public void onError(@io.reactivex.rxjava3.annotations.NonNull Throwable e) {
-                    // empty method
-                }
-            };
 
     public VxExecute(VxMethod vxMethod) {
         super(new VxBase(vxMethod.element().base()), vxMethod);
@@ -115,19 +63,19 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
         if (vxMethod.returnRxJavaSingle) {
             val single = rx.Single.create(new SingleOnSubscribeAdapter<HttpResponse<Buffer>>(future ->
                     sendRequest(client, request, future))).map(this::processResponse).cache();
-            single.subscribe(NULL_RX_SUBSCRIBER);
+            single.subscribe(requireNonNull(VxRxHelper.nullRxSubscriber()));
             return single;
 
         } else if (vxMethod.returnRxJava2Single) {
             val single = io.vertx.reactivex.impl.AsyncResultSingle.<HttpResponse<Buffer>>toSingle(handler ->
                     sendRequest(client, request, handler)).map(this::processResponse).cache();
-            single.subscribe(NULL_RX2_SINGLEOBSERVER);
+            single.subscribe(requireNonNull(VxRxHelper.nullRx2Observer()));
             return single;
 
         } else if (vxMethod.returnRxJava3Single) {
             val single = io.vertx.rxjava3.impl.AsyncResultSingle.<HttpResponse<Buffer>>toSingle(handler ->
                     sendRequest(client, request, handler)).map(this::processResponse).cache();
-            single.subscribe(NULL_RX3_SINGLEOBSERVER);
+            single.subscribe(requireNonNull(VxRxHelper.nullRx3Observer()));
             return single;
 
         } else {
