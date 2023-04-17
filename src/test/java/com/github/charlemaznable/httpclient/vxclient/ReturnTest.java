@@ -54,6 +54,7 @@ public class ReturnTest extends CommonReturnTest {
         });
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @SneakyThrows
     @Test
     public void testResponseBody(Vertx vertx, VertxTestContext test) {
@@ -66,15 +67,22 @@ public class ReturnTest extends CommonReturnTest {
         CompositeFuture.all(newArrayList(
                 httpClient.sampleFutureResponseBody().onSuccess(buffer ->
                         test.verify(() -> assertNotNull(buffer))),
-                httpClient.sampleFutureByteArray().onSuccess(bytes ->
-                        test.verify(() -> assertEquals("OK", string(bytes)))),
-                httpClient.sampleFutureObject().onSuccess(object ->
-                        test.verify(() -> assertEquals("Doe", object.getString("John")))),
-                httpClient.sampleFutureArray().onSuccess(array ->
-                        test.verify(() -> {
+                Future.future(f -> httpClient.sampleFutureByteArray()
+                        .subscribe(bytes -> test.verify(() -> {
+                            assertEquals("OK", string(bytes));
+                            f.complete();
+                        }))),
+                Future.future(f -> httpClient.sampleFutureObject()
+                        .subscribe(object -> test.verify(() -> {
+                            assertEquals("Doe", object.getString("John"));
+                            f.complete();
+                        }))),
+                Future.future(f -> httpClient.sampleFutureArray()
+                        .subscribe(array -> test.verify(() -> {
                             assertEquals("John", array.getString(0));
                             assertEquals("Doe", array.getString(1));
-                        }))
+                            f.complete();
+                        })))
         )).onComplete(result -> {
             shutdownMockWebServer2();
             test.<CompositeFuture>succeedingThenComplete().handle(result);
@@ -107,12 +115,12 @@ public class ReturnTest extends CommonReturnTest {
         Future<Buffer> sampleFutureResponseBody();
 
         @TestMapping
-        Future<byte[]> sampleFutureByteArray();
+        rx.Single<byte[]> sampleFutureByteArray();
 
         @Mapping("${root}:41191/sampleObject")
-        Future<JsonObject> sampleFutureObject();
+        io.reactivex.Single<JsonObject> sampleFutureObject();
 
         @Mapping("${root}:41191/sampleArray")
-        Future<JsonArray> sampleFutureArray();
+        io.reactivex.rxjava3.core.Single<JsonArray> sampleFutureArray();
     }
 }

@@ -2,6 +2,8 @@ package com.github.charlemaznable.httpclient.vxclient.internal;
 
 import com.github.charlemaznable.httpclient.common.CommonExecute;
 import com.github.charlemaznable.httpclient.vxclient.elf.HttpContextConfigElf;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
@@ -12,8 +14,10 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.impl.WebClientInternal;
 import io.vertx.ext.web.codec.impl.BodyCodecImpl;
+import io.vertx.rx.java.SingleOnSubscribeAdapter;
 import lombok.val;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import static com.github.charlemaznable.core.codec.Json.spec;
 import static com.github.charlemaznable.core.codec.Json.unJson;
@@ -36,6 +40,49 @@ import static java.util.Objects.nonNull;
 
 final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer> {
 
+    private static final rx.Subscriber<Object> NULL_RX_SUBSCRIBER =
+            new rx.Subscriber<>() {
+                @Override
+                public void onCompleted() {
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                }
+
+                @Override
+                public void onNext(Object o) {
+                }
+            };
+    private static final io.reactivex.SingleObserver<Object> NULL_RX2_SINGLEOBSERVER =
+            new io.reactivex.SingleObserver<>() {
+                @Override
+                public void onSubscribe(@NotNull io.reactivex.disposables.Disposable disposable) {
+                }
+
+                @Override
+                public void onSuccess(@NotNull Object o) {
+                }
+
+                @Override
+                public void onError(@NotNull Throwable throwable) {
+                }
+            };
+    private static final io.reactivex.rxjava3.core.SingleObserver<Object> NULL_RX3_SINGLEOBSERVER =
+            new io.reactivex.rxjava3.core.SingleObserver<>() {
+                @Override
+                public void onSubscribe(@io.reactivex.rxjava3.annotations.NonNull io.reactivex.rxjava3.disposables.Disposable d) {
+                }
+
+                @Override
+                public void onSuccess(@io.reactivex.rxjava3.annotations.NonNull Object o) {
+                }
+
+                @Override
+                public void onError(@io.reactivex.rxjava3.annotations.NonNull Throwable e) {
+                }
+            };
+
     public VxExecute(VxMethod vxMethod) {
         super(new VxBase(vxMethod.element().base()), vxMethod);
     }
@@ -53,12 +100,32 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
     @Override
     public Object execute() {
         val request = buildRequest();
-        val promise = Promise.<HttpResponse<Buffer>>promise();
         val client = (WebClientInternal) base().client;
-        val context = client.createContext(promise);
-        HttpContextConfigElf.configHttpContext(context, this, request);
-        context.prepareRequest(request.bufferHttpRequest, null, request.buffer);
-        return promise.future().map(this::processResponse);
+
+        val vxMethod = (VxMethod) this.executeMethod();
+        if (vxMethod.returnRxJavaSingle) {
+            val single = rx.Single.create(new SingleOnSubscribeAdapter<HttpResponse<Buffer>>(future ->
+                    sendRequest(client, request, future))).map(this::processResponse).cache();
+            single.subscribe(NULL_RX_SUBSCRIBER);
+            return single;
+
+        } else if (vxMethod.returnRxJava2Single) {
+            val single = io.vertx.reactivex.impl.AsyncResultSingle.<HttpResponse<Buffer>>toSingle(handler ->
+                    sendRequest(client, request, handler)).map(this::processResponse).cache();
+            single.subscribe(NULL_RX2_SINGLEOBSERVER);
+            return single;
+
+        } else if (vxMethod.returnRxJava3Single) {
+            val single = io.vertx.rxjava3.impl.AsyncResultSingle.<HttpResponse<Buffer>>toSingle((handler) ->
+                    sendRequest(client, request, handler)).map(this::processResponse).cache();
+            single.subscribe(NULL_RX3_SINGLEOBSERVER);
+            return single;
+
+        } else {
+            val promise = Promise.<HttpResponse<Buffer>>promise();
+            sendRequest(client, request, promise);
+            return promise.future().map(this::processResponse);
+        }
     }
 
     private VxExecuteRequest buildRequest() {
@@ -99,6 +166,13 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
         request.bufferHttpRequest.putHeaders(httpHeaders);
 
         return request;
+    }
+
+    private void sendRequest(WebClientInternal client, VxExecuteRequest request,
+                             Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
+        val context = client.createContext(handler);
+        HttpContextConfigElf.configHttpContext(context, this, request);
+        context.prepareRequest(request.bufferHttpRequest, null, request.buffer);
     }
 
     @Override

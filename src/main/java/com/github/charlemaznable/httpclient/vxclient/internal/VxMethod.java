@@ -8,6 +8,11 @@ import java.lang.reflect.Method;
 
 final class VxMethod extends CommonMethod<VxBase> {
 
+    boolean returnCoreFuture;
+    boolean returnRxJavaSingle;
+    boolean returnRxJava2Single;
+    boolean returnRxJava3Single;
+
     public VxMethod(VxClass vxClass, Method method) {
         super(new VxElement(vxClass.element().base().vertx,
                 vxClass.element().factory()), vxClass, method);
@@ -16,10 +21,16 @@ final class VxMethod extends CommonMethod<VxBase> {
 
     @Override
     protected boolean checkReturnFuture(Class<?> returnType) {
-        val returnFuture = Future.class == returnType;
-        if (!returnFuture) {
-            throw new IllegalStateException(method().getName()
-                    + " must return io.vertx.core.Future<?>");
+        returnCoreFuture = Future.class == returnType;
+        returnRxJavaSingle = rx.Single.class == returnType;
+        returnRxJava2Single = io.reactivex.Single.class == returnType;
+        returnRxJava3Single = io.reactivex.rxjava3.core.Single.class == returnType;
+        if (!returnCoreFuture && !returnRxJavaSingle && !returnRxJava2Single && !returnRxJava3Single) {
+            throw new IllegalStateException(method().getName() +
+                    " must return io.vertx.core.Future<?>[io.vertx:vertx-core]" +
+                    " or rx.Single<?>[io.reactivex:rxjava]" +
+                    " or io.reactivex.Single<?>[io.reactivex.rxjava2:rxjava]" +
+                    " or io.reactivex.rxjava3.core.Single<?>[io.reactivex.rxjava3:rxjava]");
         }
         return true;
     }
