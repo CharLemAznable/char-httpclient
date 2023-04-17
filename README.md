@@ -64,11 +64,28 @@ Future<String> postFuture = new OhReq("http://host:port/path").postFuture();
 * 请求头
 * url参数
 * 请求体
-* 客户端代理
-* ssl相关配置
-* 连接池
-* 超时配置
-* 其他
+* OkHttpClient.Builder配置
+
+```java
+new VxReq("http://host:port/path").get(asyncResult -> {
+});
+
+new VxReq("http://host:port/path").post(asyncResult -> {
+});
+
+Future<String> getFuture = new VxReq("http://host:port/path").get();
+
+Future<String> postFuture = new VxReq("http://host:port/path").post();
+```
+
+```VxReq```对象可设置http请求的部分属性, 如
+* 请求路径
+* 字符集
+* 请求体格式
+* 请求头
+* url参数
+* 请求体
+* WebClientOptions配置
 
 简易的http客户端可用于大部分简单的业务场景.
 
@@ -86,11 +103,25 @@ MyHttpClient client = OhFactory.getClient(MyHttpClient.class);
 String getResp = client.path();
 ```
 
+```java
+@VxClient
+@Mapping("http://host:port")
+public interface MyHttpClient {
+    @Mapping("/path") // 可省略, 默认使用: "/methodName"
+    Future<String> path();
+}
+
+MyHttpClient client = VxFactory.getClient(MyHttpClient.class);
+client.path().onSuccess(getResp -> {
+    
+});
+```
+
 定义接口, 添加注解配置http客户端, 调用工厂创建客户端实例, 即可发起http请求.
 
 #### 配置注解
 
-##### ```@OhClient```
+##### ```@OhClient```/```@VxClient```
 
 标识作用的注解, 接口必须添加此注解, 才能通过工厂方法创建对应的客户端实例.
 
@@ -192,15 +223,15 @@ public interface MyHttpClient {
 
 在接口上添加此注解, 则停用此默认处理方法.
 
-##### ```@RequestExtend```
+##### ```@RequestExtend``` ```@RequestExtend.Disabled```
 
 指定自定义的请求前置处理方法, 特殊处理请求的```headers, pathvars, parameters, contexts```.
 
-##### ```@ResponseParse```
+##### ```@ResponseParse``` ```@ResponseParse.Disabled```
 
 指定自定义的响应内容解析方法.
 
-##### ```@ExtraUrlQuery```
+##### ```@ExtraUrlQuery``` ```@ExtraUrlQuery.Disabled```
 
 指定请求的UrlQuery内容的特殊处理, 例如可在POST请求路径后添加UrlQuery.
 
@@ -208,60 +239,25 @@ public interface MyHttpClient {
 
 指定客户端负载均衡方式, 默认为随机选择, 可使用内置的RoundRobin轮询, 也可自定义负载均衡方式.
 
-##### ```@ClientProxy```
-
-指定客户端代理的类型/host/port.
-
-##### ```@ClientProxy.Disabled```
-
-添加在方法上, 可屏蔽添加在接口上的客户端代理配置.
-
-##### ```@ClientSSL```
-
-指定客户端SSL配置.
-
-##### ```@ClientSSL.DisabledSSLSocketFactory``` ```@ClientSSL.DisabledX509TrustManager``` ```@ClientSSL.DisabledHostnameVerifier``` ```@ClientSSL.Disabled```
-
-添加在方法上, 可屏蔽添加在接口上的客户端SSL配置.
-
-##### ```@IsolatedConnectionPool```
-
-默认全局使用公共连接池, 可在接口或方法上添加此注解, 使用独立的连接池.
-
-##### ```@ClientTimeout```
-
-指定客户端的超时时间.
-
-##### ```@ClientInterceptor``` ```@ClientInterceptors```
-
-指定客户端的请求拦截器.
-
-##### ```@ClientInterceptorCleanup```
-
-添加在方法上, 可屏蔽添加在接口上的请求拦截器.
-
-##### ```@ClientLoggingLevel```
-
-指定客户端请求/响应内容的控制台日志级别.
-
 #### 响应解析
 
 默认按照请求方法的返回值类型解析响应内容:
 1. Integer: 返回HTTP状态码
 2. HttpStatus / HttpStatus.Series
 3. Boolean: HTTP状态码是否为2xx
-4. ResponseBody / InputStream / BufferedSource / byte[] / Reader / String: 响应体原文
-5. JavaBean: 优先按配置的```@ResponseParse```解析, 否则尝试解析xml/json
-6. Collection / Map: 将JavaBean映射为Collection/Map
-7. Pair / Triple: 支持同时返回多种格式的响应解析结果, 例如状态码和JavaBean
-8. Future: 支持异步获取响应
-9. 特殊支持: 方法参数类型实现```CncRequest```接口后, 指定返回类型实现```CncResponse```接口, 则可支持泛型请求对应泛型响应.
+4. okhttp: ResponseBody / InputStream / BufferedSource / byte[] / Reader / String: 响应体原文
+5. vertx-web-client: Buffer / byte[] / JsonObject / JsonArray / String: 响应体原文
+6. JavaBean: 优先按配置的```@ResponseParse```解析, 否则尝试解析xml/json
+7. Collection / Map: 将JavaBean映射为Collection/Map
+8. Pair / Triple: 支持同时返回多种格式的响应解析结果, 例如状态码和JavaBean
+9. Future: 支持异步获取响应
+10. 特殊支持: 方法参数类型实现```CncRequest```接口后, 指定返回类型实现```CncResponse```接口, 则可支持泛型请求对应泛型响应.
 
 #### 支持环境变量
 
 注解value值支持环境变量, 使用```${key}```格式标识.
 
-环境变量源为类路径中的```ohclient.env.props```配置文件和```Arguments```启动参数.
+环境变量源为类路径中的```char-httpclient.env.props```配置文件和```Arguments```启动参数.
 
 其中```Arguments```变量的优先级高于配置文件.
 
@@ -271,18 +267,18 @@ public interface MyHttpClient {
 
 #### 在Spring中使用
 
-使用```@OhScan```指定扫描加载包路径.
+使用```@OhScan```/```@VxScan```指定扫描加载包路径.
 
-包路径中所有添加```@OhClient```注解的接口都将生成对应的http客户端实例并注入SpringContext.
+包路径中所有添加```@OhClient```/```@VxClient```注解的接口都将生成对应的http客户端实例并注入SpringContext.
 
 #### 在Guice中使用
 
-使用```OhModular```按类或包路径扫描加载.
+使用```OhModular```/```VxModuler```按类或包路径扫描加载.
 
 创建的```Module```中将包含对应的http客户端实例.
 
 #### 支持WSDL
 
-使用```@WsOhClient```/```@WsOhClient12```注解, 支持WSDL.
+使用```@WsOhClient```/```@WsOhClient12```/```@WsVxClient```/```@WsVxClient12```注解, 支持WSDL.
 
 具体使用方法, 请参考测试用例.
