@@ -44,42 +44,51 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
             new rx.Subscriber<>() {
                 @Override
                 public void onCompleted() {
+                    // empty method
                 }
 
                 @Override
                 public void onError(Throwable throwable) {
+                    // empty method
                 }
 
                 @Override
                 public void onNext(Object o) {
+                    // empty method
                 }
             };
     private static final io.reactivex.SingleObserver<Object> NULL_RX2_SINGLEOBSERVER =
             new io.reactivex.SingleObserver<>() {
                 @Override
                 public void onSubscribe(@NotNull io.reactivex.disposables.Disposable disposable) {
+                    // empty method
                 }
 
                 @Override
                 public void onSuccess(@NotNull Object o) {
+                    // empty method
                 }
 
                 @Override
                 public void onError(@NotNull Throwable throwable) {
+                    // empty method
                 }
             };
     private static final io.reactivex.rxjava3.core.SingleObserver<Object> NULL_RX3_SINGLEOBSERVER =
             new io.reactivex.rxjava3.core.SingleObserver<>() {
                 @Override
                 public void onSubscribe(@io.reactivex.rxjava3.annotations.NonNull io.reactivex.rxjava3.disposables.Disposable d) {
+                    // empty method
                 }
 
                 @Override
                 public void onSuccess(@io.reactivex.rxjava3.annotations.NonNull Object o) {
+                    // empty method
                 }
 
                 @Override
                 public void onError(@io.reactivex.rxjava3.annotations.NonNull Throwable e) {
+                    // empty method
                 }
             };
 
@@ -116,7 +125,7 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
             return single;
 
         } else if (vxMethod.returnRxJava3Single) {
-            val single = io.vertx.rxjava3.impl.AsyncResultSingle.<HttpResponse<Buffer>>toSingle((handler) ->
+            val single = io.vertx.rxjava3.impl.AsyncResultSingle.<HttpResponse<Buffer>>toSingle(handler ->
                     sendRequest(client, request, handler)).map(this::processResponse).cache();
             single.subscribe(NULL_RX3_SINGLEOBSERVER);
             return single;
