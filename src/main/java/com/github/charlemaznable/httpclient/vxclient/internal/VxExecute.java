@@ -12,7 +12,6 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.impl.WebClientInternal;
 import io.vertx.ext.web.codec.impl.BodyCodecImpl;
-import io.vertx.rx.java.SingleOnSubscribeAdapter;
 import lombok.val;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -34,7 +33,6 @@ import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUE
 import static com.github.charlemaznable.httpclient.common.CommonReq.parseCharset;
 import static com.github.charlemaznable.httpclient.common.CommonReq.permitsRequestBody;
 import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
 
 final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer> {
 
@@ -52,6 +50,7 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
         }
     }
 
+    @SuppressWarnings("ReactiveStreamsUnusedPublisher")
     @Override
     public Object execute() {
         val request = buildRequest();
@@ -65,20 +64,11 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
 
         val vxMethod = (VxMethod) this.executeMethod();
         if (vxMethod.returnRxJavaSingle) {
-            val single = rx.Single.create(new SingleOnSubscribeAdapter<>(responseFuture::onComplete));
-            single.subscribe(requireNonNull(VxRxHelper.nullRxSubscriber()));
-            return single;
-
+            return VxRxHelper.buildRxSingle(responseFuture);
         } else if (vxMethod.returnRxJava2Single) {
-            val single = io.vertx.reactivex.impl.AsyncResultSingle.toSingle(responseFuture::onComplete);
-            single.subscribe(requireNonNull(VxRxHelper.nullRx2Observer()));
-            return single;
-
+            return VxRxHelper.buildRxSingle2(responseFuture);
         } else if (vxMethod.returnRxJava3Single) {
-            val single = io.vertx.rxjava3.impl.AsyncResultSingle.toSingle(responseFuture::onComplete);
-            single.subscribe(requireNonNull(VxRxHelper.nullRx3Observer()));
-            return single;
-
+            return VxRxHelper.buildRxSingle3(responseFuture);
         } else {
             return responseFuture;
         }

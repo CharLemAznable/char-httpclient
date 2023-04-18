@@ -22,9 +22,9 @@ final class VxMethod extends CommonMethod<VxBase> {
     @Override
     protected boolean checkReturnFuture(Class<?> returnType) {
         returnCoreFuture = Future.class == returnType;
-        returnRxJavaSingle = VxRxHelper.HAS_RXJAVA && rx.Single.class == returnType;
-        returnRxJava2Single = VxRxHelper.HAS_RXJAVA2 && io.reactivex.Single.class == returnType;
-        returnRxJava3Single = VxRxHelper.HAS_RXJAVA3 && io.reactivex.rxjava3.core.Single.class == returnType;
+        returnRxJavaSingle = VxRxHelper.checkReturnRxJavaSingle(returnType);
+        returnRxJava2Single = VxRxHelper.checkReturnRxJava2Single(returnType);
+        returnRxJava3Single = VxRxHelper.checkReturnRxJava3Single(returnType);
         if (!returnCoreFuture && !returnRxJavaSingle && !returnRxJava2Single && !returnRxJava3Single) {
             throw new IllegalStateException(method().getName() +
                     " must return io.vertx.core.Future<?>[io.vertx:vertx-core]" +

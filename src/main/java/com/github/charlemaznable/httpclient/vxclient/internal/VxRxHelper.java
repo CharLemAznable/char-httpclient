@@ -1,7 +1,9 @@
 package com.github.charlemaznable.httpclient.vxclient.internal;
 
 import com.github.charlemaznable.core.lang.ClzPath;
+import io.vertx.core.Future;
 import lombok.NoArgsConstructor;
+import lombok.val;
 import org.jetbrains.annotations.NotNull;
 
 import static lombok.AccessLevel.PRIVATE;
@@ -16,16 +18,45 @@ public final class VxRxHelper {
     static final boolean HAS_RXJAVA3 =
             ClzPath.classExists("io.vertx.rxjava3.core.Vertx");
 
-    static rx.Subscriber<Object> nullRxSubscriber() {
-        return HAS_RXJAVA ? RxSubscriberHolder.NULL : null;
+    static boolean checkReturnRxJavaSingle(Class<?> returnType) {
+        if (!HAS_RXJAVA) return false;
+        return rx.Single.class == returnType;
     }
 
-    static io.reactivex.SingleObserver<Object> nullRx2Observer() {
-        return HAS_RXJAVA2 ? Rx2ObserverHolder.NULL : null;
+    static boolean checkReturnRxJava2Single(Class<?> returnType) {
+        if (!HAS_RXJAVA2) return false;
+        return io.reactivex.Single.class == returnType;
     }
 
-    static io.reactivex.rxjava3.core.SingleObserver<Object> nullRx3Observer() {
-        return HAS_RXJAVA3 ? Rx3ObserverHolder.NULL : null;
+    static boolean checkReturnRxJava3Single(Class<?> returnType) {
+        if (!HAS_RXJAVA3) return false;
+        return io.reactivex.rxjava3.core.Single.class == returnType;
+    }
+
+    static rx.Single<Object> buildRxSingle(Future<Object> future) {
+        val single = rx.Single.create(sub -> future.onComplete(ar -> {
+            if (!sub.isUnsubscribed()) {
+                if (ar.succeeded()) {
+                    sub.onSuccess(ar.result());
+                } else {
+                    sub.onError(ar.cause());
+                }
+            }
+        }));
+        single.subscribe(RxSubscriberHolder.NULL);
+        return single;
+    }
+
+    static io.reactivex.Single<Object> buildRxSingle2(Future<Object> future) {
+        val single = io.vertx.reactivex.impl.AsyncResultSingle.toSingle(future::onComplete);
+        single.subscribe(Rx2ObserverHolder.NULL);
+        return single;
+    }
+
+    static io.reactivex.rxjava3.core.Single<Object> buildRxSingle3(Future<Object> future) {
+        val single = io.vertx.rxjava3.impl.AsyncResultSingle.toSingle(future::onComplete);
+        single.subscribe(Rx3ObserverHolder.NULL);
+        return single;
     }
 
     private static class RxSubscriberHolder {
