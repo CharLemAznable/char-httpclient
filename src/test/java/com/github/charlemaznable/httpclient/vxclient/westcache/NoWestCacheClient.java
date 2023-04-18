@@ -9,4 +9,10 @@ import io.vertx.core.Future;
 public interface NoWestCacheClient {
 
     Future<String> sample();
+
+    rx.Single<String> sampleRx();
+
+    io.reactivex.Single<String> sampleRx2();
+
+    io.reactivex.rxjava3.core.Single<String> sampleRx3();
 }

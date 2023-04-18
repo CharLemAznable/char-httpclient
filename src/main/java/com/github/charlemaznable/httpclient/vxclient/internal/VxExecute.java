@@ -2,8 +2,6 @@ package com.github.charlemaznable.httpclient.vxclient.internal;
 
 import com.github.charlemaznable.httpclient.common.CommonExecute;
 import com.github.charlemaznable.httpclient.vxclient.elf.HttpContextConfigElf;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
@@ -59,29 +57,30 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
         val request = buildRequest();
         val client = (WebClientInternal) base().client;
 
+        val promise = Promise.<HttpResponse<Buffer>>promise();
+        val context = client.createContext(promise);
+        HttpContextConfigElf.configHttpContext(context, this, request);
+        context.prepareRequest(request.bufferHttpRequest, null, request.buffer);
+        val responseFuture = promise.future().map(this::processResponse);
+
         val vxMethod = (VxMethod) this.executeMethod();
         if (vxMethod.returnRxJavaSingle) {
-            val single = rx.Single.create(new SingleOnSubscribeAdapter<HttpResponse<Buffer>>(future ->
-                    sendRequest(client, request, future))).map(this::processResponse).cache();
+            val single = rx.Single.create(new SingleOnSubscribeAdapter<>(responseFuture::onComplete));
             single.subscribe(requireNonNull(VxRxHelper.nullRxSubscriber()));
             return single;
 
         } else if (vxMethod.returnRxJava2Single) {
-            val single = io.vertx.reactivex.impl.AsyncResultSingle.<HttpResponse<Buffer>>toSingle(handler ->
-                    sendRequest(client, request, handler)).map(this::processResponse).cache();
+            val single = io.vertx.reactivex.impl.AsyncResultSingle.toSingle(responseFuture::onComplete);
             single.subscribe(requireNonNull(VxRxHelper.nullRx2Observer()));
             return single;
 
         } else if (vxMethod.returnRxJava3Single) {
-            val single = io.vertx.rxjava3.impl.AsyncResultSingle.<HttpResponse<Buffer>>toSingle(handler ->
-                    sendRequest(client, request, handler)).map(this::processResponse).cache();
+            val single = io.vertx.rxjava3.impl.AsyncResultSingle.toSingle(responseFuture::onComplete);
             single.subscribe(requireNonNull(VxRxHelper.nullRx3Observer()));
             return single;
 
         } else {
-            val promise = Promise.<HttpResponse<Buffer>>promise();
-            sendRequest(client, request, promise);
-            return promise.future().map(this::processResponse);
+            return responseFuture;
         }
     }
 
@@ -123,13 +122,6 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
         request.bufferHttpRequest.putHeaders(httpHeaders);
 
         return request;
-    }
-
-    private void sendRequest(WebClientInternal client, VxExecuteRequest request,
-                             Handler<AsyncResult<HttpResponse<Buffer>>> handler) {
-        val context = client.createContext(handler);
-        HttpContextConfigElf.configHttpContext(context, this, request);
-        context.prepareRequest(request.bufferHttpRequest, null, request.buffer);
     }
 
     @Override
