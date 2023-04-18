@@ -6,7 +6,7 @@ import com.github.charlemaznable.httpclient.common.CncRequest;
 import com.github.charlemaznable.httpclient.common.CncResponse;
 import com.github.charlemaznable.httpclient.common.CommonCncTest;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.common.VertxReflectFactory;
+import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;

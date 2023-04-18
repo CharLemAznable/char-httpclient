@@ -1,7 +1,7 @@
 package com.github.charlemaznable.httpclient.ws.soap;
 
-import com.github.charlemaznable.httpclient.common.VertxReflectFactory;
 import com.github.charlemaznable.httpclient.vxclient.VxFactory;
+import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
 import com.github.charlemaznable.httpclient.ws.entity.GetSupportCity;
 import com.github.charlemaznable.httpclient.ws.entity.GetSupportProvince;
 import io.vertx.core.CompositeFuture;

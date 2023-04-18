@@ -1,4 +1,4 @@
-package com.github.charlemaznable.httpclient.common;
+package com.github.charlemaznable.httpclient.vxclient.elf;
 
 import com.github.charlemaznable.core.lang.Clz;
 import com.github.charlemaznable.core.lang.Factory;
@@ -9,9 +9,9 @@ import static com.github.charlemaznable.core.lang.Clz.isConcrete;
 import static org.joor.Reflect.onClass;
 
 @AllArgsConstructor
-public class VertxReflectFactory implements Factory {
+public final class VertxReflectFactory implements Factory {
 
-    private Vertx vertx;
+    private final Vertx vertx;
 
     @SuppressWarnings("unchecked")
     @Override

@@ -11,7 +11,7 @@ import com.github.charlemaznable.httpclient.annotation.RequestBodyRaw;
 import com.github.charlemaznable.httpclient.annotation.RequestMethod;
 import com.github.charlemaznable.httpclient.common.CommonParameterTest;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
-import com.github.charlemaznable.httpclient.common.VertxReflectFactory;
+import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;

@@ -3,7 +3,7 @@ package com.github.charlemaznable.httpclient.vxclient;
 import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
 import com.github.charlemaznable.httpclient.common.CommonReloaderTest;
-import com.github.charlemaznable.httpclient.common.VertxReflectFactory;
+import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;

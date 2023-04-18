@@ -4,7 +4,7 @@ import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingBalance;
 import com.github.charlemaznable.httpclient.common.CommonBalancerTest;
-import com.github.charlemaznable.httpclient.common.VertxReflectFactory;
+import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
