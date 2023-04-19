@@ -2,6 +2,9 @@ package com.github.charlemaznable.httpclient.ohclient.internal;
 
 import com.github.charlemaznable.httpclient.common.CommonExecute;
 import com.github.charlemaznable.httpclient.ohclient.elf.RequestBuilderConfigElf;
+import com.github.charlemaznable.httpclient.ohclient.rxjava.OhRxJava2Helper;
+import com.github.charlemaznable.httpclient.ohclient.rxjava.OhRxJava3Helper;
+import com.github.charlemaznable.httpclient.ohclient.rxjava.OhRxJavaHelper;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.Headers;
@@ -46,6 +49,7 @@ final class OhExecute extends CommonExecute<OhBase, Response, ResponseBody> {
         }
     }
 
+    @SuppressWarnings("ReactiveStreamsUnusedPublisher")
     @SneakyThrows
     @Override
     public Object execute() {
@@ -53,7 +57,17 @@ final class OhExecute extends CommonExecute<OhBase, Response, ResponseBody> {
         if (executeMethod().returnFuture()) {
             val future = new OhCallbackFuture<>(this::processResponse);
             call.enqueue(future);
-            return future;
+
+            val ohMethod = (OhMethod) executeMethod();
+            if (ohMethod.returnRxJavaSingle) {
+                return OhRxJavaHelper.buildSingle(future);
+            } else if (ohMethod.returnRxJava2Single) {
+                return OhRxJava2Helper.buildSingle(future);
+            } else if (ohMethod.returnRxJava3Single) {
+                return OhRxJava3Helper.buildSingle(future);
+            } else {
+                return future;
+            }
         }
         return processResponse(call.execute());
     }

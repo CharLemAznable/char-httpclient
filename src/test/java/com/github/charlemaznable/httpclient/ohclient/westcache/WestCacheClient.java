@@ -10,11 +10,28 @@ import java.util.concurrent.Future;
 @OhClient
 public interface WestCacheClient {
 
-    String sampleNone();
+    String sampleNoneSync();
+
+    Future<String> sampleNone();
+
+    rx.Single<String> sampleNoneRx();
+
+    io.reactivex.Single<String> sampleNoneRx2();
+
+    io.reactivex.rxjava3.core.Single<String> sampleNoneRx3();
 
     @WestCacheable
-    String sample();
+    String sampleSync();
 
     @WestCacheable
-    Future<String> sampleFuture();
+    Future<String> sample();
+
+    @WestCacheable
+    rx.Single<String> sampleRx();
+
+    @WestCacheable
+    io.reactivex.Single<String> sampleRx2();
+
+    @WestCacheable
+    io.reactivex.rxjava3.core.Single<String> sampleRx3();
 }

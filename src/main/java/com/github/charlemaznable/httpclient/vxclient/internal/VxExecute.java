@@ -2,6 +2,9 @@ package com.github.charlemaznable.httpclient.vxclient.internal;
 
 import com.github.charlemaznable.httpclient.common.CommonExecute;
 import com.github.charlemaznable.httpclient.vxclient.elf.HttpContextConfigElf;
+import com.github.charlemaznable.httpclient.vxclient.rxjava.VxRxJava2Helper;
+import com.github.charlemaznable.httpclient.vxclient.rxjava.VxRxJava3Helper;
+import com.github.charlemaznable.httpclient.vxclient.rxjava.VxRxJavaHelper;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
@@ -60,17 +63,17 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
         val context = client.createContext(promise);
         HttpContextConfigElf.configHttpContext(context, this, request);
         context.prepareRequest(request.bufferHttpRequest, null, request.buffer);
-        val responseFuture = promise.future().map(this::processResponse);
+        val future = promise.future().map(this::processResponse);
 
-        val vxMethod = (VxMethod) this.executeMethod();
+        val vxMethod = (VxMethod) executeMethod();
         if (vxMethod.returnRxJavaSingle) {
-            return VxRxHelper.buildRxSingle(responseFuture);
+            return VxRxJavaHelper.buildSingle(future);
         } else if (vxMethod.returnRxJava2Single) {
-            return VxRxHelper.buildRxSingle2(responseFuture);
+            return VxRxJava2Helper.buildSingle(future);
         } else if (vxMethod.returnRxJava3Single) {
-            return VxRxHelper.buildRxSingle3(responseFuture);
+            return VxRxJava3Helper.buildSingle(future);
         } else {
-            return responseFuture;
+            return future;
         }
     }
 

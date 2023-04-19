@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SuppressWarnings({"SpringJavaInjectionPointsAutowiringInspection", "ResultOfMethodCallIgnored"})
+@SuppressWarnings({"SpringJavaInjectionPointsAutowiringInspection", "ResultOfMethodCallIgnored", "ReactiveStreamsUnusedPublisher"})
 @SpringJUnitConfig(WestCacheConfiguration.class)
 public class WestCacheTest extends CommonWestCacheTest {
 
@@ -34,6 +34,9 @@ public class WestCacheTest extends CommonWestCacheTest {
         val respResult = new RespResult();
 
         // noWestCacheClient start
+
+        // native call add counter
+        noWestCacheClient.sample();
 
         // native call once
         setResult1.set(false);
@@ -66,6 +69,9 @@ public class WestCacheTest extends CommonWestCacheTest {
                 assertTrue(setResult1.get() && setResult2.get()));
         assertNotEquals(respResult.getResult1(), respResult.getResult2());
 
+        // rxjava call add counter
+        noWestCacheClient.sampleRx();
+
         // rxjava call once
         setResult1.set(false);
         setResult2.set(false);
@@ -97,6 +103,9 @@ public class WestCacheTest extends CommonWestCacheTest {
                 assertTrue(setResult1.get() && setResult2.get()));
         assertNotEquals(respResult.getResult1(), respResult.getResult2());
 
+        // rxjava2 call add counter
+        noWestCacheClient.sampleRx2();
+
         // rxjava2 call once
         setResult1.set(false);
         setResult2.set(false);
@@ -127,6 +136,9 @@ public class WestCacheTest extends CommonWestCacheTest {
         await().forever().untilAsserted(() ->
                 assertTrue(setResult1.get() && setResult2.get()));
         assertNotEquals(respResult.getResult1(), respResult.getResult2());
+
+        // rxjava3 call add counter
+        noWestCacheClient.sampleRx3();
 
         // rxjava3 call once
         setResult1.set(false);
@@ -161,6 +173,9 @@ public class WestCacheTest extends CommonWestCacheTest {
 
         // westCacheClient none start
 
+        // native call add counter
+        westCacheClient.sampleNone();
+
         // native call once
         setResult1.set(false);
         setResult2.set(false);
@@ -191,6 +206,9 @@ public class WestCacheTest extends CommonWestCacheTest {
         await().forever().untilAsserted(() ->
                 assertTrue(setResult1.get() && setResult2.get()));
         assertNotEquals(respResult.getResult1(), respResult.getResult2());
+
+        // rxjava call add counter
+        westCacheClient.sampleNoneRx();
 
         // rxjava call once
         setResult1.set(false);
@@ -223,6 +241,9 @@ public class WestCacheTest extends CommonWestCacheTest {
                 assertTrue(setResult1.get() && setResult2.get()));
         assertNotEquals(respResult.getResult1(), respResult.getResult2());
 
+        // rxjava2 call add counter
+        westCacheClient.sampleNoneRx2();
+
         // rxjava2 call once
         setResult1.set(false);
         setResult2.set(false);
@@ -253,6 +274,9 @@ public class WestCacheTest extends CommonWestCacheTest {
         await().forever().untilAsserted(() ->
                 assertTrue(setResult1.get() && setResult2.get()));
         assertNotEquals(respResult.getResult1(), respResult.getResult2());
+
+        // rxjava3 call add counter
+        westCacheClient.sampleNoneRx3();
 
         // rxjava3 call once
         setResult1.set(false);
@@ -424,6 +448,8 @@ public class WestCacheTest extends CommonWestCacheTest {
         assertEquals(respResult.getResult1(), respResult.getResult2());
 
         shutdownMockWebServer();
+
+        assertEquals(36, counter.get());
     }
 
     @Getter
