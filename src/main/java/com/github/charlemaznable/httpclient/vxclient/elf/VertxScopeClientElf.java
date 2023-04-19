@@ -51,8 +51,7 @@ public final class VertxScopeClientElf {
 
         @Override
         public WebClient build(Vertx vertx) {
-            val client = (WebClientInternal) WebClient.create(vertx,
-                    new WebClientOptions().setShared(true));
+            val client = (WebClientInternal) WebClient.create(vertx, new WebClientOptions());
             client.addInterceptor(new LoggingVxInterceptor());
             if (HAS_WESTCACHE) client.addInterceptor(new WestCacheVxInterceptor(vertx));
             return client;
