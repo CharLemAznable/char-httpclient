@@ -3,7 +3,6 @@ package com.github.charlemaznable.httpclient.westcache;
 import com.github.bingoohuang.westcache.utils.WestCacheOption;
 import com.github.charlemaznable.httpclient.common.CommonExecute;
 import com.github.charlemaznable.httpclient.vxclient.elf.HttpContextConfigurer;
-import com.github.charlemaznable.httpclient.vxclient.internal.VxExecuteRequest;
 import com.google.auto.service.AutoService;
 import io.vertx.ext.web.client.impl.HttpContext;
 import lombok.val;
@@ -16,8 +15,7 @@ public final class WestCacheHttpContextConfigurer implements HttpContextConfigur
 
     @Override
     public void configHttpContext(HttpContext<?> httpContext,
-                                  CommonExecute<?, ?, ?> execute,
-                                  VxExecuteRequest request) {
+                                  CommonExecute<?, ?, ?> execute) {
         // westcache supported
         if (HAS_WESTCACHE) {
             val method = execute.executeMethod().method();

@@ -61,7 +61,8 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
 
         val promise = Promise.<HttpResponse<Buffer>>promise();
         val context = client.createContext(promise);
-        HttpContextConfigElf.configHttpContext(context, this, request);
+        HttpContextConfigElf.configHttpContext(context, this);
+        context.set(VxExecuteRequest.class.getName(), request);
         context.prepareRequest(request.bufferHttpRequest, null, request.buffer);
         val future = promise.future().map(this::processResponse);
 

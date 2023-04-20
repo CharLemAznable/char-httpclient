@@ -1,7 +1,6 @@
 package com.github.charlemaznable.httpclient.vxclient.elf;
 
 import com.github.charlemaznable.httpclient.common.CommonExecute;
-import com.github.charlemaznable.httpclient.vxclient.internal.VxExecuteRequest;
 import io.vertx.ext.web.client.impl.HttpContext;
 import lombok.NoArgsConstructor;
 import lombok.val;
@@ -20,10 +19,9 @@ public final class HttpContextConfigElf {
     }
 
     public static void configHttpContext(HttpContext<?> httpContext,
-                                         CommonExecute<?, ?, ?> execute,
-                                         VxExecuteRequest request) {
+                                         CommonExecute<?, ?, ?> execute) {
         for (val configurer : configurers) {
-            configurer.configHttpContext(httpContext, execute, request);
+            configurer.configHttpContext(httpContext, execute);
         }
     }
 }
