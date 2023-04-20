@@ -5,9 +5,9 @@ import com.github.charlemaznable.httpclient.configurer.MappingConfigurer;
 import com.github.charlemaznable.httpclient.configurer.configservice.CommonClientConfig;
 import com.github.charlemaznable.httpclient.configurer.configservice.CommonMethodConfig;
 import com.github.charlemaznable.httpclient.ohclient.configurer.OkHttpClientBuilderConfigurer;
-import com.github.charlemaznable.httpclient.vxclient.configurer.VertxWebClientOptionsConfigurer;
+import com.github.charlemaznable.httpclient.vxclient.configurer.VertxWebClientBuilderConfigurer;
+import com.github.charlemaznable.httpclient.vxclient.elf.WebClientBuilder;
 import io.vertx.core.net.ProxyOptions;
-import io.vertx.ext.web.client.WebClientOptions;
 import lombok.SneakyThrows;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.Dispatcher;
@@ -100,7 +100,7 @@ public abstract class CommonConfigurerTest {
 
     @Config(keyset = "ConfigurerClient", key = "sample2")
     public interface ConfigurerClientSample2Config extends CommonMethodConfig,
-            OkHttpClientBuilderConfigurer, VertxWebClientOptionsConfigurer {
+            OkHttpClientBuilderConfigurer, VertxWebClientBuilderConfigurer {
 
         @Override
         @Config("path")
@@ -114,10 +114,11 @@ public abstract class CommonConfigurerTest {
         }
 
         @Override
-        default WebClientOptions configOptions(WebClientOptions options) {
+        default WebClientBuilder configBuilder(WebClientBuilder builder) {
             assertEquals(com.github.charlemaznable.httpclient.vxclient.ConfigurerTest.ConfigurerClient.class, getInitializingClass());
             assertEquals("sample2", getInitializingMethod().getName());
-            return options.setProxyOptions(new ProxyOptions().setHost("127.0.0.1").setPort(41311));
+            builder.options().setProxyOptions(new ProxyOptions().setHost("127.0.0.1").setPort(41311));
+            return builder;
         }
     }
 
