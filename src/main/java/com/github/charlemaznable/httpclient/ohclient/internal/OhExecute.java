@@ -1,10 +1,10 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
+import com.github.charlemaznable.core.rxjava.RxJava1BuildHelper;
+import com.github.charlemaznable.core.rxjava.RxJava2BuildHelper;
+import com.github.charlemaznable.core.rxjava.RxJava3BuildHelper;
 import com.github.charlemaznable.httpclient.common.CommonExecute;
 import com.github.charlemaznable.httpclient.ohclient.elf.RequestBuilderConfigElf;
-import com.github.charlemaznable.httpclient.ohclient.rxjava.OhRxJava2Helper;
-import com.github.charlemaznable.httpclient.ohclient.rxjava.OhRxJava3Helper;
-import com.github.charlemaznable.httpclient.ohclient.rxjava.OhRxJavaHelper;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.Headers;
@@ -60,11 +60,11 @@ final class OhExecute extends CommonExecute<OhBase, Response, ResponseBody> {
 
             val ohMethod = (OhMethod) executeMethod();
             if (ohMethod.returnRxJavaSingle) {
-                return OhRxJavaHelper.buildSingle(future);
+                return RxJava1BuildHelper.buildSingle(future);
             } else if (ohMethod.returnRxJava2Single) {
-                return OhRxJava2Helper.buildSingle(future);
+                return RxJava2BuildHelper.buildSingle(future);
             } else if (ohMethod.returnRxJava3Single) {
-                return OhRxJava3Helper.buildSingle(future);
+                return RxJava3BuildHelper.buildSingle(future);
             } else {
                 return future;
             }

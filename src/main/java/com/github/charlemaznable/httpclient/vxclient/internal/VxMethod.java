@@ -1,7 +1,7 @@
 package com.github.charlemaznable.httpclient.vxclient.internal;
 
+import com.github.charlemaznable.core.rxjava.RxJavaCheckHelper;
 import com.github.charlemaznable.httpclient.common.CommonMethod;
-import com.github.charlemaznable.httpclient.rxjava.RxJavaHelper;
 import io.vertx.core.Future;
 import lombok.val;
 
@@ -23,9 +23,9 @@ final class VxMethod extends CommonMethod<VxBase> {
     @Override
     protected boolean checkReturnFuture(Class<?> returnType) {
         returnCoreFuture = Future.class == returnType;
-        returnRxJavaSingle = RxJavaHelper.checkReturnRxJavaSingle(returnType);
-        returnRxJava2Single = RxJavaHelper.checkReturnRxJava2Single(returnType);
-        returnRxJava3Single = RxJavaHelper.checkReturnRxJava3Single(returnType);
+        returnRxJavaSingle = RxJavaCheckHelper.checkReturnRxJavaSingle(returnType);
+        returnRxJava2Single = RxJavaCheckHelper.checkReturnRxJava2Single(returnType);
+        returnRxJava3Single = RxJavaCheckHelper.checkReturnRxJava3Single(returnType);
         if (!returnCoreFuture && !returnRxJavaSingle && !returnRxJava2Single && !returnRxJava3Single) {
             throw new IllegalStateException(method().getName() +
                     " must return io.vertx.core.Future<?>[io.vertx:vertx-core]" +

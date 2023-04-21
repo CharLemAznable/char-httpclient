@@ -1,7 +1,7 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
+import com.github.charlemaznable.core.rxjava.RxJavaCheckHelper;
 import com.github.charlemaznable.httpclient.common.CommonMethod;
-import com.github.charlemaznable.httpclient.rxjava.RxJavaHelper;
 import lombok.val;
 
 import java.lang.reflect.Method;
@@ -22,9 +22,9 @@ final class OhMethod extends CommonMethod<OhBase> {
     @Override
     protected boolean checkReturnFuture(Class<?> returnType) {
         returnCoreFuture = Future.class == returnType;
-        returnRxJavaSingle = RxJavaHelper.checkReturnRxJavaSingle(returnType);
-        returnRxJava2Single = RxJavaHelper.checkReturnRxJava2Single(returnType);
-        returnRxJava3Single = RxJavaHelper.checkReturnRxJava3Single(returnType);
+        returnRxJavaSingle = RxJavaCheckHelper.checkReturnRxJavaSingle(returnType);
+        returnRxJava2Single = RxJavaCheckHelper.checkReturnRxJava2Single(returnType);
+        returnRxJava3Single = RxJavaCheckHelper.checkReturnRxJava3Single(returnType);
         return returnCoreFuture || returnRxJavaSingle || returnRxJava2Single || returnRxJava3Single;
     }
 
