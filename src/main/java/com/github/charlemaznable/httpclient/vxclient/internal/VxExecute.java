@@ -1,5 +1,6 @@
 package com.github.charlemaznable.httpclient.vxclient.internal;
 
+import com.github.charlemaznable.core.mutiny.MutinyBuildHelper;
 import com.github.charlemaznable.core.rxjava.RxJava1BuildHelper;
 import com.github.charlemaznable.core.rxjava.RxJava2BuildHelper;
 import com.github.charlemaznable.core.rxjava.RxJava3BuildHelper;
@@ -66,13 +67,16 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
         context.prepareRequest(request.bufferHttpRequest, null, request.buffer);
         val future = promise.future().map(this::processResponse);
 
-        val vxMethod = (VxMethod) executeMethod();
-        if (vxMethod.returnRxJavaSingle) {
-            return RxJava1BuildHelper.buildSingle(future);
-        } else if (vxMethod.returnRxJava2Single) {
-            return RxJava2BuildHelper.buildSingle(future);
-        } else if (vxMethod.returnRxJava3Single) {
-            return RxJava3BuildHelper.buildSingle(future);
+        if (executeMethod().returnJavaFuture()) {
+            return future.toCompletionStage().toCompletableFuture();
+        } else if (executeMethod().returnRxJavaSingle()) {
+            return RxJava1BuildHelper.buildSingleFromVertxFuture(future);
+        } else if (executeMethod().returnRxJava2Single()) {
+            return RxJava2BuildHelper.buildSingleFromVertxFuture(future);
+        } else if (executeMethod().returnRxJava3Single()) {
+            return RxJava3BuildHelper.buildSingleFromVertxFuture(future);
+        } else if (executeMethod().returnMutinyUni()) {
+            return MutinyBuildHelper.buildUniFromVertxFuture(future);
         } else {
             return future;
         }

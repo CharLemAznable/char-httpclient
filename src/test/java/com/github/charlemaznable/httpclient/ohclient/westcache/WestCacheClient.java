@@ -3,6 +3,7 @@ package com.github.charlemaznable.httpclient.ohclient.westcache;
 import com.github.bingoohuang.westcache.WestCacheable;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
+import io.smallrye.mutiny.Uni;
 
 import java.util.concurrent.Future;
 
@@ -20,6 +21,8 @@ public interface WestCacheClient {
 
     io.reactivex.rxjava3.core.Single<String> sampleNoneRx3();
 
+    Uni<String> sampleNoneUni();
+
     @WestCacheable
     String sampleSync();
 
@@ -34,4 +37,7 @@ public interface WestCacheClient {
 
     @WestCacheable
     io.reactivex.rxjava3.core.Single<String> sampleRx3();
+
+    @WestCacheable
+    Uni<String> sampleUni();
 }

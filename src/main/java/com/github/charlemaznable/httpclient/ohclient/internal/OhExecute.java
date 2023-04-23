@@ -1,5 +1,6 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
+import com.github.charlemaznable.core.mutiny.MutinyBuildHelper;
 import com.github.charlemaznable.core.rxjava.RxJava1BuildHelper;
 import com.github.charlemaznable.core.rxjava.RxJava2BuildHelper;
 import com.github.charlemaznable.core.rxjava.RxJava3BuildHelper;
@@ -58,13 +59,14 @@ final class OhExecute extends CommonExecute<OhBase, Response, ResponseBody> {
             val future = new OhCallbackFuture<>(this::processResponse);
             call.enqueue(future);
 
-            val ohMethod = (OhMethod) executeMethod();
-            if (ohMethod.returnRxJavaSingle) {
-                return RxJava1BuildHelper.buildSingle(future);
-            } else if (ohMethod.returnRxJava2Single) {
-                return RxJava2BuildHelper.buildSingle(future);
-            } else if (ohMethod.returnRxJava3Single) {
-                return RxJava3BuildHelper.buildSingle(future);
+            if (executeMethod().returnRxJavaSingle()) {
+                return RxJava1BuildHelper.buildSingleFromFuture(future);
+            } else if (executeMethod().returnRxJava2Single()) {
+                return RxJava2BuildHelper.buildSingleFromFuture(future);
+            } else if (executeMethod().returnRxJava3Single()) {
+                return RxJava3BuildHelper.buildSingleFromFuture(future);
+            } else if (executeMethod().returnMutinyUni()) {
+                return MutinyBuildHelper.buildUniFromFuture(future);
             } else {
                 return future;
             }

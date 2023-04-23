@@ -3,6 +3,7 @@ package com.github.charlemaznable.httpclient.vxclient.westcache;
 import com.github.bingoohuang.westcache.WestCacheable;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.vxclient.VxClient;
+import io.smallrye.mutiny.Uni;
 import io.vertx.core.Future;
 
 @Mapping("${root}:41260")
@@ -11,14 +12,21 @@ public interface WestCacheClient {
 
     Future<String> sampleNone();
 
+    java.util.concurrent.Future<String> sampleNoneJava();
+
     rx.Single<String> sampleNoneRx();
 
     io.reactivex.Single<String> sampleNoneRx2();
 
     io.reactivex.rxjava3.core.Single<String> sampleNoneRx3();
 
+    Uni<String> sampleNoneUni();
+
     @WestCacheable
     Future<String> sample();
+
+    @WestCacheable
+    java.util.concurrent.Future<String> sampleJava();
 
     @WestCacheable
     rx.Single<String> sampleRx();
@@ -28,4 +36,7 @@ public interface WestCacheClient {
 
     @WestCacheable
     io.reactivex.rxjava3.core.Single<String> sampleRx3();
+
+    @WestCacheable
+    Uni<String> sampleUni();
 }

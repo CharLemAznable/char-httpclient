@@ -1,6 +1,8 @@
 package com.github.charlemaznable.httpclient.common;
 
 import com.github.charlemaznable.core.lang.Reloadable;
+import com.github.charlemaznable.core.mutiny.MutinyCheckHelper;
+import com.github.charlemaznable.core.rxjava.RxJavaCheckHelper;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.val;
@@ -15,6 +17,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static com.github.charlemaznable.core.lang.Condition.checkBlank;
@@ -42,6 +45,23 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
     @Getter
     @Accessors(fluent = true)
     boolean returnFuture; // Future<V>, etc.
+    // async return types check start
+    @Getter
+    @Accessors(fluent = true)
+    boolean returnJavaFuture;
+    @Getter
+    @Accessors(fluent = true)
+    boolean returnRxJavaSingle;
+    @Getter
+    @Accessors(fluent = true)
+    boolean returnRxJava2Single;
+    @Getter
+    @Accessors(fluent = true)
+    boolean returnRxJava3Single;
+    @Getter
+    @Accessors(fluent = true)
+    boolean returnMutinyUni;
+    // async return types check finish
     boolean returnCollection; // Collection<E>
     boolean returnMap; // Map<K, V>
     boolean returnPair; // Pair<L, R>
@@ -107,7 +127,16 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
         }
     }
 
-    protected abstract boolean checkReturnFuture(Class<?> returnType);
+    protected boolean checkReturnFuture(Class<?> returnType) {
+        returnJavaFuture = Future.class == returnType;
+        returnRxJavaSingle = RxJavaCheckHelper.checkReturnRxJavaSingle(returnType);
+        returnRxJava2Single = RxJavaCheckHelper.checkReturnRxJava2Single(returnType);
+        returnRxJava3Single = RxJavaCheckHelper.checkReturnRxJava3Single(returnType);
+        returnMutinyUni = MutinyCheckHelper.checkReturnMutinyUni(returnType);
+        return returnJavaFuture
+                || returnRxJavaSingle || returnRxJava2Single || returnRxJava3Single
+                || returnMutinyUni;
+    }
 
     private void checkUnParameterizedType(Type type, boolean checkReturnFutureOrNot) {
         if (checkReturnFutureOrNot || returnCollection || returnPair || returnTriple) {

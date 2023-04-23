@@ -1,6 +1,7 @@
 package com.github.charlemaznable.httpclient.ohclient.westcache;
 
 import com.github.charlemaznable.httpclient.common.westcache.CommonWestCacheTest;
+import io.smallrye.mutiny.Uni;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -154,6 +155,42 @@ public class WestCacheTest extends CommonWestCacheTest {
                 assertTrue(setResult1.get() && setResult2.get()));
         assertNotEquals(respResult.getResult1(), respResult.getResult2());
 
+        // mutiny call add counter
+        noWestCacheClient.sampleUni();
+
+        // mutiny call once
+        setResult1.set(false);
+        setResult2.set(false);
+        Uni<String> noWestCacheSampleUni = noWestCacheClient.sampleUni();
+        noWestCacheSampleUni.subscribe().with(resp -> {
+            respResult.setResult1(resp);
+            setResult1.set(true);
+        });
+        noWestCacheSampleUni.subscribe().with(resp -> {
+            respResult.setResult2(resp);
+            setResult2.set(true);
+        });
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
+        assertEquals(respResult.getResult1(), respResult.getResult2());
+
+        // mutiny call twice
+        setResult1.set(false);
+        setResult2.set(false);
+        noWestCacheClient.sampleUni().subscribe().with(resp -> {
+            respResult.setResult1(resp);
+            setResult1.set(true);
+        });
+        noWestCacheClient.sampleUni().subscribe().with(resp -> {
+            respResult.setResult2(resp);
+            setResult2.set(true);
+        });
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
+        assertNotEquals(respResult.getResult1(), respResult.getResult2());
+
+        assertEquals(22, counter.get());
+
         // westCacheClient none start
         assertNotEquals(westCacheClient.sampleNoneSync(), westCacheClient.sampleNoneSync());
 
@@ -272,6 +309,42 @@ public class WestCacheTest extends CommonWestCacheTest {
         await().forever().untilAsserted(() ->
                 assertTrue(setResult1.get() && setResult2.get()));
         assertNotEquals(respResult.getResult1(), respResult.getResult2());
+
+        // mutiny call add counter
+        westCacheClient.sampleNoneUni();
+
+        // mutiny call once
+        setResult1.set(false);
+        setResult2.set(false);
+        Uni<String> noneWestCacheSampleUni = westCacheClient.sampleNoneUni();
+        noneWestCacheSampleUni.subscribe().with(resp -> {
+            respResult.setResult1(resp);
+            setResult1.set(true);
+        });
+        noneWestCacheSampleUni.subscribe().with(resp -> {
+            respResult.setResult2(resp);
+            setResult2.set(true);
+        });
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
+        assertEquals(respResult.getResult1(), respResult.getResult2());
+
+        // mutiny call twice
+        setResult1.set(false);
+        setResult2.set(false);
+        westCacheClient.sampleNoneUni().subscribe().with(resp -> {
+            respResult.setResult1(resp);
+            setResult1.set(true);
+        });
+        westCacheClient.sampleNoneUni().subscribe().with(resp -> {
+            respResult.setResult2(resp);
+            setResult2.set(true);
+        });
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
+        assertNotEquals(respResult.getResult1(), respResult.getResult2());
+
+        assertEquals(44, counter.get());
 
         // westCacheClient start
         assertEquals(westCacheClient.sampleSync(), westCacheClient.sampleSync());
@@ -392,9 +465,43 @@ public class WestCacheTest extends CommonWestCacheTest {
                 assertTrue(setResult1.get() && setResult2.get()));
         assertEquals(respResult.getResult1(), respResult.getResult2());
 
+        // mutiny call once
+        setResult1.set(false);
+        setResult2.set(false);
+        Uni<String> westCacheSampleUni = westCacheClient.sampleUni();
+        westCacheSampleUni.subscribe().with(resp -> {
+            respResult.setResult1(resp);
+            setResult1.set(true);
+        });
+        westCacheSampleUni.subscribe().with(resp -> {
+            respResult.setResult2(resp);
+            setResult2.set(true);
+        });
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
+        assertEquals(respResult.getResult1(), respResult.getResult2());
+
+        // mutiny call twice
+        setResult1.set(false);
+        setResult2.set(false);
+        Uni<String> cacheSampleUni1 = westCacheClient.sampleUni();
+        cacheSampleUni1.subscribe().with(resp -> {
+            respResult.setResult1(resp);
+            setResult1.set(true);
+        });
+        Uni<String> cacheSampleUni2 = westCacheClient.sampleUni();
+        cacheSampleUni2.subscribe().with(resp -> {
+            respResult.setResult2(resp);
+            setResult2.set(true);
+        });
+        assertNotSame(cacheSampleUni1, cacheSampleUni2);
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
+        assertEquals(respResult.getResult1(), respResult.getResult2());
+
         shutdownMockWebServer();
 
-        assertEquals(41, counter.get());
+        assertEquals(50, counter.get());
     }
 
     @Getter
