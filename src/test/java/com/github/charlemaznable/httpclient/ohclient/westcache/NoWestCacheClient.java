@@ -3,6 +3,7 @@ package com.github.charlemaznable.httpclient.ohclient.westcache;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import io.smallrye.mutiny.Uni;
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.Future;
 
@@ -13,6 +14,8 @@ public interface NoWestCacheClient {
     String sampleSync();
 
     Future<String> sample();
+
+    Mono<String> sampleMono();
 
     rx.Single<String> sampleRx();
 

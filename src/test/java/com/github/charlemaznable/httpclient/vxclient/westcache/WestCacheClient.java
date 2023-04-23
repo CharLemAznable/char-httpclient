@@ -5,6 +5,7 @@ import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.vxclient.VxClient;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.Future;
+import reactor.core.publisher.Mono;
 
 @Mapping("${root}:41260")
 @VxClient
@@ -13,6 +14,8 @@ public interface WestCacheClient {
     Future<String> sampleNone();
 
     java.util.concurrent.Future<String> sampleNoneJava();
+
+    Mono<String> sampleNoneMono();
 
     rx.Single<String> sampleNoneRx();
 
@@ -27,6 +30,9 @@ public interface WestCacheClient {
 
     @WestCacheable
     java.util.concurrent.Future<String> sampleJava();
+
+    @WestCacheable
+    Mono<String> sampleMono();
 
     @WestCacheable
     rx.Single<String> sampleRx();

@@ -1,6 +1,7 @@
 package com.github.charlemaznable.httpclient.vxclient.internal;
 
 import com.github.charlemaznable.core.mutiny.MutinyBuildHelper;
+import com.github.charlemaznable.core.reactor.ReactorBuildHelper;
 import com.github.charlemaznable.core.rxjava.RxJava1BuildHelper;
 import com.github.charlemaznable.core.rxjava.RxJava2BuildHelper;
 import com.github.charlemaznable.core.rxjava.RxJava3BuildHelper;
@@ -69,6 +70,8 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
 
         if (executeMethod().returnJavaFuture()) {
             return future.toCompletionStage().toCompletableFuture();
+        } else if (executeMethod().returnReactorMono()) {
+            return ReactorBuildHelper.buildMonoFromVertxFuture(future);
         } else if (executeMethod().returnRxJavaSingle()) {
             return RxJava1BuildHelper.buildSingleFromVertxFuture(future);
         } else if (executeMethod().returnRxJava2Single()) {

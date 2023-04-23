@@ -2,6 +2,7 @@ package com.github.charlemaznable.httpclient.common;
 
 import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.core.mutiny.MutinyCheckHelper;
+import com.github.charlemaznable.core.reactor.ReactorCheckHelper;
 import com.github.charlemaznable.core.rxjava.RxJavaCheckHelper;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -49,6 +50,9 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
     @Getter
     @Accessors(fluent = true)
     boolean returnJavaFuture;
+    @Getter
+    @Accessors(fluent = true)
+    boolean returnReactorMono;
     @Getter
     @Accessors(fluent = true)
     boolean returnRxJavaSingle;
@@ -129,11 +133,12 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
 
     protected boolean checkReturnFuture(Class<?> returnType) {
         returnJavaFuture = Future.class == returnType;
+        returnReactorMono = ReactorCheckHelper.checkReturnReactorMono(returnType);
         returnRxJavaSingle = RxJavaCheckHelper.checkReturnRxJavaSingle(returnType);
         returnRxJava2Single = RxJavaCheckHelper.checkReturnRxJava2Single(returnType);
         returnRxJava3Single = RxJavaCheckHelper.checkReturnRxJava3Single(returnType);
         returnMutinyUni = MutinyCheckHelper.checkReturnMutinyUni(returnType);
-        return returnJavaFuture
+        return returnJavaFuture || returnReactorMono
                 || returnRxJavaSingle || returnRxJava2Single || returnRxJava3Single
                 || returnMutinyUni;
     }

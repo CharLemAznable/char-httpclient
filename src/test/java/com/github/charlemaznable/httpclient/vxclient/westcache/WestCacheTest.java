@@ -10,6 +10,7 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -84,6 +85,40 @@ public class WestCacheTest extends CommonWestCacheTest {
         // java call twice
         respResult.setResult1(noWestCacheClient.sampleJava().get());
         respResult.setResult2(noWestCacheClient.sampleJava().get());
+        assertNotEquals(respResult.getResult1(), respResult.getResult2());
+
+        // reactor call add counter
+        noWestCacheClient.sampleMono();
+
+        // reactor call once
+        setResult1.set(false);
+        setResult2.set(false);
+        Mono<String> noWestCacheSampleMono = noWestCacheClient.sampleMono();
+        noWestCacheSampleMono.subscribe(resp -> {
+            respResult.setResult1(resp);
+            setResult1.set(true);
+        });
+        noWestCacheSampleMono.subscribe(resp -> {
+            respResult.setResult2(resp);
+            setResult2.set(true);
+        });
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
+        assertEquals(respResult.getResult1(), respResult.getResult2());
+
+        // reactor call twice
+        setResult1.set(false);
+        setResult2.set(false);
+        noWestCacheClient.sampleMono().subscribe(resp -> {
+            respResult.setResult1(resp);
+            setResult1.set(true);
+        });
+        noWestCacheClient.sampleMono().subscribe(resp -> {
+            respResult.setResult2(resp);
+            setResult2.set(true);
+        });
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
         assertNotEquals(respResult.getResult1(), respResult.getResult2());
 
         // rxjava call add counter
@@ -222,7 +257,7 @@ public class WestCacheTest extends CommonWestCacheTest {
                 assertTrue(setResult1.get() && setResult2.get()));
         assertNotEquals(respResult.getResult1(), respResult.getResult2());
 
-        assertEquals(24, counter.get());
+        assertEquals(28, counter.get());
 
         // westCacheClient none start
 
@@ -272,6 +307,40 @@ public class WestCacheTest extends CommonWestCacheTest {
         // java call twice
         respResult.setResult1(westCacheClient.sampleNoneJava().get());
         respResult.setResult2(westCacheClient.sampleNoneJava().get());
+        assertNotEquals(respResult.getResult1(), respResult.getResult2());
+
+        // reactor call add counter
+        westCacheClient.sampleNoneMono();
+
+        // reactor call once
+        setResult1.set(false);
+        setResult2.set(false);
+        Mono<String> noneWestCacheSampleMono = westCacheClient.sampleNoneMono();
+        noneWestCacheSampleMono.subscribe(resp -> {
+            respResult.setResult1(resp);
+            setResult1.set(true);
+        });
+        noneWestCacheSampleMono.subscribe(resp -> {
+            respResult.setResult2(resp);
+            setResult2.set(true);
+        });
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
+        assertEquals(respResult.getResult1(), respResult.getResult2());
+
+        // reactor call twice
+        setResult1.set(false);
+        setResult2.set(false);
+        westCacheClient.sampleNoneMono().subscribe(resp -> {
+            respResult.setResult1(resp);
+            setResult1.set(true);
+        });
+        westCacheClient.sampleNoneMono().subscribe(resp -> {
+            respResult.setResult2(resp);
+            setResult2.set(true);
+        });
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
         assertNotEquals(respResult.getResult1(), respResult.getResult2());
 
         // rxjava call add counter
@@ -410,7 +479,7 @@ public class WestCacheTest extends CommonWestCacheTest {
                 assertTrue(setResult1.get() && setResult2.get()));
         assertNotEquals(respResult.getResult1(), respResult.getResult2());
 
-        assertEquals(48, counter.get());
+        assertEquals(56, counter.get());
 
         // westCacheClient start
 
@@ -460,6 +529,40 @@ public class WestCacheTest extends CommonWestCacheTest {
         assertNotSame(cacheSampleJava1, cacheSampleJava2);
         respResult.setResult1(cacheSampleJava1.get());
         respResult.setResult2(cacheSampleJava2.get());
+        assertEquals(respResult.getResult1(), respResult.getResult2());
+
+        // reactor call once
+        setResult1.set(false);
+        setResult2.set(false);
+        Mono<String> westCacheSampleMono = westCacheClient.sampleMono();
+        westCacheSampleMono.subscribe(resp -> {
+            respResult.setResult1(resp);
+            setResult1.set(true);
+        });
+        westCacheSampleMono.subscribe(resp -> {
+            respResult.setResult2(resp);
+            setResult2.set(true);
+        });
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
+        assertEquals(respResult.getResult1(), respResult.getResult2());
+
+        // reactor call twice
+        setResult1.set(false);
+        setResult2.set(false);
+        Mono<String> cacheSampleMono1 = westCacheClient.sampleMono();
+        cacheSampleMono1.subscribe(resp -> {
+            respResult.setResult1(resp);
+            setResult1.set(true);
+        });
+        Mono<String> cacheSampleMono2 = westCacheClient.sampleMono();
+        cacheSampleMono2.subscribe(resp -> {
+            respResult.setResult2(resp);
+            setResult2.set(true);
+        });
+        assertNotSame(cacheSampleMono1, cacheSampleMono2);
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
         assertEquals(respResult.getResult1(), respResult.getResult2());
 
         // rxjava call once
@@ -600,7 +703,7 @@ public class WestCacheTest extends CommonWestCacheTest {
 
         shutdownMockWebServer();
 
-        assertEquals(54, counter.get());
+        assertEquals(63, counter.get());
     }
 
     @Getter

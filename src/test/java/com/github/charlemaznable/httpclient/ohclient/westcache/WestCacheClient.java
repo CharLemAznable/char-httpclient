@@ -4,6 +4,7 @@ import com.github.bingoohuang.westcache.WestCacheable;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import io.smallrye.mutiny.Uni;
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.Future;
 
@@ -14,6 +15,8 @@ public interface WestCacheClient {
     String sampleNoneSync();
 
     Future<String> sampleNone();
+
+    Mono<String> sampleNoneMono();
 
     rx.Single<String> sampleNoneRx();
 
@@ -28,6 +31,9 @@ public interface WestCacheClient {
 
     @WestCacheable
     Future<String> sample();
+
+    @WestCacheable
+    Mono<String> sampleMono();
 
     @WestCacheable
     rx.Single<String> sampleRx();
