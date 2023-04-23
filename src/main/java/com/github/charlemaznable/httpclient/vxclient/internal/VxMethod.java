@@ -24,6 +24,7 @@ final class VxMethod extends CommonMethod<VxBase> {
             throw new IllegalStateException(method().getName() +
                     " must return io.vertx.core.Future<?>[io.vertx:vertx-core]" +
                     " or java.util.concurrent.Future<?>" +
+                    " or reactor.core.publisher.Mono<?>[io.projectreactor:reactor-core]" +
                     " or rx.Single<?>[io.reactivex:rxjava]" +
                     " or io.reactivex.Single<?>[io.reactivex.rxjava2:rxjava]" +
                     " or io.reactivex.rxjava3.core.Single<?>[io.reactivex.rxjava3:rxjava]" +
