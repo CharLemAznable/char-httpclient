@@ -80,18 +80,7 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
         }, result -> {
             if (result.succeeded()) {
                 if (result.result().isPresent()) {
-                    httpContext.set(IS_CACHE_DISPATCH, true);
-                    val cacheResponse = result.result().get();
-                    httpContext.dispatchResponse(new HttpResponseImpl<>(
-                            HttpVersion.valueOf(cacheResponse.getVersion()),
-                            cacheResponse.getStatusCode(),
-                            cacheResponse.getStatusMessage(),
-                            cacheResponse.buildResponseHeaders(),
-                            MultiMap.caseInsensitiveMultiMap(),
-                            Collections.emptyList(),
-                            cacheResponse.getBody().buildBuffer(),
-                            Collections.emptyList()
-                    ));
+                    dispatchCacheResponse(httpContext, result.result().get());
                 } else {
                     if (lockMap.get(context) == context) {
                         httpContext.next();
@@ -112,21 +101,35 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
             return;
         }
         val response = httpContext.response();
+        val cacheResponse = new CacheResponse();
+        cacheResponse.setVersion(response.version().name());
+        cacheResponse.setStatusCode(response.statusCode());
+        cacheResponse.setStatusMessage(response.statusMessage());
+        cacheResponse.readFromResponseHeaders(response.headers());
+        val responseBody = nullThen(response.body(), Buffer::buffer);
+        val cacheResponseBody = new CacheResponseBody();
+        cacheResponseBody.readFromBuffer(responseBody);
+        cacheResponse.setBody(cacheResponseBody);
         vertx.<Void>executeBlocking(block -> {
-            val cacheResponse = new CacheResponse();
-            cacheResponse.setVersion(response.version().name());
-            cacheResponse.setStatusCode(response.statusCode());
-            cacheResponse.setStatusMessage(response.statusMessage());
-            cacheResponse.readFromResponseHeaders(response.headers());
-            val responseBody = nullThen(response.body(), Buffer::buffer);
-            val cacheResponseBody = new CacheResponseBody();
-            cacheResponseBody.readFromBuffer(responseBody);
-            cacheResponse.setBody(cacheResponseBody);
             context.cachePut(cacheResponse);
             localCache.put(context, Optional.of(cacheResponse));
             lockMap.remove(context);
             block.complete();
         }, result -> httpContext.next());
+    }
+
+    private void dispatchCacheResponse(HttpContext<Buffer> httpContext, CacheResponse cacheResponse) {
+        httpContext.set(IS_CACHE_DISPATCH, true);
+        httpContext.dispatchResponse(new HttpResponseImpl<>(
+                HttpVersion.valueOf(cacheResponse.getVersion()),
+                cacheResponse.getStatusCode(),
+                cacheResponse.getStatusMessage(),
+                cacheResponse.buildResponseHeaders(),
+                MultiMap.caseInsensitiveMultiMap(),
+                Collections.emptyList(),
+                cacheResponse.getBody().buildBuffer(),
+                Collections.emptyList()
+        ));
     }
 
     @Getter

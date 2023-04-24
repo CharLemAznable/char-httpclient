@@ -483,6 +483,24 @@ public class WestCacheTest extends CommonWestCacheTest {
 
         // westCacheClient start
 
+        // native call twice
+        setResult1.set(false);
+        setResult2.set(false);
+        Future<String> cacheSample1 = westCacheClient.sample();
+        Future<String> cacheSample2 = westCacheClient.sample();
+        assertNotSame(cacheSample1, cacheSample2);
+        cacheSample1.onSuccess(resp -> {
+            respResult.setResult1(resp);
+            setResult1.set(true);
+        });
+        cacheSample2.onSuccess(resp -> {
+            respResult.setResult2(resp);
+            setResult2.set(true);
+        });
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
+        assertEquals(respResult.getResult1(), respResult.getResult2());
+
         // native call once
         setResult1.set(false);
         setResult2.set(false);
@@ -499,22 +517,12 @@ public class WestCacheTest extends CommonWestCacheTest {
                 assertTrue(setResult1.get() && setResult2.get()));
         assertEquals(respResult.getResult1(), respResult.getResult2());
 
-        // native call twice
-        setResult1.set(false);
-        setResult2.set(false);
-        Future<String> cacheSample1 = westCacheClient.sample();
-        cacheSample1.onSuccess(resp -> {
-            respResult.setResult1(resp);
-            setResult1.set(true);
-        });
-        Future<String> cacheSample2 = westCacheClient.sample();
-        cacheSample2.onSuccess(resp -> {
-            respResult.setResult2(resp);
-            setResult2.set(true);
-        });
-        assertNotSame(cacheSample1, cacheSample2);
-        await().forever().untilAsserted(() ->
-                assertTrue(setResult1.get() && setResult2.get()));
+        // java call twice
+        java.util.concurrent.Future<String> cacheSampleJava1 = westCacheClient.sampleJava();
+        java.util.concurrent.Future<String> cacheSampleJava2 = westCacheClient.sampleJava();
+        assertNotSame(cacheSampleJava1, cacheSampleJava2);
+        respResult.setResult1(cacheSampleJava1.get());
+        respResult.setResult2(cacheSampleJava2.get());
         assertEquals(respResult.getResult1(), respResult.getResult2());
 
         // java call once
@@ -523,12 +531,22 @@ public class WestCacheTest extends CommonWestCacheTest {
         respResult.setResult2(westCacheSampleJava.get());
         assertEquals(respResult.getResult1(), respResult.getResult2());
 
-        // java call twice
-        java.util.concurrent.Future<String> cacheSampleJava1 = westCacheClient.sampleJava();
-        java.util.concurrent.Future<String> cacheSampleJava2 = westCacheClient.sampleJava();
-        assertNotSame(cacheSampleJava1, cacheSampleJava2);
-        respResult.setResult1(cacheSampleJava1.get());
-        respResult.setResult2(cacheSampleJava2.get());
+        // reactor call twice
+        setResult1.set(false);
+        setResult2.set(false);
+        Mono<String> cacheSampleMono1 = westCacheClient.sampleMono();
+        Mono<String> cacheSampleMono2 = westCacheClient.sampleMono();
+        assertNotSame(cacheSampleMono1, cacheSampleMono2);
+        cacheSampleMono1.subscribe(resp -> {
+            respResult.setResult1(resp);
+            setResult1.set(true);
+        });
+        cacheSampleMono2.subscribe(resp -> {
+            respResult.setResult2(resp);
+            setResult2.set(true);
+        });
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
         assertEquals(respResult.getResult1(), respResult.getResult2());
 
         // reactor call once
@@ -547,20 +565,20 @@ public class WestCacheTest extends CommonWestCacheTest {
                 assertTrue(setResult1.get() && setResult2.get()));
         assertEquals(respResult.getResult1(), respResult.getResult2());
 
-        // reactor call twice
+        // rxjava call twice
         setResult1.set(false);
         setResult2.set(false);
-        Mono<String> cacheSampleMono1 = westCacheClient.sampleMono();
-        cacheSampleMono1.subscribe(resp -> {
+        rx.Single<String> cacheSampleRx1 = westCacheClient.sampleRx();
+        rx.Single<String> cacheSampleRx2 = westCacheClient.sampleRx();
+        assertNotSame(cacheSampleRx1, cacheSampleRx2);
+        cacheSampleRx1.subscribe(resp -> {
             respResult.setResult1(resp);
             setResult1.set(true);
         });
-        Mono<String> cacheSampleMono2 = westCacheClient.sampleMono();
-        cacheSampleMono2.subscribe(resp -> {
+        cacheSampleRx2.subscribe(resp -> {
             respResult.setResult2(resp);
             setResult2.set(true);
         });
-        assertNotSame(cacheSampleMono1, cacheSampleMono2);
         await().forever().untilAsserted(() ->
                 assertTrue(setResult1.get() && setResult2.get()));
         assertEquals(respResult.getResult1(), respResult.getResult2());
@@ -581,20 +599,20 @@ public class WestCacheTest extends CommonWestCacheTest {
                 assertTrue(setResult1.get() && setResult2.get()));
         assertEquals(respResult.getResult1(), respResult.getResult2());
 
-        // rxjava call twice
+        // rxjava2 call twice
         setResult1.set(false);
         setResult2.set(false);
-        rx.Single<String> cacheSampleRx1 = westCacheClient.sampleRx();
-        cacheSampleRx1.subscribe(resp -> {
+        io.reactivex.Single<String> cacheSampleRx21 = westCacheClient.sampleRx2();
+        io.reactivex.Single<String> cacheSampleRx22 = westCacheClient.sampleRx2();
+        assertNotSame(cacheSampleRx21, cacheSampleRx22);
+        cacheSampleRx21.subscribe(resp -> {
             respResult.setResult1(resp);
             setResult1.set(true);
         });
-        rx.Single<String> cacheSampleRx2 = westCacheClient.sampleRx();
-        cacheSampleRx2.subscribe(resp -> {
+        cacheSampleRx22.subscribe(resp -> {
             respResult.setResult2(resp);
             setResult2.set(true);
         });
-        assertNotSame(cacheSampleRx1, cacheSampleRx2);
         await().forever().untilAsserted(() ->
                 assertTrue(setResult1.get() && setResult2.get()));
         assertEquals(respResult.getResult1(), respResult.getResult2());
@@ -615,20 +633,20 @@ public class WestCacheTest extends CommonWestCacheTest {
                 assertTrue(setResult1.get() && setResult2.get()));
         assertEquals(respResult.getResult1(), respResult.getResult2());
 
-        // rxjava2 call twice
+        // rxjava3 call twice
         setResult1.set(false);
         setResult2.set(false);
-        io.reactivex.Single<String> cacheSampleRx21 = westCacheClient.sampleRx2();
-        cacheSampleRx21.subscribe(resp -> {
+        io.reactivex.rxjava3.core.Single<String> cacheSampleRx31 = westCacheClient.sampleRx3();
+        io.reactivex.rxjava3.core.Single<String> cacheSampleRx32 = westCacheClient.sampleRx3();
+        assertNotSame(cacheSampleRx31, cacheSampleRx32);
+        cacheSampleRx31.subscribe(resp -> {
             respResult.setResult1(resp);
             setResult1.set(true);
         });
-        io.reactivex.Single<String> cacheSampleRx22 = westCacheClient.sampleRx2();
-        cacheSampleRx22.subscribe(resp -> {
+        cacheSampleRx32.subscribe(resp -> {
             respResult.setResult2(resp);
             setResult2.set(true);
         });
-        assertNotSame(cacheSampleRx21, cacheSampleRx22);
         await().forever().untilAsserted(() ->
                 assertTrue(setResult1.get() && setResult2.get()));
         assertEquals(respResult.getResult1(), respResult.getResult2());
@@ -649,20 +667,20 @@ public class WestCacheTest extends CommonWestCacheTest {
                 assertTrue(setResult1.get() && setResult2.get()));
         assertEquals(respResult.getResult1(), respResult.getResult2());
 
-        // rxjava3 call twice
+        // mutiny call twice
         setResult1.set(false);
         setResult2.set(false);
-        io.reactivex.rxjava3.core.Single<String> cacheSampleRx31 = westCacheClient.sampleRx3();
-        cacheSampleRx31.subscribe(resp -> {
+        Uni<String> cacheSampleUni1 = westCacheClient.sampleUni();
+        Uni<String> cacheSampleUni2 = westCacheClient.sampleUni();
+        assertNotSame(cacheSampleUni1, cacheSampleUni2);
+        cacheSampleUni1.subscribe().with(resp -> {
             respResult.setResult1(resp);
             setResult1.set(true);
         });
-        io.reactivex.rxjava3.core.Single<String> cacheSampleRx32 = westCacheClient.sampleRx3();
-        cacheSampleRx32.subscribe(resp -> {
+        cacheSampleUni2.subscribe().with(resp -> {
             respResult.setResult2(resp);
             setResult2.set(true);
         });
-        assertNotSame(cacheSampleRx31, cacheSampleRx32);
         await().forever().untilAsserted(() ->
                 assertTrue(setResult1.get() && setResult2.get()));
         assertEquals(respResult.getResult1(), respResult.getResult2());
@@ -679,24 +697,6 @@ public class WestCacheTest extends CommonWestCacheTest {
             respResult.setResult2(resp);
             setResult2.set(true);
         });
-        await().forever().untilAsserted(() ->
-                assertTrue(setResult1.get() && setResult2.get()));
-        assertEquals(respResult.getResult1(), respResult.getResult2());
-
-        // mutiny call twice
-        setResult1.set(false);
-        setResult2.set(false);
-        Uni<String> cacheSampleUni1 = westCacheClient.sampleUni();
-        cacheSampleUni1.subscribe().with(resp -> {
-            respResult.setResult1(resp);
-            setResult1.set(true);
-        });
-        Uni<String> cacheSampleUni2 = westCacheClient.sampleUni();
-        cacheSampleUni2.subscribe().with(resp -> {
-            respResult.setResult2(resp);
-            setResult2.set(true);
-        });
-        assertNotSame(cacheSampleUni1, cacheSampleUni2);
         await().forever().untilAsserted(() ->
                 assertTrue(setResult1.get() && setResult2.get()));
         assertEquals(respResult.getResult1(), respResult.getResult2());
