@@ -90,7 +90,6 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
                     }
                 }
             } else {
-                // 读取缓存发生错误 -> 继续请求
                 httpContext.next();
             }
         });
@@ -114,13 +113,9 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
             cacheResponse.setBody(cacheResponseBody);
             context.cachePut(cacheResponse);
             localCache.put(context, Optional.of(cacheResponse));
-            lockMap.remove(context);
             block.complete();
         }, result -> {
-            if (result.failed()) {
-                // 写入缓存发生错误 -> 释放防死锁
-                lockMap.remove(context);
-            }
+            lockMap.remove(context);
             httpContext.next();
         });
     }
