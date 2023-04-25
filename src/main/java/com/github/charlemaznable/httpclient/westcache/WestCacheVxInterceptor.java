@@ -68,6 +68,7 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
         switch (httpContext.phase()) {
             case CREATE_REQUEST -> handleCreateRequest((HttpContext<Buffer>) httpContext, context);
             case DISPATCH_RESPONSE -> handleDispatchResponse((HttpContext<Buffer>) httpContext, context);
+            case FAILURE -> handleFailure((HttpContext<Buffer>) httpContext, context);
             default -> httpContext.next();
         }
     }
@@ -132,6 +133,11 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
                 cacheResponse.getBody().buildBuffer(),
                 Collections.emptyList()
         ));
+    }
+
+    private void handleFailure(HttpContext<Buffer> httpContext, WestCacheContext context) {
+        lockMap.remove(context);
+        httpContext.next();
     }
 
     @Getter
