@@ -1,9 +1,9 @@
 package com.github.charlemaznable.httpclient.vxclient.elf;
 
 import io.vertx.core.Vertx;
-import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.impl.WebClientInternal;
 
 public interface VertxScopeClientBuilder {
 
-    WebClient build(Vertx vertx);
+    WebClientInternal build(Vertx vertx);
 }

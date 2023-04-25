@@ -6,7 +6,7 @@ import com.github.charlemaznable.httpclient.configurer.configservice.CommonClien
 import com.github.charlemaznable.httpclient.configurer.configservice.CommonMethodConfig;
 import com.github.charlemaznable.httpclient.ohclient.configurer.OkHttpClientBuilderConfigurer;
 import com.github.charlemaznable.httpclient.vxclient.configurer.VertxWebClientBuilderConfigurer;
-import com.github.charlemaznable.httpclient.vxclient.elf.WebClientBuilder;
+import com.github.charlemaznable.httpclient.vxclient.elf.VxWebClientBuilder;
 import io.vertx.core.net.ProxyOptions;
 import lombok.SneakyThrows;
 import okhttp3.OkHttpClient;
@@ -114,7 +114,7 @@ public abstract class CommonConfigurerTest {
         }
 
         @Override
-        default WebClientBuilder configBuilder(WebClientBuilder builder) {
+        default VxWebClientBuilder configBuilder(VxWebClientBuilder builder) {
             assertEquals(com.github.charlemaznable.httpclient.vxclient.ConfigurerTest.ConfigurerClient.class, getInitializingClass());
             assertEquals("sample2", getInitializingMethod().getName());
             builder.options().setProxyOptions(new ProxyOptions().setHost("127.0.0.1").setPort(41311));

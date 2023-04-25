@@ -14,7 +14,6 @@ import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpResponse;
-import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.impl.WebClientInternal;
 import io.vertx.ext.web.codec.impl.BodyCodecImpl;
 import lombok.val;
@@ -47,7 +46,7 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
 
     @Override
     protected boolean processParameterType(Object argument, Class<?> parameterType) {
-        if (argument instanceof WebClient client) {
+        if (argument instanceof WebClientInternal client) {
             base().client = client;
             return true;
         } else {
@@ -59,10 +58,8 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
     @Override
     public Object execute() {
         val request = buildRequest();
-        val client = (WebClientInternal) base().client;
-
         val promise = Promise.<HttpResponse<Buffer>>promise();
-        val context = client.createContext(promise);
+        val context = base().client.createContext(promise);
         HttpContextConfigElf.configHttpContext(context, this);
         context.set(VxExecuteRequest.class.getName(), request);
         context.prepareRequest(request.bufferHttpRequest, null, request.buffer);

@@ -4,7 +4,6 @@ import com.github.charlemaznable.httpclient.logging.LoggingVxInterceptor;
 import com.github.charlemaznable.httpclient.westcache.WestCacheVxInterceptor;
 import com.google.common.cache.LoadingCache;
 import io.vertx.core.Vertx;
-import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.client.impl.WebClientInternal;
 import lombok.NoArgsConstructor;
@@ -22,18 +21,18 @@ import static lombok.AccessLevel.PRIVATE;
 public final class VertxScopeClientElf {
 
     private static final VertxScopeClientBuilder instance;
-    private static final LoadingCache<Vertx, WebClient>
+    private static final LoadingCache<Vertx, WebClientInternal>
             scopeClientCache = simpleCache(from(VertxScopeClientElf::buildScopeClient));
 
     static {
         instance = findBuilder();
     }
 
-    public static WebClient scopeClient(Vertx vertx) {
+    public static WebClientInternal scopeClient(Vertx vertx) {
         return get(scopeClientCache, vertx);
     }
 
-    private static WebClient buildScopeClient(Vertx vertx) {
+    private static WebClientInternal buildScopeClient(Vertx vertx) {
         return instance.build(vertx);
     }
 
@@ -50,8 +49,8 @@ public final class VertxScopeClientElf {
     private static final class DefaultVertxScopeClientBuilder implements VertxScopeClientBuilder {
 
         @Override
-        public WebClient build(Vertx vertx) {
-            val client = (WebClientInternal) WebClient.create(vertx, new WebClientOptions());
+        public WebClientInternal build(Vertx vertx) {
+            val client = new VxWebClient(vertx, new WebClientOptions());
             client.addInterceptor(new LoggingVxInterceptor());
             if (HAS_WESTCACHE) client.addInterceptor(new WestCacheVxInterceptor(vertx));
             return client;
