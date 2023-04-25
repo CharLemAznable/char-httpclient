@@ -50,7 +50,6 @@
             src/main/java/com/github/charlemaznable/httpclient/ohclient/elf/GlobalClientElf.java,
             src/main/java/com/github/charlemaznable/httpclient/ohclient/elf/SSLTrustAll.java,
             src/main/java/com/github/charlemaznable/httpclient/vxclient/elf/VertxScopeClientElf.java,
-            src/main/java/com/github/charlemaznable/httpclient/vxclient/elf/WebClientBuilder.java,
             src/main/java/com/github/charlemaznable/httpclient/ohclient/OhScan.java,
             src/main/java/com/github/charlemaznable/httpclient/vxclient/VxScan.java,
             src/main/java/com/github/charlemaznable/httpclient/logging/LoggingOhInterceptor.java,

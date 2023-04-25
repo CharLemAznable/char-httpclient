@@ -90,6 +90,7 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
                     }
                 }
             } else {
+                // 读取缓存发生错误 -> 继续请求
                 httpContext.next();
             }
         });
@@ -100,22 +101,28 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
             httpContext.next();
             return;
         }
-        val response = httpContext.response();
-        val cacheResponse = new CacheResponse();
-        cacheResponse.setVersion(response.version().name());
-        cacheResponse.setStatusCode(response.statusCode());
-        cacheResponse.setStatusMessage(response.statusMessage());
-        cacheResponse.readFromResponseHeaders(response.headers());
-        val responseBody = nullThen(response.body(), Buffer::buffer);
-        val cacheResponseBody = new CacheResponseBody();
-        cacheResponseBody.readFromBuffer(responseBody);
-        cacheResponse.setBody(cacheResponseBody);
         vertx.<Void>executeBlocking(block -> {
+            val response = httpContext.response();
+            val cacheResponse = new CacheResponse();
+            cacheResponse.setVersion(response.version().name());
+            cacheResponse.setStatusCode(response.statusCode());
+            cacheResponse.setStatusMessage(response.statusMessage());
+            cacheResponse.readFromResponseHeaders(response.headers());
+            val responseBody = nullThen(response.body(), Buffer::buffer);
+            val cacheResponseBody = new CacheResponseBody();
+            cacheResponseBody.readFromBuffer(responseBody);
+            cacheResponse.setBody(cacheResponseBody);
             context.cachePut(cacheResponse);
             localCache.put(context, Optional.of(cacheResponse));
             lockMap.remove(context);
             block.complete();
-        }, result -> httpContext.next());
+        }, result -> {
+            if (result.failed()) {
+                // 写入缓存发生错误 -> 释放防死锁
+                lockMap.remove(context);
+            }
+            httpContext.next();
+        });
     }
 
     private void dispatchCacheResponse(HttpContext<Buffer> httpContext, CacheResponse cacheResponse) {
