@@ -22,10 +22,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
-import static com.github.charlemaznable.httpclient.westcache.WestCacheConstant.DEFAULT_CACHED_STATUS_CODES;
+import static com.github.charlemaznable.httpclient.westcache.WestCacheConstant.buildDefaultStatusCodes;
 import static com.google.common.cache.CacheBuilder.newBuilder;
 import static com.google.common.cache.CacheLoader.from;
 import static java.util.Objects.isNull;
@@ -38,6 +39,8 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
     private final Vertx vertx;
     private final LoadingCache<WestCacheContext, Optional<CacheResponse>> localCache;
     private final Map<WestCacheContext, WestCacheContext> lockMap = Maps.newConcurrentMap();
+    @Getter
+    private final Set<Integer> cachedStatusCodes = buildDefaultStatusCodes();
 
     public WestCacheVxInterceptor(Vertx vertx) {
         this(vertx, 2 ^ 8, 60);
@@ -103,7 +106,7 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
         vertx.<Void>executeBlocking(block -> {
             val response = httpContext.response();
             val statusCode = response.statusCode();
-            if (!DEFAULT_CACHED_STATUS_CODES.contains(statusCode)) {
+            if (!cachedStatusCodes.contains(statusCode)) {
                 block.complete();
                 return;
             }

@@ -22,13 +22,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Str.toStr;
-import static com.github.charlemaznable.httpclient.westcache.WestCacheConstant.DEFAULT_CACHED_STATUS_CODES;
+import static com.github.charlemaznable.httpclient.westcache.WestCacheConstant.buildDefaultStatusCodes;
 import static com.google.common.cache.CacheBuilder.newBuilder;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -38,6 +39,8 @@ import static okio.Okio.source;
 public final class WestCacheOhInterceptor implements Interceptor {
 
     private final Cache<WestCacheContext, Optional<CacheResponse>> localCache;
+    @Getter
+    private final Set<Integer> cachedStatusCodes = buildDefaultStatusCodes();
 
     public WestCacheOhInterceptor() {
         this(2 ^ 8, 60);
@@ -67,7 +70,7 @@ public final class WestCacheOhInterceptor implements Interceptor {
 
             val response = chain.proceed(request);
             val code = response.code();
-            if (!DEFAULT_CACHED_STATUS_CODES.contains(code)) {
+            if (!cachedStatusCodes.contains(code)) {
                 networkResponse.setResponse(response);
                 return Optional.empty();
             }
