@@ -74,16 +74,14 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
     }
 
     private void handleCreateRequest(HttpContext<Buffer> httpContext, WestCacheContext context) {
-        vertx.<Optional<CacheResponse>>executeBlocking(block -> {
-            val cachedOptional = LoadingCachee.get(localCache, context);
-            if (cachedOptional.isEmpty()) lockMap.putIfAbsent(context, context);
-            block.complete(cachedOptional);
-        }, result -> {
+        vertx.<Optional<CacheResponse>>executeBlocking(block -> block.complete(
+                LoadingCachee.get(localCache, context)), result -> {
             if (result.succeeded()) {
                 if (result.result().isPresent()) {
                     dispatchCacheResponse(httpContext, result.result().get());
                 } else {
-                    if (lockMap.get(context) == context) {
+                    if (isNull(lockMap.putIfAbsent(context, context))) {
+                        // putIfAbsent return null, means locked by current context
                         httpContext.next();
                     } else {
                         // re-create request for waiting
@@ -112,13 +110,12 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
             val cacheResponseBody = new CacheResponseBody();
             cacheResponseBody.readFromBuffer(responseBody);
             cacheResponse.setBody(cacheResponseBody);
-            context.cachePut(cacheResponse);
+
             localCache.put(context, Optional.of(cacheResponse));
+            context.cachePut(cacheResponse);
             block.complete();
-        }, result -> {
-            lockMap.remove(context);
-            httpContext.next();
-        });
+        }, result -> lockMap.remove(context));
+        httpContext.next();
     }
 
     private void dispatchCacheResponse(HttpContext<Buffer> httpContext, CacheResponse cacheResponse) {
