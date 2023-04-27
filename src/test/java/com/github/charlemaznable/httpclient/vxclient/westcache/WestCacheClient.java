@@ -45,4 +45,7 @@ public interface WestCacheClient {
 
     @WestCacheable
     Uni<String> sampleUni();
+
+    @WestCacheable
+    Uni<String> sample500();
 }

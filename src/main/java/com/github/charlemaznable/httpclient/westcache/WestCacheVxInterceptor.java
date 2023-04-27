@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
+import static com.github.charlemaznable.httpclient.westcache.WestCacheConstant.DEFAULT_CACHED_STATUS_CODES;
 import static com.google.common.cache.CacheBuilder.newBuilder;
 import static com.google.common.cache.CacheLoader.from;
 import static java.util.Objects.isNull;
@@ -101,16 +102,21 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
         }
         vertx.<Void>executeBlocking(block -> {
             val response = httpContext.response();
+            val statusCode = response.statusCode();
+            if (!DEFAULT_CACHED_STATUS_CODES.contains(statusCode)) {
+                block.complete();
+                return;
+            }
+
             val cacheResponse = new CacheResponse();
             cacheResponse.setVersion(response.version().name());
-            cacheResponse.setStatusCode(response.statusCode());
+            cacheResponse.setStatusCode(statusCode);
             cacheResponse.setStatusMessage(response.statusMessage());
             cacheResponse.readFromResponseHeaders(response.headers());
             val responseBody = nullThen(response.body(), Buffer::buffer);
             val cacheResponseBody = new CacheResponseBody();
             cacheResponseBody.readFromBuffer(responseBody);
             cacheResponse.setBody(cacheResponseBody);
-
             localCache.put(context, Optional.of(cacheResponse));
             context.cachePut(cacheResponse);
             block.complete();

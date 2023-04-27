@@ -602,9 +602,23 @@ public class WestCacheTest extends CommonWestCacheTest {
                 assertTrue(setResult1.get() && setResult2.get()));
         assertEquals(respResult.getResult1(), respResult.getResult2());
 
-        shutdownMockWebServer();
-
         assertEquals(59, counter.get());
+
+        // call 500
+
+        setResult1.set(false);
+        setResult2.set(false);
+        Uni<String> westCacheSample500_1 = westCacheClient.sample500();
+        Uni<String> westCacheSample500_2 = westCacheClient.sample500();
+        assertNotSame(westCacheSample500_1, westCacheSample500_2);
+        westCacheSample500_1.subscribe().with(resp -> {}, throwable -> setResult1.set(true));
+        westCacheSample500_2.subscribe().with(resp -> {}, throwable -> setResult2.set(true));
+        await().forever().untilAsserted(() ->
+                assertTrue(setResult1.get() && setResult2.get()));
+
+        assertEquals(61, counter.get());
+
+        shutdownMockWebServer();
     }
 
     @Getter
