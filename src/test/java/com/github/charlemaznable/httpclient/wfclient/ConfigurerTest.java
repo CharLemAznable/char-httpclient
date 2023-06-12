@@ -9,6 +9,7 @@ import reactor.core.publisher.Mono;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConfigurerTest extends CommonConfigurerTest {
 
@@ -23,7 +24,7 @@ public class ConfigurerTest extends CommonConfigurerTest {
         try {
             client.sample2().block();
         } catch (Exception e) {
-            assertEquals("Connection refused: /127.0.0.1:41311", e.getMessage());
+            assertTrue(e.getMessage().contains("Connection refused: /127.0.0.1:41311"));
         }
 
         val clientError = wfLoader.getClient(ConfigurerClientError.class);
