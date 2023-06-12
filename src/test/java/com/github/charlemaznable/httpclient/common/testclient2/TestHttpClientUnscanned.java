@@ -4,11 +4,14 @@ import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.common.testclient.TestClientMapping;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.vxclient.VxClient;
+import com.github.charlemaznable.httpclient.wfclient.WfClient;
 import io.vertx.core.Future;
+import reactor.core.publisher.Mono;
 
 @TestClientMapping
 @OhClient
 @VxClient
+@WfClient
 public interface TestHttpClientUnscanned {
 
     @Mapping("/sample")
@@ -23,5 +26,12 @@ public interface TestHttpClientUnscanned {
 
     default Future<String> vxSampleWrapper() {
         return vxSample().map(response -> "[" + response + "]");
+    }
+
+    @Mapping("/sample")
+    Mono<String> wfSample();
+
+    default Mono<String> wfSampleWrapper() {
+        return wfSample().map(response -> "[" + response + "]");
     }
 }

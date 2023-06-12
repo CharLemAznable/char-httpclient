@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class VxSpringNakedTest extends CommonSpringNakedTest {
 
     @Test
-    public void testOhClientNaked(VertxTestContext test) {
+    public void testVxClientNaked(VertxTestContext test) {
         startMockWebServer();
 
         assertThrows(VxException.class,

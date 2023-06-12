@@ -4,6 +4,7 @@ import com.github.charlemaznable.httpclient.annotation.ContentFormat;
 import com.github.charlemaznable.httpclient.configurer.AcceptCharsetConfigurer;
 import com.github.charlemaznable.httpclient.configurer.ContentFormatConfigurer;
 import com.github.charlemaznable.httpclient.configurer.RequestMethodConfigurer;
+import com.google.common.net.MediaType;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.Dispatcher;
@@ -12,7 +13,6 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
 import javax.annotation.Nonnull;
-
 import java.nio.charset.Charset;
 
 import static com.github.charlemaznable.httpclient.common.CommonConstant.ACCEPT_CHARSET;
@@ -24,7 +24,6 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class CommonFactoryTest {
 
@@ -76,18 +75,23 @@ public abstract class CommonFactoryTest {
             @Nonnull
             @Override
             public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                val contentType = requireNonNull(request.getHeader(CONTENT_TYPE));
+                val contentType = MediaType.parse(requireNonNull(request.getHeader(CONTENT_TYPE)));
                 val bodyString = request.getBody().readUtf8();
                 switch (requireNonNull(request.getPath())) {
                     case SAMPLE:
-                        assertTrue(contentType.startsWith(FORM_DATA.toString()));
+                        assertEquals(contentType.type(), FORM_DATA.type());
+                        assertEquals(contentType.subtype(), FORM_DATA.subtype());
                         return new MockResponse().setBody(bodyString);
                     case SAMPLE2:
-                        assertTrue(contentType.startsWith(JSON_UTF_8.toString()));
+                        assertEquals(contentType.type(), JSON_UTF_8.type());
+                        assertEquals(contentType.subtype(), JSON_UTF_8.subtype());
+                        assertEquals(contentType.charset(), JSON_UTF_8.charset());
                         return new MockResponse().setBody(bodyString);
                     case SAMPLE3:
                     case COVER:
-                        assertTrue(contentType.startsWith(APPLICATION_XML_UTF_8.toString()));
+                        assertEquals(contentType.type(), APPLICATION_XML_UTF_8.type());
+                        assertEquals(contentType.subtype(), APPLICATION_XML_UTF_8.subtype());
+                        assertEquals(contentType.charset(), APPLICATION_XML_UTF_8.charset());
                         return new MockResponse().setBody(bodyString);
                     default:
                         return new MockResponse()

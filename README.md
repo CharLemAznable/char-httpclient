@@ -87,6 +87,25 @@ Future<String> postFuture = new VxReq("http://host:port/path").post();
 * 请求体
 * WebClientOptions配置
 
+```java
+Mono<String> getMono = new WfReq("http://host:port/path").get();
+
+Mono<String> postMono = new WfReq("http://host:port/path").post();
+
+Future<String> getFuture = new WfReq("http://host:port/path").getFuture();
+
+Future<String> postFuture = new WfReq("http://host:port/path").postFuture();
+```
+
+```WfReq```对象可设置http请求的部分属性, 如
+* 请求路径
+* 字符集
+* 请求体格式
+* 请求头
+* url参数
+* 请求体
+* WebClient.Builder配置
+
 简易的http客户端可用于大部分简单的业务场景.
 
 ##### 使用注解标识接口, 自动装配http客户端
@@ -117,11 +136,25 @@ client.path().onSuccess(getResp -> {
 });
 ```
 
+```java
+@WfClient
+@Mapping("http://host:port")
+public interface MyHttpClient {
+    @Mapping("/path") // 可省略, 默认使用: "/methodName"
+    Mono<String> path();
+}
+
+MyHttpClient client = WfFactory.getClient(MyHttpClient.class);
+client.path().subscribe(getResp -> {
+    
+});
+```
+
 定义接口, 添加注解配置http客户端, 调用工厂创建客户端实例, 即可发起http请求.
 
 #### 配置注解
 
-##### ```@OhClient```/```@VxClient```
+##### ```@OhClient```/```@VxClient```/```@WfClient```
 
 标识作用的注解, 接口必须添加此注解, 才能通过工厂方法创建对应的客户端实例.
 
@@ -247,11 +280,12 @@ public interface MyHttpClient {
 3. Boolean: HTTP状态码是否为2xx
 4. okhttp: ResponseBody / InputStream / BufferedSource / byte[] / Reader / String: 响应体原文
 5. vertx-web-client: Buffer / byte[] / JsonObject / JsonArray / String: 响应体原文
-6. JavaBean: 优先按配置的```@ResponseParse```解析, 否则尝试解析xml/json
-7. Collection / Map: 将JavaBean映射为Collection/Map
-8. Pair / Triple: 支持同时返回多种格式的响应解析结果, 例如状态码和JavaBean
-9. Future: 支持异步获取响应
-10. 特殊支持: 方法参数类型实现```CncRequest```接口后, 指定返回类型实现```CncResponse```接口, 则可支持泛型请求对应泛型响应.
+6. webflux-webclient: byte[] / String: 响应体原文
+7. JavaBean: 优先按配置的```@ResponseParse```解析, 否则尝试解析xml/json
+8. Collection / Map: 将JavaBean映射为Collection/Map
+9. Pair / Triple: 支持同时返回多种格式的响应解析结果, 例如状态码和JavaBean
+10. Future: 支持异步获取响应
+11. 特殊支持: 方法参数类型实现```CncRequest```接口后, 指定返回类型实现```CncResponse```接口, 则可支持泛型请求对应泛型响应.
 
 #### 支持环境变量
 
@@ -267,18 +301,18 @@ public interface MyHttpClient {
 
 #### 在Spring中使用
 
-使用```@OhScan```/```@VxScan```指定扫描加载包路径.
+使用```@OhScan```/```@VxScan```/```@WfScan```指定扫描加载包路径.
 
-包路径中所有添加```@OhClient```/```@VxClient```注解的接口都将生成对应的http客户端实例并注入SpringContext.
+包路径中所有添加```@OhClient```/```@VxClient```/```@WfClient```注解的接口都将生成对应的http客户端实例并注入SpringContext.
 
 #### 在Guice中使用
 
-使用```OhModular```/```VxModuler```按类或包路径扫描加载.
+使用```OhModular```/```VxModuler```/```WfModuler```按类或包路径扫描加载.
 
 创建的```Module```中将包含对应的http客户端实例.
 
 #### 支持WSDL
 
-使用```@WsOhClient```/```@WsOhClient12```/```@WsVxClient```/```@WsVxClient12```注解, 支持WSDL.
+使用```@WsOhClient```/```@WsOhClient12```/```@WsVxClient```/```@WsVxClient12```/```@WsWfClient```/```@WsWfClient12```注解, 支持WSDL.
 
 具体使用方法, 请参考测试用例.

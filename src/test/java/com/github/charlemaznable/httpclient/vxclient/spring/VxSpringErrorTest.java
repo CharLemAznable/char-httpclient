@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 public class VxSpringErrorTest extends CommonSpringErrorTest {
 
     @Test
-    public void testOhClientError(VertxTestContext test) {
+    public void testVxClientError(VertxTestContext test) {
         startMockWebServer();
 
         val testHttpClientConcrete = SpringContext.getBean(TestHttpClientConcrete.class);

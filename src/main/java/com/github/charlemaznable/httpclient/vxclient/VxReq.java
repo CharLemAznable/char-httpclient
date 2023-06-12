@@ -17,7 +17,6 @@ import io.vertx.ext.web.client.WebClientOptions;
 import lombok.experimental.Delegate;
 import lombok.val;
 
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
@@ -110,38 +109,36 @@ public class VxReq extends CommonReq<VxReq> {
         }
 
         @SafeVarargs
-        private void request(Function<WebClient, HttpRequest<Buffer>> requestBuilder,
+        private void request(Supplier<HttpRequest<Buffer>> requestBuilder,
                              Supplier<Buffer> bodySupplier,
                              Handler<AsyncResult<String>>... handlers) {
-            requestBuilder.apply(this.webClient)
-                    .sendBuffer(bodySupplier.get(), handle(handlers));
+            requestBuilder.get().sendBuffer(bodySupplier.get(), handle(handlers));
         }
 
-        private Future<String> request(Function<WebClient, HttpRequest<Buffer>> requestBuilder,
+        private Future<String> request(Supplier<HttpRequest<Buffer>> requestBuilder,
                                        Supplier<Buffer> bodySupplier) {
             Promise<String> promise = Promise.promise();
-            requestBuilder.apply(this.webClient)
-                    .sendBuffer(bodySupplier.get(), handle(promise));
+            requestBuilder.get().sendBuffer(bodySupplier.get(), handle(promise));
             return promise.future();
         }
 
-        private HttpRequest<Buffer> buildGetRequest(WebClient webClient) {
+        private HttpRequest<Buffer> buildGetRequest() {
             val parameterMap = fetchParameterMap();
             val requestUrl = concatRequestUrl(parameterMap);
             val headersMap = fetchHeaderMap();
             val query = URL_QUERY_FORMATTER.format(parameterMap, newHashMap());
-            return webClient.getAbs(concatUrlQuery(requestUrl, query)).putHeaders(headersMap);
+            return this.webClient.getAbs(concatUrlQuery(requestUrl, query)).putHeaders(headersMap);
         }
 
         private Buffer buildGetBody() {
             return null;
         }
 
-        private HttpRequest<Buffer> buildPostRequest(WebClient webClient) {
+        private HttpRequest<Buffer> buildPostRequest() {
             val parameterMap = fetchParameterMap();
             val requestUrl = concatRequestUrl(parameterMap);
             val headersMap = fetchHeaderMap();
-            return webClient.postAbs(requestUrl).putHeaders(headersMap);
+            return this.webClient.postAbs(requestUrl).putHeaders(headersMap);
         }
 
         private Buffer buildPostBody() {

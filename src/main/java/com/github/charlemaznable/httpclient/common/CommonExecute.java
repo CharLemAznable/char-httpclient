@@ -2,6 +2,11 @@ package com.github.charlemaznable.httpclient.common;
 
 import com.github.charlemaznable.core.lang.Reflectt;
 import com.github.charlemaznable.core.lang.Str;
+import com.github.charlemaznable.core.mutiny.MutinyBuildHelper;
+import com.github.charlemaznable.core.reactor.ReactorBuildHelper;
+import com.github.charlemaznable.core.rxjava.RxJava1BuildHelper;
+import com.github.charlemaznable.core.rxjava.RxJava2BuildHelper;
+import com.github.charlemaznable.core.rxjava.RxJava3BuildHelper;
 import com.github.charlemaznable.httpclient.annotation.Bundle;
 import com.github.charlemaznable.httpclient.annotation.ContentFormat;
 import com.github.charlemaznable.httpclient.annotation.Context;
@@ -28,16 +33,22 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.github.charlemaznable.core.codec.Json.desc;
+import static com.github.charlemaznable.core.codec.Json.spec;
+import static com.github.charlemaznable.core.codec.Json.unJson;
+import static com.github.charlemaznable.core.codec.Json.unJsonArray;
+import static com.github.charlemaznable.core.codec.Xml.unXml;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
+import static com.github.charlemaznable.core.lang.Str.isBlank;
 import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static java.util.Objects.isNull;
@@ -307,9 +318,24 @@ public abstract class CommonExecute<T extends CommonBase<T>, R/* Response Type *
         }
     }
 
-    protected abstract Object customProcessReturnTypeValue(int statusCode,
-                                                           B responseBody,
-                                                           Class<?> returnType);
+    protected Object customProcessReturnTypeValue(int statusCode,
+                                                  B responseBody,
+                                                  Class<?> returnType) {
+        return parseObject(responseBody, returnType);
+    }
+
+    private Object parseObject(B responseBody, Class<?> returnType) {
+        val content = notNullThen(responseBody, this::getResponseBodyString);
+        if (isBlank(content)) return null;
+        if (nonNull(base().responseParser())) {
+            val contextMap = base().contexts().stream().collect(toMap(Pair::getKey, Pair::getValue));
+            return base().responseParser().parse(content, returnType, contextMap);
+        }
+        if (content.startsWith("<")) return spec(unXml(content), returnType);
+        if (content.startsWith("[")) return unJsonArray(content, returnType);
+        if (content.startsWith("{")) return unJson(content, returnType);
+        throw new IllegalArgumentException("Parse response body Error: \n" + content);
+    }
 
     private boolean returnVoid(Class<?> returnType) {
         return void.class == returnType || Void.class == returnType;
@@ -323,7 +349,24 @@ public abstract class CommonExecute<T extends CommonBase<T>, R/* Response Type *
         return boolean.class == returnType || Boolean.class == returnType;
     }
 
-    protected boolean returnUnCollectionString(Class<?> returnType) {
+    private boolean returnUnCollectionString(Class<?> returnType) {
         return String.class == returnType && !executeMethod.returnCollection;
+    }
+
+    @SuppressWarnings("ReactiveStreamsUnusedPublisher")
+    protected Object returnAsyncFromFuture(CompletableFuture<Object> future) {
+        if (executeMethod.returnReactorMono()) {
+            return ReactorBuildHelper.buildMonoFromFuture(future);
+        } else if (executeMethod.returnRxJavaSingle()) {
+            return RxJava1BuildHelper.buildSingleFromFuture(future);
+        } else if (executeMethod.returnRxJava2Single()) {
+            return RxJava2BuildHelper.buildSingleFromFuture(future);
+        } else if (executeMethod.returnRxJava3Single()) {
+            return RxJava3BuildHelper.buildSingleFromFuture(future);
+        } else if (executeMethod.returnMutinyUni()) {
+            return MutinyBuildHelper.buildUniFromFuture(future);
+        } else {
+            return future;
+        }
     }
 }

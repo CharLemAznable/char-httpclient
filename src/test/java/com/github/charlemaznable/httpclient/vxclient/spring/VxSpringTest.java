@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class VxSpringTest extends CommonSpringTest {
 
     @Test
-    public void testOhClient(VertxTestContext test) {
+    public void testVxClient(VertxTestContext test) {
         startMockWebServer();
 
         val testHttpClientConcrete = SpringContext.getBean(TestHttpClientConcrete.class);

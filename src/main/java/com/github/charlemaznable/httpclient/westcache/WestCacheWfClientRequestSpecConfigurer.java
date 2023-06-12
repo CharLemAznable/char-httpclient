@@ -2,19 +2,19 @@ package com.github.charlemaznable.httpclient.westcache;
 
 import com.github.bingoohuang.westcache.utils.WestCacheOption;
 import com.github.charlemaznable.httpclient.common.CommonExecute;
-import com.github.charlemaznable.httpclient.vxclient.elf.HttpContextConfigurer;
+import com.github.charlemaznable.httpclient.wfclient.elf.RequestSpecConfigurer;
 import com.google.auto.service.AutoService;
-import io.vertx.ext.web.client.impl.HttpContext;
 import lombok.val;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import static com.github.charlemaznable.httpclient.westcache.WestCacheConstant.HAS_WESTCACHE;
 import static java.util.Objects.nonNull;
 
-@AutoService(HttpContextConfigurer.class)
-public final class WestCacheHttpContextConfigurer implements HttpContextConfigurer {
+@AutoService(RequestSpecConfigurer.class)
+public final class WestCacheWfClientRequestSpecConfigurer implements RequestSpecConfigurer {
 
     @Override
-    public void configHttpContext(HttpContext<?> httpContext,
+    public void configRequestSpec(WebClient.RequestBodyUriSpec requestSpec,
                                   CommonExecute<?, ?, ?> execute) {
         // westcache supported
         if (HAS_WESTCACHE) {
@@ -23,7 +23,7 @@ public final class WestCacheHttpContextConfigurer implements HttpContextConfigur
             if (nonNull(option)) {
                 val cacheKey = option.getKeyer().getCacheKey(option,
                         method, execute.executeMethod().defaultClass(), execute.args());
-                httpContext.set(WestCacheContext.class.getName(), new WestCacheContext(option, cacheKey));
+                requestSpec.attribute(WestCacheContext.class.getName(), new WestCacheContext(option, cacheKey));
             }
         }
     }

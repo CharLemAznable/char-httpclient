@@ -1,10 +1,5 @@
 package com.github.charlemaznable.httpclient.ohclient.internal;
 
-import com.github.charlemaznable.core.mutiny.MutinyBuildHelper;
-import com.github.charlemaznable.core.reactor.ReactorBuildHelper;
-import com.github.charlemaznable.core.rxjava.RxJava1BuildHelper;
-import com.github.charlemaznable.core.rxjava.RxJava2BuildHelper;
-import com.github.charlemaznable.core.rxjava.RxJava3BuildHelper;
 import com.github.charlemaznable.httpclient.common.CommonExecute;
 import com.github.charlemaznable.httpclient.ohclient.elf.RequestBuilderConfigElf;
 import lombok.SneakyThrows;
@@ -18,7 +13,6 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.internal.http.HttpMethod;
 import okio.BufferedSource;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -27,7 +21,6 @@ import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
-import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT_TYPE;
@@ -51,7 +44,6 @@ final class OhExecute extends CommonExecute<OhBase, Response, ResponseBody> {
         }
     }
 
-    @SuppressWarnings("ReactiveStreamsUnusedPublisher")
     @SneakyThrows
     @Override
     public Object execute() {
@@ -59,20 +51,7 @@ final class OhExecute extends CommonExecute<OhBase, Response, ResponseBody> {
         if (executeMethod().returnFuture()) {
             val future = new OhCallbackFuture<>(this::processResponse);
             call.enqueue(future);
-
-            if (executeMethod().returnReactorMono()) {
-                return ReactorBuildHelper.buildMonoFromFuture(future);
-            } else if (executeMethod().returnRxJavaSingle()) {
-                return RxJava1BuildHelper.buildSingleFromFuture(future);
-            } else if (executeMethod().returnRxJava2Single()) {
-                return RxJava2BuildHelper.buildSingleFromFuture(future);
-            } else if (executeMethod().returnRxJava3Single()) {
-                return RxJava3BuildHelper.buildSingleFromFuture(future);
-            } else if (executeMethod().returnMutinyUni()) {
-                return MutinyBuildHelper.buildUniFromFuture(future);
-            } else {
-                return future;
-            }
+            return returnAsyncFromFuture(future);
         }
         return processResponse(call.execute());
     }
@@ -145,11 +124,7 @@ final class OhExecute extends CommonExecute<OhBase, Response, ResponseBody> {
         } else if (Reader.class.isAssignableFrom(returnType)) {
             return notNullThen(responseBody, ResponseBodyExtractor::charStream);
         } else {
-            return notNullThen(responseBody, body ->
-                    ResponseBodyExtractor.object(body, notNullThen(base().responseParser(), parser -> {
-                        val contextMap = base().contexts().stream().collect(toMap(Pair::getKey, Pair::getValue));
-                        return content -> parser.parse(content, returnType, contextMap);
-                    }), returnType));
+            return super.customProcessReturnTypeValue(statusCode, responseBody, returnType);
         }
     }
 }

@@ -3,6 +3,7 @@ package com.github.charlemaznable.httpclient.westcache;
 import com.github.bingoohuang.westcache.spring.exclude.WestCacheExcludeAnnotationTypeSupplier;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.vxclient.VxClient;
+import com.github.charlemaznable.httpclient.wfclient.WfClient;
 import com.google.auto.service.AutoService;
 
 import java.lang.annotation.Annotation;
@@ -15,6 +16,6 @@ public final class WestCacheClientExcluder implements WestCacheExcludeAnnotation
 
     @Override
     public List<Class<? extends Annotation>> get() {
-        return newArrayList(OhClient.class, VxClient.class);
+        return newArrayList(OhClient.class, VxClient.class, WfClient.class);
     }
 }

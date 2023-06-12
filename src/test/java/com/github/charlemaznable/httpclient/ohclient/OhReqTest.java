@@ -20,8 +20,7 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class
-OhReqTest extends CommonReqTest {
+public class OhReqTest extends CommonReqTest {
 
     @SneakyThrows
     @Test

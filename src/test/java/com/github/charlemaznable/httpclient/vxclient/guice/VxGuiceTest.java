@@ -44,7 +44,7 @@ public class VxGuiceTest extends CommonGuiceTest {
 
     @SneakyThrows
     @Test
-    public void testOhClient(Vertx vertx, VertxTestContext test) {
+    public void testVxClient(Vertx vertx, VertxTestContext test) {
         val diamondModular = new DiamondModular();
         val diamondModule = diamondModular.createModule();
         val vxModular = new VxModular(new AbstractModule() {
@@ -75,7 +75,7 @@ public class VxGuiceTest extends CommonGuiceTest {
 
     @SneakyThrows
     @Test
-    public void testOhClientError(Vertx vertx, VertxTestContext test) {
+    public void testVxClientError(Vertx vertx, VertxTestContext test) {
         val vxModular = new VxModular(new AbstractModule() {
             @Override
             protected void configure() {
@@ -104,7 +104,7 @@ public class VxGuiceTest extends CommonGuiceTest {
 
     @SneakyThrows
     @Test
-    public void testOhClientNaked(Vertx vertx, VertxTestContext test) {
+    public void testVxClientNaked(Vertx vertx, VertxTestContext test) {
         val vxModular = new VxModular(new AbstractModule() {
             @Override
             protected void configure() {
@@ -134,7 +134,7 @@ public class VxGuiceTest extends CommonGuiceTest {
 
     @SneakyThrows
     @Test
-    public void testOhClientScan(Vertx vertx, VertxTestContext test) {
+    public void testVxClientScan(Vertx vertx, VertxTestContext test) {
         val diamondModular = new DiamondModular();
         val diamondModule = diamondModular.createModule();
         val vxModular = new VxModular(new AbstractModule() {

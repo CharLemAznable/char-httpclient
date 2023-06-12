@@ -7,7 +7,7 @@ import io.vertx.ext.web.client.impl.HttpContext;
 import org.slf4j.Logger;
 
 @AutoService(HttpContextConfigurer.class)
-public final class LoggingHttpContextConfigurer implements HttpContextConfigurer {
+public final class LoggingOhClientHttpContextConfigurer implements HttpContextConfigurer {
 
     @Override
     public void configHttpContext(HttpContext<?> httpContext,

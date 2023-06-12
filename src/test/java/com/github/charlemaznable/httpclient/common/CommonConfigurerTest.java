@@ -7,6 +7,7 @@ import com.github.charlemaznable.httpclient.configurer.configservice.CommonMetho
 import com.github.charlemaznable.httpclient.ohclient.configurer.OkHttpClientBuilderConfigurer;
 import com.github.charlemaznable.httpclient.vxclient.configurer.VertxWebClientBuilderConfigurer;
 import com.github.charlemaznable.httpclient.vxclient.elf.VxWebClientBuilder;
+import com.github.charlemaznable.httpclient.wfclient.configurer.WebFluxClientBuilderConfigurer;
 import io.vertx.core.net.ProxyOptions;
 import lombok.SneakyThrows;
 import okhttp3.OkHttpClient;
@@ -15,6 +16,10 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.n3r.diamond.client.impl.MockDiamondServer;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
+import reactor.netty.transport.ProxyProvider;
 
 import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
@@ -100,7 +105,7 @@ public abstract class CommonConfigurerTest {
 
     @Config(keyset = "ConfigurerClient", key = "sample2")
     public interface ConfigurerClientSample2Config extends CommonMethodConfig,
-            OkHttpClientBuilderConfigurer, VertxWebClientBuilderConfigurer {
+            OkHttpClientBuilderConfigurer, VertxWebClientBuilderConfigurer, WebFluxClientBuilderConfigurer {
 
         @Override
         @Config("path")
@@ -118,6 +123,15 @@ public abstract class CommonConfigurerTest {
             assertEquals(com.github.charlemaznable.httpclient.vxclient.ConfigurerTest.ConfigurerClient.class, getInitializingClass());
             assertEquals("sample2", getInitializingMethod().getName());
             builder.options().setProxyOptions(new ProxyOptions().setHost("127.0.0.1").setPort(41311));
+            return builder;
+        }
+
+        @Override
+        default WebClient.Builder configBuilder(WebClient.Builder builder) {
+            assertEquals(com.github.charlemaznable.httpclient.wfclient.ConfigurerTest.ConfigurerClient.class, getInitializingClass());
+            assertEquals("sample2", getInitializingMethod().getName());
+            builder.clientConnector(new ReactorClientHttpConnector(HttpClient.create().compress(true)
+                    .proxy(proxy -> proxy.type(ProxyProvider.Proxy.HTTP).host("127.0.0.1").port(41311))));
             return builder;
         }
     }

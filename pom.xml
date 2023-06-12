@@ -50,10 +50,13 @@
             src/main/java/com/github/charlemaznable/httpclient/ohclient/elf/GlobalClientElf.java,
             src/main/java/com/github/charlemaznable/httpclient/ohclient/elf/SSLTrustAll.java,
             src/main/java/com/github/charlemaznable/httpclient/vxclient/elf/VertxScopeClientElf.java,
+            src/main/java/com/github/charlemaznable/httpclient/wfclient/elf/GlobalClientElf.java,
             src/main/java/com/github/charlemaznable/httpclient/ohclient/OhScan.java,
             src/main/java/com/github/charlemaznable/httpclient/vxclient/VxScan.java,
+            src/main/java/com/github/charlemaznable/httpclient/wfclient/WfScan.java,
             src/main/java/com/github/charlemaznable/httpclient/logging/LoggingOhInterceptor.java,
-            src/main/java/com/github/charlemaznable/httpclient/logging/LoggingVxInterceptor.java
+            src/main/java/com/github/charlemaznable/httpclient/logging/LoggingVxInterceptor.java,
+            src/main/java/com/github/charlemaznable/httpclient/logging/LoggingWfInterceptor.java
         </sonar.exclusions>
 
         <char-configservice.version>2023.1.2-SNAPSHOT</char-configservice.version>
@@ -84,6 +87,11 @@
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.reactivex</groupId>
@@ -122,6 +130,10 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webflux</artifactId>
         </dependency>
 
         <dependency>

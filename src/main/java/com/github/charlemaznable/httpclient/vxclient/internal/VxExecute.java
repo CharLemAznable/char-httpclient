@@ -17,18 +17,11 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.impl.WebClientInternal;
 import io.vertx.ext.web.codec.impl.BodyCodecImpl;
 import lombok.val;
-import org.apache.commons.lang3.tuple.Pair;
 
-import static com.github.charlemaznable.core.codec.Json.spec;
-import static com.github.charlemaznable.core.codec.Json.unJson;
-import static com.github.charlemaznable.core.codec.Json.unJsonArray;
-import static com.github.charlemaznable.core.codec.Xml.unXml;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
-import static com.github.charlemaznable.core.lang.Mapp.toMap;
-import static com.github.charlemaznable.core.lang.Str.isBlank;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT_TYPE;
@@ -36,7 +29,6 @@ import static com.github.charlemaznable.httpclient.common.CommonConstant.DEFAULT
 import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUERY_FORMATTER;
 import static com.github.charlemaznable.httpclient.common.CommonReq.parseCharset;
 import static com.github.charlemaznable.httpclient.common.CommonReq.permitsRequestBody;
-import static java.util.Objects.nonNull;
 
 final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer> {
 
@@ -148,20 +140,7 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
         } else if (JsonArray.class.isAssignableFrom(returnType)) {
             return notNullThen(responseBody, BodyCodecImpl.JSON_ARRAY_DECODER);
         } else {
-            return notNullThen(responseBody, buffer -> returnObject(buffer, returnType));
+            return super.customProcessReturnTypeValue(statusCode, responseBody, returnType);
         }
-    }
-
-    private Object returnObject(Buffer responseBody, Class<?> returnType) {
-        val content = responseBody.toString(base().acceptCharset());
-        if (isBlank(content)) return null;
-        if (nonNull(base().responseParser())) {
-            val contextMap = base().contexts().stream().collect(toMap(Pair::getKey, Pair::getValue));
-            return base().responseParser().parse(content, returnType, contextMap);
-        }
-        if (content.startsWith("<")) return spec(unXml(content), returnType);
-        if (content.startsWith("[")) return unJsonArray(content, returnType);
-        if (content.startsWith("{")) return unJson(content, returnType);
-        throw new IllegalArgumentException("Parse response body Error: \n" + content);
     }
 }
