@@ -4,6 +4,7 @@ import com.github.charlemaznable.httpclient.logging.LoggingWfInterceptor;
 import com.github.charlemaznable.httpclient.westcache.WestCacheWfInterceptor;
 import lombok.NoArgsConstructor;
 import lombok.val;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ServiceLoader;
@@ -34,11 +35,12 @@ public final class GlobalClientElf {
         return result;
     }
 
-    private static final class DefaultGlobalClientSupplier implements GlobalClientSupplier {
+    public static class DefaultGlobalClientSupplier implements GlobalClientSupplier {
 
         @Override
         public WebClient supply() {
             val builder = WebClient.builder();
+            builder.clientConnector(new ReactorClientHttpConnector());
             builder.filter(new LoggingWfInterceptor());
             if (HAS_WESTCACHE) builder.filter(new WestCacheWfInterceptor());
             return builder.build();

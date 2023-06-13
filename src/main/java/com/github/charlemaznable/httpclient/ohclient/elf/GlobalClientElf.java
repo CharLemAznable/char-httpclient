@@ -34,7 +34,7 @@ public final class GlobalClientElf {
         return result;
     }
 
-    private static final class DefaultGlobalClientSupplier implements GlobalClientSupplier {
+    public static class DefaultGlobalClientSupplier implements GlobalClientSupplier {
 
         @Override
         public OkHttpClient supply() {

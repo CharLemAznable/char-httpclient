@@ -46,7 +46,7 @@ public final class VertxScopeClientElf {
         return result;
     }
 
-    private static final class DefaultVertxScopeClientBuilder implements VertxScopeClientBuilder {
+    public static class DefaultVertxScopeClientBuilder implements VertxScopeClientBuilder {
 
         @Override
         public WebClientInternal build(Vertx vertx) {
