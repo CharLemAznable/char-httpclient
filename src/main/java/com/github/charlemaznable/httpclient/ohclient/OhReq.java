@@ -26,6 +26,7 @@ import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Str.toStr;
+import static com.github.charlemaznable.core.lang.function.Unchecker.unchecked;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT_TYPE;
@@ -179,7 +180,7 @@ public final class OhReq extends CommonReq<OhReq> {
                         statusCode, responseBody);
             }
 
-            return notNullThen(responseBody, OhReq.Instance::extractResponseString);
+            return notNullThen(responseBody, unchecked(ResponseBody::string));
         }
 
         private String applyFallback(FallbackFunction<?> function,
@@ -189,14 +190,9 @@ public final class OhReq extends CommonReq<OhReq> {
                         @Override
                         public String responseBodyAsString() {
                             return toStr(notNullThen(getResponseBody(),
-                                    OhReq.Instance::extractResponseString));
+                                    unchecked(ResponseBody::string)));
                         }
                     }));
-        }
-
-        @SneakyThrows
-        private static String extractResponseString(ResponseBody responseBody) {
-            return responseBody.string();
         }
     }
 }

@@ -3,7 +3,6 @@ package com.github.charlemaznable.httpclient.westcache;
 import com.github.charlemaznable.core.lang.LoadingCachee;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhResponseBody;
 import com.google.common.cache.Cache;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -11,7 +10,6 @@ import lombok.val;
 import okhttp3.Headers;
 import okhttp3.Interceptor;
 import okhttp3.Protocol;
-import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.internal.http.RealResponseBody;
@@ -24,11 +22,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Str.toStr;
+import static com.github.charlemaznable.core.lang.function.Unchecker.unchecked;
 import static com.github.charlemaznable.httpclient.westcache.WestCacheConstant.buildDefaultStatusCodes;
 import static com.google.common.cache.CacheBuilder.newBuilder;
 import static java.util.Objects.isNull;
@@ -91,7 +89,8 @@ public final class WestCacheOhInterceptor implements Interceptor {
             return Optional.of(cacheResponse);
         });
         if (cachedOptional.isEmpty()) return nullThen(
-                networkResponse.getResponse(), proceed(chain, request));
+                networkResponse.getResponse(),
+                unchecked(() -> chain.proceed(request)));
 
         val cacheResponse = cachedOptional.get();
         return new Response.Builder()
@@ -147,22 +146,5 @@ public final class WestCacheOhInterceptor implements Interceptor {
     @Setter
     private static final class NetworkResponse {
         private Response response;
-    }
-
-    private static Supplier<Response> proceed(Interceptor.Chain chain, Request request) {
-        return new ProceedSupplier(chain, request);
-    }
-
-    @AllArgsConstructor
-    private static final class ProceedSupplier implements Supplier<Response> {
-
-        private final Interceptor.Chain chain;
-        private final Request request;
-
-        @SneakyThrows
-        @Override
-        public Response get() {
-            return chain.proceed(request);
-        }
     }
 }

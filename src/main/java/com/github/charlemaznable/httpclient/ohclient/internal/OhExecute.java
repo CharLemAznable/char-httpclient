@@ -21,6 +21,7 @@ import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
+import static com.github.charlemaznable.core.lang.function.Unchecker.unchecked;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT_TYPE;
@@ -106,9 +107,10 @@ final class OhExecute extends CommonExecute<OhBase, Response, ResponseBody> {
         return responseBody;
     }
 
+    @SneakyThrows
     @Override
     protected String getResponseBodyString(ResponseBody responseBody) {
-        return ResponseBodyExtractor.string(responseBody);
+        return responseBody.string();
     }
 
     @Override
@@ -116,13 +118,13 @@ final class OhExecute extends CommonExecute<OhBase, Response, ResponseBody> {
         if (ResponseBody.class.isAssignableFrom(returnType)) {
             return responseBody;
         } else if (InputStream.class == returnType) {
-            return notNullThen(responseBody, ResponseBodyExtractor::byteStream);
+            return notNullThen(responseBody, ResponseBody::byteStream);
         } else if (BufferedSource.class.isAssignableFrom(returnType)) {
-            return (notNullThen(responseBody, ResponseBodyExtractor::source));
+            return (notNullThen(responseBody, ResponseBody::source));
         } else if (byte[].class == returnType) {
-            return notNullThen(responseBody, ResponseBodyExtractor::bytes);
+            return notNullThen(responseBody, unchecked(ResponseBody::bytes));
         } else if (Reader.class.isAssignableFrom(returnType)) {
-            return notNullThen(responseBody, ResponseBodyExtractor::charStream);
+            return notNullThen(responseBody, ResponseBody::charStream);
         } else {
             return super.customProcessReturnTypeValue(statusCode, responseBody, returnType);
         }
