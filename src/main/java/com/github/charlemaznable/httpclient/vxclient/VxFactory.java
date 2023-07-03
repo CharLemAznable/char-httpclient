@@ -24,7 +24,6 @@ import static com.github.charlemaznable.core.lang.LoadingCachee.get;
 import static com.github.charlemaznable.core.lang.LoadingCachee.simpleCache;
 import static com.github.charlemaznable.core.spring.SpringFactory.springFactory;
 import static com.google.common.cache.CacheLoader.from;
-import static java.util.Objects.nonNull;
 import static lombok.AccessLevel.PRIVATE;
 
 @NoArgsConstructor(access = PRIVATE)
@@ -90,13 +89,15 @@ public final class VxFactory {
         }
 
         private Vertx vertx() {
-            if (nonNull(vertx)) return vertx;
-            synchronized (vertxLock) {
-                if (nonNull(vertx)) return vertx;
-                this.vertx = checkNotNull(FactoryContext.build(factory, Vertx.class),
-                        new VxException("Cannot find Vertx Instance in Context"));
-                return vertx;
+            if (null == vertx) {
+                synchronized (vertxLock) {
+                    if (null == vertx) {
+                        vertx = checkNotNull(FactoryContext.build(factory, Vertx.class),
+                                new VxException("Cannot find Vertx Instance in Context"));
+                    }
+                }
             }
+            return vertx;
         }
 
         private <T> void ensureClassIsAnInterface(Class<T> clazz) {
