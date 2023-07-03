@@ -9,6 +9,7 @@ import com.github.charlemaznable.httpclient.vxclient.internal.VxClass;
 import com.github.charlemaznable.httpclient.vxclient.internal.VxDummy;
 import com.google.common.cache.LoadingCache;
 import io.vertx.core.Vertx;
+import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.val;
 
@@ -24,7 +25,7 @@ import static com.github.charlemaznable.core.lang.LoadingCachee.get;
 import static com.github.charlemaznable.core.lang.LoadingCachee.simpleCache;
 import static com.github.charlemaznable.core.spring.SpringFactory.springFactory;
 import static com.google.common.cache.CacheLoader.from;
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static lombok.AccessLevel.PRIVATE;
 
 @NoArgsConstructor(access = PRIVATE)
@@ -58,8 +59,8 @@ public final class VxFactory {
         private final Factory factory;
         private final LoadingCache<Class<?>, Object> vxCache
                 = simpleCache(from(this::loadClient));
-        private final ThreadLocal<Vertx> vertxThreadLocal = new ThreadLocal<>();
-        private Vertx vertx;
+        private final Object vertxLock = new Object();
+        private volatile VertxHolder vertxHolder;
 
         VxLoader(Factory factory) {
             this.factory = checkNotNull(factory);
@@ -90,16 +91,13 @@ public final class VxFactory {
         }
 
         private Vertx vertx() {
-            if (isNull(vertxThreadLocal.get())) buildVertx();
-            return vertx;
-        }
-
-        private synchronized void buildVertx() {
-            if (isNull(vertx)) {
-                vertx = checkNotNull(FactoryContext.build(factory, Vertx.class),
-                        new VxException("Cannot find Vertx Instance in Context"));
+            if (nonNull(vertxHolder)) return vertxHolder.vertx;
+            synchronized (vertxLock) {
+                if (nonNull(vertxHolder)) return vertxHolder.vertx;
+                vertxHolder = new VertxHolder(checkNotNull(FactoryContext.build(factory, Vertx.class),
+                        new VxException("Cannot find Vertx Instance in Context")));
+                return vertxHolder.vertx;
             }
-            vertxThreadLocal.set(vertx);
         }
 
         private <T> void ensureClassIsAnInterface(Class<T> clazz) {
@@ -116,5 +114,11 @@ public final class VxFactory {
             }
             return enhancedImpl;
         }
+    }
+
+    @AllArgsConstructor
+    private static class VertxHolder {
+
+        private Vertx vertx;
     }
 }
