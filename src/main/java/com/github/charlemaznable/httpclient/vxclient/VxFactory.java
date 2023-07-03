@@ -24,6 +24,7 @@ import static com.github.charlemaznable.core.lang.LoadingCachee.get;
 import static com.github.charlemaznable.core.lang.LoadingCachee.simpleCache;
 import static com.github.charlemaznable.core.spring.SpringFactory.springFactory;
 import static com.google.common.cache.CacheLoader.from;
+import static java.util.Objects.isNull;
 import static lombok.AccessLevel.PRIVATE;
 
 @NoArgsConstructor(access = PRIVATE)
@@ -57,8 +58,8 @@ public final class VxFactory {
         private final Factory factory;
         private final LoadingCache<Class<?>, Object> vxCache
                 = simpleCache(from(this::loadClient));
-        private final Object vertxLock = new Object();
-        private volatile Vertx vertx;
+        private final ThreadLocal<Vertx> vertxThreadLocal = new ThreadLocal<>();
+        private Vertx vertx;
 
         VxLoader(Factory factory) {
             this.factory = checkNotNull(factory);
@@ -89,15 +90,16 @@ public final class VxFactory {
         }
 
         private Vertx vertx() {
-            if (null == vertx) {
-                synchronized (vertxLock) {
-                    if (null == vertx) {
-                        vertx = checkNotNull(FactoryContext.build(factory, Vertx.class),
-                                new VxException("Cannot find Vertx Instance in Context"));
-                    }
-                }
-            }
+            if (isNull(vertxThreadLocal.get())) buildVertx();
             return vertx;
+        }
+
+        private synchronized void buildVertx() {
+            if (isNull(vertx)) {
+                vertx = checkNotNull(FactoryContext.build(factory, Vertx.class),
+                        new VxException("Cannot find Vertx Instance in Context"));
+            }
+            vertxThreadLocal.set(vertx);
         }
 
         private <T> void ensureClassIsAnInterface(Class<T> clazz) {
