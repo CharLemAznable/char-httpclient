@@ -117,8 +117,8 @@ public final class VxFactory {
     }
 
     @AllArgsConstructor
-    private static class VertxHolder {
+    private static final class VertxHolder {
 
-        private Vertx vertx;
+        private final Vertx vertx;
     }
 }
