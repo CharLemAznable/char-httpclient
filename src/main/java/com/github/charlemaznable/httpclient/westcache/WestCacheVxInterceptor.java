@@ -78,15 +78,31 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
     }
 
     private void handleCreateRequest(HttpContext<Buffer> httpContext, WestCacheContext context) {
+        // first check localCache
         vertx.<Optional<CacheResponse>>executeBlocking(block -> block.complete(
                 LoadingCachee.get(localCache, context)), result -> {
             if (result.succeeded()) {
                 if (result.result().isPresent()) {
                     dispatchCacheResponse(httpContext, result.result().get());
                 } else {
+                    // try lock by current context
                     if (isNull(lockMap.putIfAbsent(context, context))) {
                         // putIfAbsent return null, means locked by current context
-                        httpContext.next();
+                        // double check localCache
+                        vertx.<Optional<CacheResponse>>executeBlocking(block -> block.complete(
+                                LoadingCachee.get(localCache, context)), resultRetry -> {
+                            if (result.succeeded()) {
+                                if (result.result().isPresent()) {
+                                    // localCache exists, dispatch cache response
+                                    dispatchCacheResponse(httpContext, result.result().get());
+                                } else {
+                                    // current context continue request
+                                    httpContext.next();
+                                }
+                            } else {
+                                httpContext.next();
+                            }
+                        });
                     } else {
                         // re-create request for waiting
                         httpContext.createRequest(httpContext.requestOptions());
