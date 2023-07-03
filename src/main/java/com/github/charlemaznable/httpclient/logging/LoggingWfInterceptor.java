@@ -37,7 +37,7 @@ public final class LoggingWfInterceptor implements ExchangeFilterFunction {
         val logger = (Logger) loggerOptional.get();
         if (!logger.isDebugEnabled()) return next.exchange(request);
 
-        logger.debug("--> " + request.method().name() + " " + request.url());
+        log(logger, "--> " + request.method().name() + " " + request.url());
 
         val requestHeaders = request.headers();
         for (val name : requestHeaders.keySet()) {
@@ -45,19 +45,19 @@ public final class LoggingWfInterceptor implements ExchangeFilterFunction {
         }
         val requestBodyOptional = request.attribute(REQUEST_BODY_AS_STRING);
         if (requestBodyOptional.isEmpty()) {
-            logger.debug("--> END " + request.method());
+            log(logger, "--> END " + request.method());
         } else {
             val requestBody = (String) requestBodyOptional.get();
             if (bodyHasUnknownEncoding(requestHeaders)) {
-                logger.debug("--> END " + request.method() + " (encoded body omitted)");
+                log(logger, "--> END " + request.method() + " (encoded body omitted)");
             } else {
                 val contentType = requestHeaders.getContentType();
                 val charset = checkNull(contentType, () -> UTF_8, MimeType::getCharset);
                 val requestLength = nullThen(bytes(requestBody, charset), () -> new byte[0]).length;
 
-                logger.debug("");
-                logger.debug(requestBody);
-                logger.debug("--> END " + request.method() + " (" + requestLength + "-byte body)");
+                log(logger, "");
+                log(logger, requestBody);
+                log(logger, "--> END " + request.method() + " (" + requestLength + "-byte body)");
             }
         }
 
@@ -70,7 +70,7 @@ public final class LoggingWfInterceptor implements ExchangeFilterFunction {
                 val statusCode = responseEntity.getStatusCode().value();
                 val statusMessage = checkNull(HttpStatus.resolve(statusCode),
                         () -> "", s -> " " + s.getReasonPhrase());
-                logger.debug("<-- " + statusCode + statusMessage
+                log(logger, "<-- " + statusCode + statusMessage
                         + " " + request.url() + " (" + tookMs + "ms)");
 
                 val responseHeaders = responseEntity.getHeaders();
@@ -80,19 +80,19 @@ public final class LoggingWfInterceptor implements ExchangeFilterFunction {
 
                 val responseBody = responseEntity.getBody();
                 if (!promisesBody(request.method(), responseEntity)) {
-                    logger.debug("<-- END HTTP");
+                    log(logger, "<-- END HTTP");
                 } else if (bodyHasUnknownEncoding(responseHeaders)) {
-                    logger.debug("<-- END HTTP (encoded body omitted)");
+                    log(logger, "<-- END HTTP (encoded body omitted)");
                 } else {
                     val contentType = responseHeaders.getContentType();
                     val charset = checkNull(contentType, () -> UTF_8, MimeType::getCharset);
                     val responseLength = nullThen(bytes(responseBody, charset), () -> new byte[0]).length;
 
                     if (responseLength != 0L) {
-                        logger.debug("");
-                        logger.debug(responseBody);
+                        log(logger, "");
+                        log(logger, responseBody);
                     }
-                    logger.debug("<-- END HTTP (" + responseLength + "-byte body)");
+                    log(logger, "<-- END HTTP (" + responseLength + "-byte body)");
                 }
                 if (nonNull(responseBody)) builder.body(responseBody);
                 return builder.build();
@@ -101,7 +101,7 @@ public final class LoggingWfInterceptor implements ExchangeFilterFunction {
     }
 
     private void logHeader(Logger logger, HttpHeaders headers, String name) {
-        logger.debug(name + ": " + String.join(", ", headers.getOrEmpty(name)));
+        log(logger, name + ": " + String.join(", ", headers.getOrEmpty(name)));
     }
 
     private boolean bodyHasUnknownEncoding(HttpHeaders headers) {
@@ -128,5 +128,9 @@ public final class LoggingWfInterceptor implements ExchangeFilterFunction {
         // response is malformed. For best compatibility, we honor the headers.
         return response.getHeaders().getContentLength() != -1L ||
                 "chunked".equalsIgnoreCase(response.getHeaders().getFirst("Transfer-Encoding"));
+    }
+
+    private void log(Logger logger, String content) {
+        logger.debug(content);
     }
 }

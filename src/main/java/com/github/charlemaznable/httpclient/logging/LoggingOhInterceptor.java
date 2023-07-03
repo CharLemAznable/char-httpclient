@@ -34,20 +34,20 @@ public final class LoggingOhInterceptor implements Interceptor {
 
         String requestStartMessage = "--> " + request.method() + " " + request.url();
         if (nonNull(connection)) requestStartMessage += " " + connection.protocol();
-        logger.debug(requestStartMessage);
+        log(logger, requestStartMessage);
 
         val requestHeaders = request.headers();
         if (nonNull(requestBody)) {
             val contentType = requestBody.contentType();
             if (nonNull(contentType)) {
                 if (isNull(requestHeaders.get("Content-Type"))) {
-                    logger.debug("Content-Type: " + contentType);
+                    log(logger, "Content-Type: " + contentType);
                 }
             }
             val contentLength = requestBody.contentLength();
             if (-1L != contentLength) {
                 if (isNull(requestHeaders.get("Content-Length"))) {
-                    logger.debug("Content-Length: " + contentLength);
+                    log(logger, "Content-Length: " + contentLength);
                 }
             }
         }
@@ -55,13 +55,13 @@ public final class LoggingOhInterceptor implements Interceptor {
             logHeader(logger, requestHeaders, i);
         }
         if (isNull(requestBody)) {
-            logger.debug("--> END " + request.method());
+            log(logger, "--> END " + request.method());
         } else if (bodyHasUnknownEncoding(requestHeaders)) {
-            logger.debug("--> END " + request.method() + " (encoded body omitted)");
+            log(logger, "--> END " + request.method() + " (encoded body omitted)");
         } else if (requestBody.isDuplex()) {
-            logger.debug("--> END " + request.method() + " (duplex request body omitted)");
+            log(logger, "--> END " + request.method() + " (duplex request body omitted)");
         } else if (requestBody.isOneShot()) {
-            logger.debug("--> END " + request.method() + " (one-shot body omitted)");
+            log(logger, "--> END " + request.method() + " (one-shot body omitted)");
         } else {
             val buffer = new Buffer();
             requestBody.writeTo(buffer);
@@ -69,9 +69,9 @@ public final class LoggingOhInterceptor implements Interceptor {
             val contentType = requestBody.contentType();
             val charset = checkNull(contentType, () -> UTF_8, t -> t.charset(UTF_8));
 
-            logger.debug("");
-            logger.debug(buffer.readString(charset));
-            logger.debug("--> END " + request.method() + " (" + requestBody.contentLength() + "-byte body)");
+            log(logger, "");
+            log(logger, buffer.readString(charset));
+            log(logger, "--> END " + request.method() + " (" + requestBody.contentLength() + "-byte body)");
         }
 
         val startNs = System.nanoTime();
@@ -79,13 +79,13 @@ public final class LoggingOhInterceptor implements Interceptor {
         try {
             response = chain.proceed(request);
         } catch (Exception e) {
-            logger.debug("<-- HTTP FAILED: " + e);
+            log(logger, "<-- HTTP FAILED: " + e);
             throw e;
         }
         val tookMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs);
 
         val responseBody = checkNotNull(response.body());
-        logger.debug("<-- " + response.code()
+        log(logger, "<-- " + response.code()
                 + (isEmpty(response.message()) ? "" : (" " + response.message()))
                 + " " + response.request().url() + " (" + tookMs + "ms)");
 
@@ -94,9 +94,9 @@ public final class LoggingOhInterceptor implements Interceptor {
             logHeader(logger, responseHeaders, i);
         }
         if (!HttpHeaders.promisesBody(response)) {
-            logger.debug("<-- END HTTP");
+            log(logger, "<-- END HTTP");
         } else if (bodyHasUnknownEncoding(responseHeaders)) {
-            logger.debug("<-- END HTTP (encoded body omitted)");
+            log(logger, "<-- END HTTP (encoded body omitted)");
         } else {
             val source = responseBody.source();
             source.request(Long.MAX_VALUE); // Buffer the entire body.
@@ -114,21 +114,21 @@ public final class LoggingOhInterceptor implements Interceptor {
             val charset = checkNull(contentType, () -> UTF_8, t -> t.charset(UTF_8));
 
             if (responseBody.contentLength() != 0L) {
-                logger.debug("");
-                logger.debug(buffer.clone().readString(charset));
+                log(logger, "");
+                log(logger, buffer.clone().readString(charset));
             }
 
             if (nonNull(gzippedLength)) {
-                logger.debug("<-- END HTTP (" + buffer.size() + "-byte, " + gzippedLength + "-gzipped-byte body)");
+                log(logger, "<-- END HTTP (" + buffer.size() + "-byte, " + gzippedLength + "-gzipped-byte body)");
             } else {
-                logger.debug("<-- END HTTP (" + buffer.size() + "-byte body)");
+                log(logger, "<-- END HTTP (" + buffer.size() + "-byte body)");
             }
         }
         return response;
     }
 
     private void logHeader(Logger logger, Headers headers, int i) {
-        logger.debug(headers.name(i) + ": " + headers.value(i));
+        log(logger, headers.name(i) + ": " + headers.value(i));
     }
 
     private boolean bodyHasUnknownEncoding(Headers headers) {
@@ -136,5 +136,9 @@ public final class LoggingOhInterceptor implements Interceptor {
         if (isNull(contentEncoding)) return false;
         return !contentEncoding.equalsIgnoreCase("identity") &&
                 !contentEncoding.equalsIgnoreCase("gzip");
+    }
+
+    private void log(Logger logger, String content) {
+        logger.debug(content);
     }
 }

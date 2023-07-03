@@ -62,7 +62,7 @@ public final class LoggingVxInterceptor implements Handler<HttpContext<?>> {
         val request = httpContext.request();
         val requestBody = (Buffer) httpContext.body();
 
-        logger.debug("--> " + requestOptions.getMethod() + " "
+        log(logger, "--> " + requestOptions.getMethod() + " "
                 + checkNull(executeRequest, () -> "unknown url", VxExecuteRequest::getRequestUrl));
 
         val requestHeaders = request.headers();
@@ -70,16 +70,16 @@ public final class LoggingVxInterceptor implements Handler<HttpContext<?>> {
             logHeader(logger, requestHeaders, name);
         }
         if (isNull(requestBody)) {
-            logger.debug("--> END " + requestOptions.getMethod());
+            log(logger, "--> END " + requestOptions.getMethod());
         } else if (bodyHasUnknownEncoding(requestHeaders)) {
-            logger.debug("--> END " + requestOptions.getMethod() + " (encoded body omitted)");
+            log(logger, "--> END " + requestOptions.getMethod() + " (encoded body omitted)");
         } else {
             val contentType = requestHeaders.get("Content-Type");
             val charset = checkNull(contentType, UTF_8::name, CommonReq::parseCharset);
 
-            logger.debug("");
-            logger.debug(requestBody.toString(charset));
-            logger.debug("--> END " + requestOptions.getMethod() + " (" + requestBody.length() + "-byte body)");
+            log(logger, "");
+            log(logger, requestBody.toString(charset));
+            log(logger, "--> END " + requestOptions.getMethod() + " (" + requestBody.length() + "-byte body)");
         }
 
         val startNs = System.nanoTime();
@@ -93,7 +93,7 @@ public final class LoggingVxInterceptor implements Handler<HttpContext<?>> {
         val executeRequest = httpContext.<VxExecuteRequest>get(VxExecuteRequest.class.getName());
         val requestOptions = httpContext.requestOptions();
         val response = httpContext.response();
-        logger.debug("<-- " + response.statusCode()
+        log(logger, "<-- " + response.statusCode()
                 + (isEmpty(response.statusMessage()) ? "" : (" " + response.statusMessage()))
                 + " " + checkNull(executeRequest, () -> "unknown url", VxExecuteRequest::getRequestUrl)
                 + " (" + tookMs + "ms)");
@@ -103,9 +103,9 @@ public final class LoggingVxInterceptor implements Handler<HttpContext<?>> {
             logHeader(logger, responseHeaders, name);
         }
         if (!promisesBody(requestOptions, response)) {
-            logger.debug("<-- END HTTP");
+            log(logger, "<-- END HTTP");
         } else if (bodyHasUnknownEncoding(responseHeaders)) {
-            logger.debug("<-- END HTTP (encoded body omitted)");
+            log(logger, "<-- END HTTP (encoded body omitted)");
         } else {
             val contentType = responseHeaders.get("Content-Type");
             val charset = checkNull(contentType, UTF_8::name, CommonReq::parseCharset);
@@ -113,19 +113,19 @@ public final class LoggingVxInterceptor implements Handler<HttpContext<?>> {
             val responseBody = nullThen(response.body(), Buffer::buffer);
             val contentLength = responseBody.length();
             if (contentLength != 0L) {
-                logger.debug("");
-                logger.debug(responseBody.toString(charset));
+                log(logger, "");
+                log(logger, responseBody.toString(charset));
             }
-            logger.debug("<-- END HTTP (" + contentLength + "-byte body)");
+            log(logger, "<-- END HTTP (" + contentLength + "-byte body)");
         }
     }
 
     private void loggingFailure(HttpContext<Buffer> httpContext, Logger logger) {
-        logger.debug("<-- HTTP FAILED: " + httpContext.failure());
+        log(logger, "<-- HTTP FAILED: " + httpContext.failure());
     }
 
     private void logHeader(Logger logger, MultiMap headers, String name) {
-        logger.debug(name + ": " + String.join(", ", headers.getAll(name)));
+        log(logger, name + ": " + String.join(", ", headers.getAll(name)));
     }
 
     private boolean bodyHasUnknownEncoding(MultiMap headers) {
@@ -152,5 +152,9 @@ public final class LoggingVxInterceptor implements Handler<HttpContext<?>> {
         // response is malformed. For best compatibility, we honor the headers.
         return toLong(response.headers().get("Content-Length"), -1L) != -1L ||
                 "chunked".equalsIgnoreCase(response.headers().get("Transfer-Encoding"));
+    }
+
+    private void log(Logger logger, String content) {
+        logger.debug(content);
     }
 }
