@@ -59,7 +59,7 @@ public final class VxFactory {
         private final LoadingCache<Class<?>, Object> vxCache
                 = simpleCache(from(this::loadClient));
         private final Object vertxLock = new Object();
-        private Vertx vertx;
+        private volatile Vertx vertx;
 
         VxLoader(Factory factory) {
             this.factory = checkNotNull(factory);
