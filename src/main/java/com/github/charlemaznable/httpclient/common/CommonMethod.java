@@ -197,11 +197,11 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
             if (isBlank(url)) {
                 requestUrlsSet.addAll(defaultClass.baseUrls);
             } else {
-                requestUrlsSet.addAll(defaultClass.baseUrls.parallelStream()
+                requestUrlsSet.addAll(defaultClass.baseUrls.stream()
                         .map(base -> checkBlank(base, () -> url, b -> b + url)).toList());
             }
         }
-        return requestUrlsSet.parallelStream().distinct().collect(Collectors.toList());
+        return requestUrlsSet.stream().distinct().collect(Collectors.toList());
     }
 
     @Override

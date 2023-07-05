@@ -102,7 +102,7 @@ public abstract class CommonReq<T extends CommonReq<T>> extends CommonBase<Commo
     }
 
     protected Map<String, Object> fetchParameterMap() {
-        return this.parameters.parallelStream().collect(toMap(Pair::getKey, Pair::getValue));
+        return this.parameters.stream().collect(toMap(Pair::getKey, Pair::getValue));
     }
 
     protected String concatRequestUrl(Map<String, Object> parameterMap) {

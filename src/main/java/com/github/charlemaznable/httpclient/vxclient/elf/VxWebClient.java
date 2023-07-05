@@ -48,7 +48,7 @@ public final class VxWebClient implements WebClientInternal {
         List<Handler<HttpContext<?>>> newInterceptors = on(this.webClientBase).get("interceptors");
         newArrayList(interceptors).stream().filter(Objects::nonNull)
                 .forEach(interceptor -> {
-                    if (newInterceptors.parallelStream().noneMatch(i ->
+                    if (newInterceptors.stream().noneMatch(i ->
                             i.getClass() == interceptor.getClass())) {
                         this.interceptors.add(interceptor);
                         this.webClientBase.addInterceptor(interceptor);

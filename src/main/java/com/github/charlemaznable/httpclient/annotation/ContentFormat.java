@@ -54,7 +54,7 @@ public @interface ContentFormat {
         @Override
         public String format(@Nonnull final Map<String, Object> parameterMap,
                              @Nonnull final Map<String, Object> contextMap) {
-            return newHashMap(parameterMap).entrySet().parallelStream()
+            return newHashMap(parameterMap).entrySet().stream()
                     .filter(e -> isNotBlank(e.getKey()) && nonNull(e.getValue()))
                     .map(e -> e.getKey() + "=" + Url.encode(toStr(e.getValue())))
                     .collect(Collectors.joining("&"));

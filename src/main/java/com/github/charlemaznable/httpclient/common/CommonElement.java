@@ -192,29 +192,29 @@ public abstract class CommonElement<T extends CommonBase<T>> {
 
     private List<Pair<String, String>> buildFixedHeaders(AnnotatedElement element) {
         if (configurer instanceof FixedHeadersConfigurer fixedHeadersConfigurer)
-            return newArrayList(fixedHeadersConfigurer.fixedHeaders()).parallelStream().filter(NOT_BLANK_KEY).toList();
-        return newArrayList(getMergedRepeatableAnnotations(element, FixedHeader.class)).parallelStream().map(a ->
+            return newArrayList(fixedHeadersConfigurer.fixedHeaders()).stream().filter(NOT_BLANK_KEY).toList();
+        return newArrayList(getMergedRepeatableAnnotations(element, FixedHeader.class)).stream().map(a ->
                 Pair.of(a.name(), cleanupValue(a.value(), a.emptyAsCleanup()))).filter(NOT_BLANK_KEY).toList();
     }
 
     private List<Pair<String, String>> buildFixedPathVars(AnnotatedElement element) {
         if (configurer instanceof FixedPathVarsConfigurer fixedPathVarsConfigurer)
-            return newArrayList(fixedPathVarsConfigurer.fixedPathVars()).parallelStream().filter(NOT_BLANK_KEY).toList();
-        return newArrayList(getMergedRepeatableAnnotations(element, FixedPathVar.class)).parallelStream().map(a ->
+            return newArrayList(fixedPathVarsConfigurer.fixedPathVars()).stream().filter(NOT_BLANK_KEY).toList();
+        return newArrayList(getMergedRepeatableAnnotations(element, FixedPathVar.class)).stream().map(a ->
                 Pair.of(a.name(), cleanupValue(a.value(), a.emptyAsCleanup()))).filter(NOT_BLANK_KEY).toList();
     }
 
     private List<Pair<String, Object>> buildFixedParameters(AnnotatedElement element) {
         if (configurer instanceof FixedParametersConfigurer fixedParametersConfigurer)
-            return newArrayList(fixedParametersConfigurer.fixedParameters()).parallelStream().filter(NOT_BLANK_KEY).toList();
-        return newArrayList(getMergedRepeatableAnnotations(element, FixedParameter.class)).parallelStream().map(a ->
+            return newArrayList(fixedParametersConfigurer.fixedParameters()).stream().filter(NOT_BLANK_KEY).toList();
+        return newArrayList(getMergedRepeatableAnnotations(element, FixedParameter.class)).stream().map(a ->
                 Pair.of(a.name(), (Object) cleanupValue(a.value(), a.emptyAsCleanup()))).filter(NOT_BLANK_KEY).toList();
     }
 
     private List<Pair<String, Object>> buildFixedContexts(AnnotatedElement element) {
         if (configurer instanceof FixedContextsConfigurer fixedContextsConfigurer)
-            return newArrayList(fixedContextsConfigurer.fixedContexts()).parallelStream().filter(NOT_BLANK_KEY).toList();
-        return newArrayList(getMergedRepeatableAnnotations(element, FixedContext.class)).parallelStream().map(a ->
+            return newArrayList(fixedContextsConfigurer.fixedContexts()).stream().filter(NOT_BLANK_KEY).toList();
+        return newArrayList(getMergedRepeatableAnnotations(element, FixedContext.class)).stream().map(a ->
                 Pair.of(a.name(), (Object) cleanupValue(a.value(), a.emptyAsCleanup()))).filter(NOT_BLANK_KEY).toList();
     }
 
