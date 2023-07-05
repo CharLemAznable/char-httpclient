@@ -217,9 +217,9 @@ public abstract class CommonExecute<T extends CommonBase<T>, R/* Response Type *
 
     protected final CommonExecuteParams buildCommonExecuteParams() {
         val params = new CommonExecuteParams();
-        val pathVarMap = base().pathVars().stream().collect(toMap(Pair::getKey, Pair::getValue));
-        params.parameterMap = base().parameters().stream().collect(toMap(Pair::getKey, Pair::getValue));
-        params.contextMap = base().contexts().stream().collect(toMap(Pair::getKey, Pair::getValue));
+        val pathVarMap = base().pathVars().parallelStream().collect(toMap(Pair::getKey, Pair::getValue));
+        params.parameterMap = base().parameters().parallelStream().collect(toMap(Pair::getKey, Pair::getValue));
+        params.contextMap = base().contexts().parallelStream().collect(toMap(Pair::getKey, Pair::getValue));
         val pathVarSubstitutor = new StringSubstitutor(pathVarMap, "{", "}");
         val substitutedUrl = pathVarSubstitutor.replace(
                 base().mappingBalancer().choose(executeMethod().requestUrls));
@@ -292,7 +292,7 @@ public abstract class CommonExecute<T extends CommonBase<T>, R/* Response Type *
     private List<Object> processResponseBody(int statusCode,
                                              B responseBody,
                                              Class<?> responseClass) {
-        return executeMethod.returnTypes.stream().map(returnType ->
+        return executeMethod.returnTypes.parallelStream().map(returnType ->
                         processReturnTypeValue(statusCode, responseBody,
                                 CncResponse.class == returnType ? responseClass : returnType))
                 .collect(Collectors.toList());
@@ -328,7 +328,8 @@ public abstract class CommonExecute<T extends CommonBase<T>, R/* Response Type *
         val content = notNullThen(responseBody, this::getResponseBodyString);
         if (isBlank(content)) return null;
         if (nonNull(base().responseParser())) {
-            val contextMap = base().contexts().stream().collect(toMap(Pair::getKey, Pair::getValue));
+            val contextMap = base().contexts().parallelStream()
+                    .collect(toMap(Pair::getKey, Pair::getValue));
             return base().responseParser().parse(content, returnType, contextMap);
         }
         if (content.startsWith("<")) return spec(unXml(content), returnType);

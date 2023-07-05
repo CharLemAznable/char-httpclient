@@ -141,10 +141,10 @@ public abstract class CommonElement<T extends CommonBase<T>> {
     public List<String> buildMappingUrls(AnnotatedElement element) {
         if (configurer instanceof MappingConfigurer mappingConfigurer)
             return newArrayList(mappingConfigurer.urls())
-                    .stream().map(CommonConstant::substitute).toList();
+                    .parallelStream().map(CommonConstant::substitute).toList();
         val mapping = getMergedAnnotation(element, Mapping.class);
         return notNullThen(mapping, anno -> Arrays
-                .stream(anno.value()).map(CommonConstant::substitute).toList());
+                .stream(anno.value()).parallel().map(CommonConstant::substitute).toList());
     }
 
     /****************************************************************/
@@ -192,29 +192,29 @@ public abstract class CommonElement<T extends CommonBase<T>> {
 
     private List<Pair<String, String>> buildFixedHeaders(AnnotatedElement element) {
         if (configurer instanceof FixedHeadersConfigurer fixedHeadersConfigurer)
-            return newArrayList(fixedHeadersConfigurer.fixedHeaders()).stream().filter(NOT_BLANK_KEY).toList();
-        return newArrayList(getMergedRepeatableAnnotations(element, FixedHeader.class)).stream().map(a ->
+            return newArrayList(fixedHeadersConfigurer.fixedHeaders()).parallelStream().filter(NOT_BLANK_KEY).toList();
+        return newArrayList(getMergedRepeatableAnnotations(element, FixedHeader.class)).parallelStream().map(a ->
                 Pair.of(a.name(), cleanupValue(a.value(), a.emptyAsCleanup()))).filter(NOT_BLANK_KEY).toList();
     }
 
     private List<Pair<String, String>> buildFixedPathVars(AnnotatedElement element) {
         if (configurer instanceof FixedPathVarsConfigurer fixedPathVarsConfigurer)
-            return newArrayList(fixedPathVarsConfigurer.fixedPathVars()).stream().filter(NOT_BLANK_KEY).toList();
-        return newArrayList(getMergedRepeatableAnnotations(element, FixedPathVar.class)).stream().map(a ->
+            return newArrayList(fixedPathVarsConfigurer.fixedPathVars()).parallelStream().filter(NOT_BLANK_KEY).toList();
+        return newArrayList(getMergedRepeatableAnnotations(element, FixedPathVar.class)).parallelStream().map(a ->
                 Pair.of(a.name(), cleanupValue(a.value(), a.emptyAsCleanup()))).filter(NOT_BLANK_KEY).toList();
     }
 
     private List<Pair<String, Object>> buildFixedParameters(AnnotatedElement element) {
         if (configurer instanceof FixedParametersConfigurer fixedParametersConfigurer)
-            return newArrayList(fixedParametersConfigurer.fixedParameters()).stream().filter(NOT_BLANK_KEY).toList();
-        return newArrayList(getMergedRepeatableAnnotations(element, FixedParameter.class)).stream().map(a ->
+            return newArrayList(fixedParametersConfigurer.fixedParameters()).parallelStream().filter(NOT_BLANK_KEY).toList();
+        return newArrayList(getMergedRepeatableAnnotations(element, FixedParameter.class)).parallelStream().map(a ->
                 Pair.of(a.name(), (Object) cleanupValue(a.value(), a.emptyAsCleanup()))).filter(NOT_BLANK_KEY).toList();
     }
 
     private List<Pair<String, Object>> buildFixedContexts(AnnotatedElement element) {
         if (configurer instanceof FixedContextsConfigurer fixedContextsConfigurer)
-            return newArrayList(fixedContextsConfigurer.fixedContexts()).stream().filter(NOT_BLANK_KEY).toList();
-        return newArrayList(getMergedRepeatableAnnotations(element, FixedContext.class)).stream().map(a ->
+            return newArrayList(fixedContextsConfigurer.fixedContexts()).parallelStream().filter(NOT_BLANK_KEY).toList();
+        return newArrayList(getMergedRepeatableAnnotations(element, FixedContext.class)).parallelStream().map(a ->
                 Pair.of(a.name(), (Object) cleanupValue(a.value(), a.emptyAsCleanup()))).filter(NOT_BLANK_KEY).toList();
     }
 
@@ -226,7 +226,7 @@ public abstract class CommonElement<T extends CommonBase<T>> {
         if (configurer instanceof StatusFallbacksConfigurer statusFallbacksConfigurer)
             return newHashMap(statusFallbacksConfigurer.statusFallbackMapping());
         return newArrayList(getMergedRepeatableAnnotations(element, StatusFallback.class))
-                .stream().collect(toMap(StatusFallback::status,
+                .parallelStream().collect(toMap(StatusFallback::status,
                         anno -> buildFallbackFunction(anno.fallback())));
     }
 
@@ -241,7 +241,7 @@ public abstract class CommonElement<T extends CommonBase<T>> {
         if (configurer instanceof StatusSeriesFallbacksConfigurer statusSeriesFallbacksConfigurer)
             return newHashMap(statusSeriesFallbacksConfigurer.statusSeriesFallbackMapping());
         return newArrayList(getMergedRepeatableAnnotations(element, StatusSeriesFallback.class))
-                .stream().collect(toMap(StatusSeriesFallback::statusSeries,
+                .parallelStream().collect(toMap(StatusSeriesFallback::statusSeries,
                         anno -> buildFallbackFunction(anno.fallback())));
     }
 

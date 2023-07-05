@@ -27,7 +27,7 @@ public interface StatusSeriesFallbacksConfig extends StatusSeriesFallbacksConfig
         return notNullThen(statusSeriesFallbackMappingString(), v -> {
             val mapping = Splitter.on("&").omitEmptyStrings()
                     .trimResults().withKeyValueSeparator("=").split(v);
-            return mapping.entrySet().stream()
+            return mapping.entrySet().parallelStream()
                     .filter(e -> nonNull(HttpStatus.Series.resolve(intOf(e.getKey()))))
                     .filter(e -> isAssignable(findClass(e.getValue()), FallbackFunction.class))
                     .collect(toMap(e -> HttpStatus.Series.valueOf(intOf(e.getKey())),
