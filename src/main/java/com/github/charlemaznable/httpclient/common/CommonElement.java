@@ -51,6 +51,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -60,6 +61,7 @@ import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
+import static com.github.charlemaznable.core.lang.Mapp.newEnumMap;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.NOT_BLANK_KEY;
@@ -118,7 +120,7 @@ public abstract class CommonElement<T extends CommonBase<T>> {
         base.parameters.addAll(buildFixedParameters(element));
         base.contexts = newArrayList(superBase.contexts);
         base.contexts.addAll(buildFixedContexts(element));
-        base.statusFallbackMapping = newHashMap(superBase.statusFallbackMapping);
+        base.statusFallbackMapping = defaultFallback(superBase.statusFallbackMapping);
         base.statusFallbackMapping.putAll(buildStatusFallbackMapping(element));
         base.statusSeriesFallbackMapping = defaultFallback(element, superBase.statusSeriesFallbackMapping);
         base.statusSeriesFallbackMapping.putAll(buildStatusSeriesFallbackMapping(element));
@@ -222,6 +224,11 @@ public abstract class CommonElement<T extends CommonBase<T>> {
         return emptyThen(value, () -> emptyAsCleanup ? null : "");
     }
 
+    private EnumMap<HttpStatus, FallbackFunction<?>>
+    defaultFallback(Map<HttpStatus, FallbackFunction<?>> defaultValue) {
+        return newEnumMap(HttpStatus.class, defaultValue);
+    }
+
     private Map<HttpStatus, FallbackFunction<?>> buildStatusFallbackMapping(AnnotatedElement element) {
         if (configurer instanceof StatusFallbacksConfigurer statusFallbacksConfigurer)
             return newHashMap(statusFallbacksConfigurer.statusFallbackMapping());
@@ -230,11 +237,11 @@ public abstract class CommonElement<T extends CommonBase<T>> {
                         anno -> buildFallbackFunction(anno.fallback())));
     }
 
-    private Map<HttpStatus.Series, FallbackFunction<?>>
+    private EnumMap<HttpStatus.Series, FallbackFunction<?>>
     defaultFallback(AnnotatedElement element, Map<HttpStatus.Series, FallbackFunction<?>> defaultValue) {
         val disabled = configurer instanceof DefaultFallbackDisabledConfigurer disabledConfigurer
                 ? disabledConfigurer.disabledDefaultFallback() : isAnnotated(element, DefaultFallbackDisabled.class);
-        return newHashMap(disabled ? null : defaultValue);
+        return newEnumMap(HttpStatus.Series.class, disabled ? null : defaultValue);
     }
 
     private Map<HttpStatus.Series, FallbackFunction<?>> buildStatusSeriesFallbackMapping(AnnotatedElement element) {
