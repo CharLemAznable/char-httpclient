@@ -5,15 +5,12 @@ import com.github.charlemaznable.httpclient.configurer.DefaultFallbackDisabledCo
 import com.github.charlemaznable.httpclient.configurer.StatusFallbacksConfigurer;
 import com.github.charlemaznable.httpclient.configurer.StatusSeriesFallbacksConfigurer;
 import lombok.SneakyThrows;
-import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-
-import javax.annotation.Nonnull;
 
 import java.util.Map;
 
+import static com.github.charlemaznable.httpclient.common.Utils.dispatcher;
 import static java.util.Objects.requireNonNull;
 
 public abstract class CommonFallbackTest {
@@ -23,24 +20,18 @@ public abstract class CommonFallbackTest {
     @SneakyThrows
     protected void startMockWebServer() {
         mockWebServer = new MockWebServer();
-        mockWebServer.setDispatcher(new Dispatcher() {
-            @Nonnull
-            @Override
-            public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                return switch (requireNonNull(request.getPath())) {
-                    case "/sampleNotFound", "/sampleMappingNotFound" -> new MockResponse()
-                            .setResponseCode(HttpStatus.NOT_FOUND.value())
-                            .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                    case "/sampleClientError", "/sampleMappingClientError" -> new MockResponse()
-                            .setResponseCode(HttpStatus.FORBIDDEN.value())
-                            .setBody(HttpStatus.FORBIDDEN.getReasonPhrase());
-                    case "/sampleServerError" -> new MockResponse()
-                            .setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                            .setBody(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
-                    default -> new MockResponse().setBody("OK");
-                };
-            }
-        });
+        mockWebServer.setDispatcher(dispatcher(request -> switch (requireNonNull(request.getPath())) {
+            case "/sampleNotFound", "/sampleMappingNotFound" -> new MockResponse()
+                    .setResponseCode(HttpStatus.NOT_FOUND.value())
+                    .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+            case "/sampleClientError", "/sampleMappingClientError" -> new MockResponse()
+                    .setResponseCode(HttpStatus.FORBIDDEN.value())
+                    .setBody(HttpStatus.FORBIDDEN.getReasonPhrase());
+            case "/sampleServerError" -> new MockResponse()
+                    .setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .setBody(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+            default -> new MockResponse().setBody("OK");
+        }));
         mockWebServer.start(41180);
     }
 
@@ -107,5 +98,6 @@ public abstract class CommonFallbackTest {
         }
     }
 
-    public static class DisabledMappingHttpClientConfig implements DefaultFallbackDisabledConfigurer {}
+    public static class DisabledMappingHttpClientConfig implements DefaultFallbackDisabledConfigurer {
+    }
 }

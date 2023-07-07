@@ -3,17 +3,14 @@ package com.github.charlemaznable.httpclient.common;
 import com.github.charlemaznable.httpclient.configurer.FixedPathVarsConfigurer;
 import com.github.charlemaznable.httpclient.configurer.MappingMethodNameDisabledConfigurer;
 import lombok.SneakyThrows;
-import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.commons.lang3.tuple.Pair;
-
-import javax.annotation.Nonnull;
 
 import java.util.List;
 
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
+import static com.github.charlemaznable.httpclient.common.Utils.dispatcher;
 import static java.util.Objects.requireNonNull;
 
 public abstract class CommonPathVarTest {
@@ -23,20 +20,14 @@ public abstract class CommonPathVarTest {
     @SneakyThrows
     protected void startMockWebServer() {
         mockWebServer = new MockWebServer();
-        mockWebServer.setDispatcher(new Dispatcher() {
-            @Nonnull
-            @Override
-            public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                return switch (requireNonNull(request.getPath())) {
-                    case "/V1/V2" -> new MockResponse().setBody("V2");
-                    case "/V1/V3" -> new MockResponse().setBody("V3");
-                    case "/V1/V4" -> new MockResponse().setBody("V4");
-                    default -> new MockResponse()
-                            .setResponseCode(HttpStatus.NOT_FOUND.value())
-                            .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                };
-            }
-        });
+        mockWebServer.setDispatcher(dispatcher(request -> switch (requireNonNull(request.getPath())) {
+            case "/V1/V2" -> new MockResponse().setBody("V2");
+            case "/V1/V3" -> new MockResponse().setBody("V3");
+            case "/V1/V4" -> new MockResponse().setBody("V4");
+            default -> new MockResponse()
+                    .setResponseCode(HttpStatus.NOT_FOUND.value())
+                    .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+        }));
         mockWebServer.start(41150);
     }
 

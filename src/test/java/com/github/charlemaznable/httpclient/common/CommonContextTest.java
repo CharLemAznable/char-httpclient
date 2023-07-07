@@ -16,14 +16,11 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.val;
-import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
-
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +29,7 @@ import static com.github.charlemaznable.core.codec.Json.unJson;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Str.toStr;
+import static com.github.charlemaznable.httpclient.common.Utils.dispatcher;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,47 +42,43 @@ public abstract class CommonContextTest {
     @SneakyThrows
     protected void startMockWebServer() {
         mockWebServer = new MockWebServer();
-        mockWebServer.setDispatcher(new Dispatcher() {
-            @Nonnull
-            @Override
-            public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                val body = unJson(request.getBody().readUtf8());
-                switch (requireNonNull(request.getPath())) {
-                    case "/sampleDefault":
-                        assertEquals("EH1", request.getHeader("H1"));
-                        assertEquals("CV1", body.get("C1"));
-                        assertEquals("CV2", body.get("C2"));
-                        assertNull(body.get("C3"));
-                        assertNull(body.get("C4"));
-                        return new MockResponse().setBody("OK");
-                    case "/sampleMapping":
-                        assertEquals("EH1", request.getHeader("H1"));
-                        assertEquals("CV1", body.get("C1"));
-                        assertNull(body.get("C2"));
-                        assertEquals("CV3", body.get("C3"));
-                        assertNull(body.get("C4"));
-                        return new MockResponse().setBody("OK");
-                    case "/sampleContexts":
-                        assertEquals("EH1", request.getHeader("H1"));
-                        assertEquals("CV1", body.get("C1"));
-                        assertNull(body.get("C2"));
-                        assertNull(body.get("C3"));
-                        assertEquals("CV4", body.get("C4"));
-                        return new MockResponse().setBody("OK");
-                    case "/sampleNone":
-                        assertNull(request.getHeader("H1"));
-                        assertEquals("CV1", body.get("C1"));
-                        assertEquals("CV2", body.get("C2"));
-                        assertNull(body.get("C3"));
-                        assertNull(body.get("C4"));
-                        return new MockResponse().setBody("OK");
-                    default:
-                        return new MockResponse()
-                                .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                }
+        mockWebServer.setDispatcher(dispatcher(request -> {
+            val body = unJson(request.getBody().readUtf8());
+            switch (requireNonNull(request.getPath())) {
+                case "/sampleDefault":
+                    assertEquals("EH1", request.getHeader("H1"));
+                    assertEquals("CV1", body.get("C1"));
+                    assertEquals("CV2", body.get("C2"));
+                    assertNull(body.get("C3"));
+                    assertNull(body.get("C4"));
+                    return new MockResponse().setBody("OK");
+                case "/sampleMapping":
+                    assertEquals("EH1", request.getHeader("H1"));
+                    assertEquals("CV1", body.get("C1"));
+                    assertNull(body.get("C2"));
+                    assertEquals("CV3", body.get("C3"));
+                    assertNull(body.get("C4"));
+                    return new MockResponse().setBody("OK");
+                case "/sampleContexts":
+                    assertEquals("EH1", request.getHeader("H1"));
+                    assertEquals("CV1", body.get("C1"));
+                    assertNull(body.get("C2"));
+                    assertNull(body.get("C3"));
+                    assertEquals("CV4", body.get("C4"));
+                    return new MockResponse().setBody("OK");
+                case "/sampleNone":
+                    assertNull(request.getHeader("H1"));
+                    assertEquals("CV1", body.get("C1"));
+                    assertEquals("CV2", body.get("C2"));
+                    assertNull(body.get("C3"));
+                    assertNull(body.get("C4"));
+                    return new MockResponse().setBody("OK");
+                default:
+                    return new MockResponse()
+                            .setResponseCode(HttpStatus.NOT_FOUND.value())
+                            .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
             }
-        });
+        }));
         mockWebServer.start(41170);
     }
 
@@ -206,5 +200,6 @@ public abstract class CommonContextTest {
         }
     }
 
-    public static class SampleMappingConfig3 implements ResponseParseDisabledConfigurer, RequestExtendDisabledConfigurer {}
+    public static class SampleMappingConfig3 implements ResponseParseDisabledConfigurer, RequestExtendDisabledConfigurer {
+    }
 }

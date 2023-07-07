@@ -5,14 +5,11 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.val;
-import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-
-import javax.annotation.Nonnull;
 
 import static com.github.charlemaznable.core.codec.Json.json;
+import static com.github.charlemaznable.httpclient.common.Utils.dispatcher;
 
 public abstract class CommonCncTest {
 
@@ -23,15 +20,11 @@ public abstract class CommonCncTest {
     @SneakyThrows
     protected void startMockWebServer() {
         mockWebServer = new MockWebServer();
-        mockWebServer.setDispatcher(new Dispatcher() {
-            @Nonnull
-            @Override
-            public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                val testResponse = new CncTest.TestResponse();
-                testResponse.setContent(CONTENT);
-                return new MockResponse().setBody(json(testResponse));
-            }
-        });
+        mockWebServer.setDispatcher(dispatcher(request -> {
+            val testResponse = new CncTest.TestResponse();
+            testResponse.setContent(CONTENT);
+            return new MockResponse().setBody(json(testResponse));
+        }));
         mockWebServer.start(41200);
     }
 
@@ -45,7 +38,8 @@ public abstract class CommonCncTest {
         Class<T> getResponseClass();
     }
 
-    public interface OtherResponse {}
+    public interface OtherResponse {
+    }
 
     public static class TestRequest implements CncRequest<CncTest.TestResponse> {
 

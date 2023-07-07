@@ -5,23 +5,21 @@ import com.github.charlemaznable.httpclient.configurer.MappingBalanceConfigurer;
 import com.github.charlemaznable.httpclient.configurer.MappingConfigurer;
 import lombok.SneakyThrows;
 import lombok.val;
-import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
+import static com.github.charlemaznable.httpclient.common.Utils.dispatcher;
 import static java.util.Objects.requireNonNull;
 
 public abstract class CommonBalancerTest {
 
-    protected AtomicInteger countSample1 = new AtomicInteger();
-    protected AtomicInteger countSample2 = new AtomicInteger();
-    protected AtomicInteger countSample3 = new AtomicInteger();
+    protected final AtomicInteger countSample1 = new AtomicInteger();
+    protected final AtomicInteger countSample2 = new AtomicInteger();
+    protected final AtomicInteger countSample3 = new AtomicInteger();
 
     protected MockWebServer mockWebServer1;
     protected MockWebServer mockWebServer2;
@@ -30,28 +28,24 @@ public abstract class CommonBalancerTest {
     protected void startMockWebServer() {
         mockWebServer1 = new MockWebServer();
         mockWebServer2 = new MockWebServer();
-        val dispatcher = new Dispatcher() {
-            @Nonnull
-            @Override
-            public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                val requestUrl = requireNonNull(request.getRequestUrl());
-                switch (requestUrl.encodedPath()) {
-                    case "/sample1":
-                        countSample1.incrementAndGet();
-                        return new MockResponse().setBody("OK1");
-                    case "/sample2":
-                        countSample2.incrementAndGet();
-                        return new MockResponse().setBody("OK2");
-                    case "/sample3":
-                        countSample3.incrementAndGet();
-                        return new MockResponse().setBody("OK3");
-                    default:
-                        return new MockResponse()
-                                .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                }
+        val dispatcher = dispatcher(request -> {
+            val requestUrl = requireNonNull(request.getRequestUrl());
+            switch (requestUrl.encodedPath()) {
+                case "/sample1":
+                    countSample1.incrementAndGet();
+                    return new MockResponse().setBody("OK1");
+                case "/sample2":
+                    countSample2.incrementAndGet();
+                    return new MockResponse().setBody("OK2");
+                case "/sample3":
+                    countSample3.incrementAndGet();
+                    return new MockResponse().setBody("OK3");
+                default:
+                    return new MockResponse()
+                            .setResponseCode(HttpStatus.NOT_FOUND.value())
+                            .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
             }
-        };
+        });
         mockWebServer1.setDispatcher(dispatcher);
         mockWebServer1.start(41240);
         mockWebServer2.setDispatcher(dispatcher);

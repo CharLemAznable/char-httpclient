@@ -5,17 +5,14 @@ import com.github.charlemaznable.configservice.ConfigListenerRegister;
 import com.github.charlemaznable.httpclient.configurer.MappingConfigurer;
 import lombok.SneakyThrows;
 import lombok.val;
-import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-
-import javax.annotation.Nonnull;
 
 import java.util.List;
 
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
+import static com.github.charlemaznable.httpclient.common.Utils.dispatcher;
 import static java.util.Objects.requireNonNull;
 
 public abstract class CommonReloaderTest {
@@ -26,37 +23,29 @@ public abstract class CommonReloaderTest {
     @SneakyThrows
     protected void startMockWebServer() {
         mockWebServer1 = new MockWebServer();
-        mockWebServer1.setDispatcher(new Dispatcher() {
-            @Nonnull
-            @Override
-            public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                val requestUrl = requireNonNull(request.getRequestUrl());
-                if ("/sample".equals(requestUrl.encodedPath())) {
-                    return new MockResponse().setBody("mock server 1");
-                }
-                return new MockResponse()
-                        .setResponseCode(HttpStatus.NOT_FOUND.value())
-                        .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+        mockWebServer1.setDispatcher(dispatcher(request -> {
+            val requestUrl = requireNonNull(request.getRequestUrl());
+            if ("/sample".equals(requestUrl.encodedPath())) {
+                return new MockResponse().setBody("mock server 1");
             }
-        });
+            return new MockResponse()
+                    .setResponseCode(HttpStatus.NOT_FOUND.value())
+                    .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+        }));
         mockWebServer1.start(41270);
 
         mockWebServer2 = new MockWebServer();
-        mockWebServer2.setDispatcher(new Dispatcher() {
-            @Nonnull
-            @Override
-            public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                val requestUrl = requireNonNull(request.getRequestUrl());
-                if ("/sample".equals(requestUrl.encodedPath())) {
-                    return new MockResponse().setBody("mock server 2");
-                } else if ("/sample2".equals(requestUrl.encodedPath())) {
-                    return new MockResponse().setBody("mock server 3");
-                }
-                return new MockResponse()
-                        .setResponseCode(HttpStatus.NOT_FOUND.value())
-                        .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+        mockWebServer2.setDispatcher(dispatcher(request -> {
+            val requestUrl = requireNonNull(request.getRequestUrl());
+            if ("/sample".equals(requestUrl.encodedPath())) {
+                return new MockResponse().setBody("mock server 2");
+            } else if ("/sample2".equals(requestUrl.encodedPath())) {
+                return new MockResponse().setBody("mock server 3");
             }
-        });
+            return new MockResponse()
+                    .setResponseCode(HttpStatus.NOT_FOUND.value())
+                    .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+        }));
         mockWebServer2.start(41280);
     }
 

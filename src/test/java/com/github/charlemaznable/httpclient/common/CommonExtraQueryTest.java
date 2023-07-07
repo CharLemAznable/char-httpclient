@@ -5,16 +5,14 @@ import com.github.charlemaznable.httpclient.configurer.ExtraUrlQueryConfigurer;
 import com.github.charlemaznable.httpclient.configurer.ExtraUrlQueryDisabledConfigurer;
 import lombok.SneakyThrows;
 import lombok.val;
-import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 
 import javax.annotation.Nonnull;
-
 import java.util.Map;
 
 import static com.github.charlemaznable.core.codec.Json.unJson;
+import static com.github.charlemaznable.httpclient.common.Utils.dispatcher;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -26,35 +24,31 @@ public abstract class CommonExtraQueryTest {
     @SneakyThrows
     protected void startMockWebServer() {
         mockWebServer = new MockWebServer();
-        mockWebServer.setDispatcher(new Dispatcher() {
-            @Nonnull
-            @Override
-            public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                val requestUrl = requireNonNull(request.getRequestUrl());
-                switch (requestUrl.encodedPath()) {
-                    case "/sampleGet":
-                        assertEquals("GET", request.getMethod());
-                        assertEquals("EQV1", requestUrl.queryParameter("EQ1"));
-                        assertEquals("PV1", requestUrl.queryParameter("P1"));
-                        return new MockResponse().setBody("OK");
-                    case "/samplePost":
-                        assertEquals("POST", request.getMethod());
-                        assertEquals("EQV2", requestUrl.queryParameter("EQ1"));
-                        val body = unJson(request.getBody().readUtf8());
-                        assertEquals("PV1", body.get("P1"));
-                        return new MockResponse().setBody("OK");
-                    case "/sampleNone":
-                        assertEquals("GET", request.getMethod());
-                        assertNull(requestUrl.queryParameter("EQ1"));
-                        assertEquals("PV1", requestUrl.queryParameter("P1"));
-                        return new MockResponse().setBody("OK");
-                    default:
-                        return new MockResponse()
-                                .setResponseCode(HttpStatus.NOT_FOUND.value())
-                                .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
-                }
+        mockWebServer.setDispatcher(dispatcher(request -> {
+            val requestUrl = requireNonNull(request.getRequestUrl());
+            switch (requestUrl.encodedPath()) {
+                case "/sampleGet":
+                    assertEquals("GET", request.getMethod());
+                    assertEquals("EQV1", requestUrl.queryParameter("EQ1"));
+                    assertEquals("PV1", requestUrl.queryParameter("P1"));
+                    return new MockResponse().setBody("OK");
+                case "/samplePost":
+                    assertEquals("POST", request.getMethod());
+                    assertEquals("EQV2", requestUrl.queryParameter("EQ1"));
+                    val body = unJson(request.getBody().readUtf8());
+                    assertEquals("PV1", body.get("P1"));
+                    return new MockResponse().setBody("OK");
+                case "/sampleNone":
+                    assertEquals("GET", request.getMethod());
+                    assertNull(requestUrl.queryParameter("EQ1"));
+                    assertEquals("PV1", requestUrl.queryParameter("P1"));
+                    return new MockResponse().setBody("OK");
+                default:
+                    return new MockResponse()
+                            .setResponseCode(HttpStatus.NOT_FOUND.value())
+                            .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
             }
-        });
+        }));
         mockWebServer.start(41230);
     }
 
@@ -97,5 +91,6 @@ public abstract class CommonExtraQueryTest {
         }
     }
 
-    public static class ExtraNoneConfig implements ExtraUrlQueryDisabledConfigurer {}
+    public static class ExtraNoneConfig implements ExtraUrlQueryDisabledConfigurer {
+    }
 }

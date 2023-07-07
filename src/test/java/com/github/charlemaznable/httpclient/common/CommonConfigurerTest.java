@@ -11,22 +11,20 @@ import com.github.charlemaznable.httpclient.wfclient.configurer.WebFluxClientBui
 import io.vertx.core.net.ProxyOptions;
 import lombok.SneakyThrows;
 import okhttp3.OkHttpClient;
-import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.n3r.diamond.client.impl.MockDiamondServer;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.transport.ProxyProvider;
 
-import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.List;
 
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
+import static com.github.charlemaznable.httpclient.common.Utils.dispatcher;
 import static com.github.charlemaznable.httpclient.configurer.InitializationContext.getInitializingClass;
 import static com.github.charlemaznable.httpclient.configurer.InitializationContext.getInitializingMethod;
 import static java.net.Proxy.Type.HTTP;
@@ -66,18 +64,14 @@ public abstract class CommonConfigurerTest {
                 """);
 
         mockWebServer = new MockWebServer();
-        mockWebServer.setDispatcher(new Dispatcher() {
-            @Nonnull
-            @Override
-            public MockResponse dispatch(@Nonnull RecordedRequest request) {
-                if ("/sample".equals(request.getPath())) {
-                    return new MockResponse().setBody("SAMPLE");
-                }
-                return new MockResponse()
-                        .setResponseCode(HttpStatus.NOT_FOUND.value())
-                        .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+        mockWebServer.setDispatcher(dispatcher(request -> {
+            if ("/sample".equals(request.getPath())) {
+                return new MockResponse().setBody("SAMPLE");
             }
-        });
+            return new MockResponse()
+                    .setResponseCode(HttpStatus.NOT_FOUND.value())
+                    .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+        }));
         mockWebServer.start(41310);
     }
 
