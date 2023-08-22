@@ -41,17 +41,19 @@ public abstract class CommonFactoryTest {
         mockWebServer1.setDispatcher(dispatcher(request -> {
             val acceptCharset = requireNonNull(request.getHeader(ACCEPT_CHARSET));
             switch (requireNonNull(request.getPath())) {
-                case SAMPLE:
+                case SAMPLE -> {
                     assertEquals(ISO_8859_1.name(), acceptCharset);
                     return new MockResponse().setBody(acceptCharset);
-                case SAMPLE2:
-                case COVER:
+                }
+                case SAMPLE2, COVER -> {
                     assertEquals(UTF_8.name(), acceptCharset);
                     return new MockResponse().setBody(acceptCharset);
-                default:
+                }
+                default -> {
                     return new MockResponse()
                             .setResponseCode(HttpStatus.NOT_FOUND.value())
                             .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                }
             }
         }));
         mockWebServer1.start(41130);
@@ -69,25 +71,28 @@ public abstract class CommonFactoryTest {
             val contentType = MediaType.parse(requireNonNull(request.getHeader(CONTENT_TYPE)));
             val bodyString = request.getBody().readUtf8();
             switch (requireNonNull(request.getPath())) {
-                case SAMPLE:
+                case SAMPLE -> {
                     assertEquals(contentType.type(), FORM_DATA.type());
                     assertEquals(contentType.subtype(), FORM_DATA.subtype());
                     return new MockResponse().setBody(bodyString);
-                case SAMPLE2:
+                }
+                case SAMPLE2 -> {
                     assertEquals(contentType.type(), JSON_UTF_8.type());
                     assertEquals(contentType.subtype(), JSON_UTF_8.subtype());
                     assertEquals(contentType.charset(), JSON_UTF_8.charset());
                     return new MockResponse().setBody(bodyString);
-                case SAMPLE3:
-                case COVER:
+                }
+                case SAMPLE3, COVER -> {
                     assertEquals(contentType.type(), APPLICATION_XML_UTF_8.type());
                     assertEquals(contentType.subtype(), APPLICATION_XML_UTF_8.subtype());
                     assertEquals(contentType.charset(), APPLICATION_XML_UTF_8.charset());
                     return new MockResponse().setBody(bodyString);
-                default:
+                }
+                default -> {
                     return new MockResponse()
                             .setResponseCode(HttpStatus.NOT_FOUND.value())
                             .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                }
             }
         }));
         mockWebServer2.start(41131);
@@ -104,17 +109,19 @@ public abstract class CommonFactoryTest {
         mockWebServer3.setDispatcher(dispatcher(request -> {
             val method = requireNonNull(request.getMethod());
             switch (requireNonNull(request.getPath())) {
-                case SAMPLE:
+                case SAMPLE -> {
                     assertEquals("POST", method);
                     return new MockResponse().setBody(method);
-                case SAMPLE2:
-                case COVER:
+                }
+                case SAMPLE2, COVER -> {
                     assertEquals("GET", method);
                     return new MockResponse().setBody(method);
-                default:
+                }
+                default -> {
                     return new MockResponse()
                             .setResponseCode(HttpStatus.NOT_FOUND.value())
                             .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                }
             }
         }));
         mockWebServer3.start(41132);

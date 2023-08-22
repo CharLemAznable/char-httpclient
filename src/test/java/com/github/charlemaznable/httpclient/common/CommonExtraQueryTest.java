@@ -27,26 +27,30 @@ public abstract class CommonExtraQueryTest {
         mockWebServer.setDispatcher(dispatcher(request -> {
             val requestUrl = requireNonNull(request.getRequestUrl());
             switch (requestUrl.encodedPath()) {
-                case "/sampleGet":
+                case "/sampleGet" -> {
                     assertEquals("GET", request.getMethod());
                     assertEquals("EQV1", requestUrl.queryParameter("EQ1"));
                     assertEquals("PV1", requestUrl.queryParameter("P1"));
                     return new MockResponse().setBody("OK");
-                case "/samplePost":
+                }
+                case "/samplePost" -> {
                     assertEquals("POST", request.getMethod());
                     assertEquals("EQV2", requestUrl.queryParameter("EQ1"));
                     val body = unJson(request.getBody().readUtf8());
                     assertEquals("PV1", body.get("P1"));
                     return new MockResponse().setBody("OK");
-                case "/sampleNone":
+                }
+                case "/sampleNone" -> {
                     assertEquals("GET", request.getMethod());
                     assertNull(requestUrl.queryParameter("EQ1"));
                     assertEquals("PV1", requestUrl.queryParameter("P1"));
                     return new MockResponse().setBody("OK");
-                default:
+                }
+                default -> {
                     return new MockResponse()
                             .setResponseCode(HttpStatus.NOT_FOUND.value())
                             .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                }
             }
         }));
         mockWebServer.start(41230);

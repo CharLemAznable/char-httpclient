@@ -31,19 +31,23 @@ public abstract class CommonBalancerTest {
         val dispatcher = dispatcher(request -> {
             val requestUrl = requireNonNull(request.getRequestUrl());
             switch (requestUrl.encodedPath()) {
-                case "/sample1":
+                case "/sample1" -> {
                     countSample1.incrementAndGet();
                     return new MockResponse().setBody("OK1");
-                case "/sample2":
+                }
+                case "/sample2" -> {
                     countSample2.incrementAndGet();
                     return new MockResponse().setBody("OK2");
-                case "/sample3":
+                }
+                case "/sample3" -> {
                     countSample3.incrementAndGet();
                     return new MockResponse().setBody("OK3");
-                default:
+                }
+                default -> {
                     return new MockResponse()
                             .setResponseCode(HttpStatus.NOT_FOUND.value())
                             .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                }
             }
         });
         mockWebServer1.setDispatcher(dispatcher);

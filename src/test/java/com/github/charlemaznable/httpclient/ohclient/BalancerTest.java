@@ -62,6 +62,31 @@ public class BalancerTest extends CommonBalancerTest {
 
         httpClientNeo.cover(new MappingBalance.RandomBalancer());
 
+        countSample1.set(0);
+        countSample2.set(0);
+        countSample3.set(0);
+
+        val httpClientWeighted = ohLoader.getClient(WeightedBalancerClient.class);
+
+        for (int i = 0; i < 30; i++) {
+            httpClientWeighted.roundRobin();
+        }
+        assertEquals(20, countSample1.get());
+        assertEquals(10, countSample2.get());
+        assertEquals(0, countSample3.get());
+
+        countSample1.set(0);
+        countSample2.set(0);
+        countSample3.set(0);
+
+        val count = 10000;
+        for (int i = 0; i < count; i++) {
+            httpClientWeighted.random();
+        }
+        assertEquals(0, countSample1.get());
+        assertEquals(0.25, 1. * countSample2.get() / count, 0.05);
+        assertEquals(0.75, 1. * countSample3.get() / count, 0.05);
+
         shutdownMockWebServer();
     }
 
@@ -94,5 +119,18 @@ public class BalancerTest extends CommonBalancerTest {
 
         @ConfigureWith(RandomBalancerConfig.class)
         void cover(MappingBalance.MappingBalancer balancer);
+    }
+
+    @OhClient
+    @Mapping({"${root}:41240", "${root}:41250"})
+    public interface WeightedBalancerClient {
+
+        @Mapping({"/sample1", "/sample1", "/sample2"})
+        @MappingBalance(MappingBalance.RoundRobinBalancer.class)
+        void roundRobin();
+
+        @Mapping({"/sample2", "/sample3", "/sample3", "/sample3"})
+        @MappingBalance(MappingBalance.RandomBalancer.class)
+        void random();
     }
 }

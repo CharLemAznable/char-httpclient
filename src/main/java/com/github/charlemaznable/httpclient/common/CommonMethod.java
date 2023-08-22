@@ -17,15 +17,12 @@ import java.lang.reflect.TypeVariable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 
 import static com.github.charlemaznable.core.lang.Condition.checkBlank;
 import static com.github.charlemaznable.core.lang.Condition.emptyThen;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Str.isBlank;
-import static com.google.common.collect.Sets.newHashSet;
 
 public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadable {
 
@@ -192,16 +189,16 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
     private List<String> buildRequestUrls() {
         val urls = emptyThen(element.buildMappingUrls(method), () ->
                 newArrayList(defaultClass.mappingMethodNameDisabled ? "" : "/" + method.getName()));
-        Set<String> requestUrlsSet = newHashSet();
+        List<String> requestUrls = newArrayList();
         for (val url : urls) {
             if (isBlank(url)) {
-                requestUrlsSet.addAll(defaultClass.baseUrls);
+                requestUrls.addAll(defaultClass.baseUrls);
             } else {
-                requestUrlsSet.addAll(defaultClass.baseUrls.stream()
+                requestUrls.addAll(defaultClass.baseUrls.stream()
                         .map(base -> checkBlank(base, () -> url, b -> b + url)).toList());
             }
         }
-        return requestUrlsSet.stream().distinct().collect(Collectors.toList());
+        return requestUrls;
     }
 
     @Override

@@ -23,28 +23,32 @@ public abstract class CommonHeaderTest {
         mockWebServer = new MockWebServer();
         mockWebServer.setDispatcher(dispatcher(request -> {
             switch (requireNonNull(request.getPath())) {
-                case "/sampleDefault":
+                case "/sampleDefault" -> {
                     assertEquals("V1", request.getHeader("H1"));
                     assertEquals("V2", request.getHeader("H2"));
                     assertNull(request.getHeader("H3"));
                     assertNull(request.getHeader("H4"));
                     return new MockResponse().setBody("OK");
-                case "/sampleMapping":
+                }
+                case "/sampleMapping" -> {
                     assertEquals("V1", request.getHeader("H1"));
                     assertNull(request.getHeader("H2"));
                     assertEquals("V3", request.getHeader("H3"));
                     assertNull(request.getHeader("H4"));
                     return new MockResponse().setBody("OK");
-                case "/sampleHeaders":
+                }
+                case "/sampleHeaders" -> {
                     assertEquals("V1", request.getHeader("H1"));
                     assertNull(request.getHeader("H2"));
                     assertNull(request.getHeader("H3"));
                     assertEquals("V4", request.getHeader("H4"));
                     return new MockResponse().setBody("OK");
-                default:
+                }
+                default -> {
                     return new MockResponse()
                             .setResponseCode(HttpStatus.NOT_FOUND.value())
                             .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                }
             }
         }));
         mockWebServer.start(41140);

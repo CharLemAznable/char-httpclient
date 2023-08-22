@@ -45,38 +45,43 @@ public abstract class CommonContextTest {
         mockWebServer.setDispatcher(dispatcher(request -> {
             val body = unJson(request.getBody().readUtf8());
             switch (requireNonNull(request.getPath())) {
-                case "/sampleDefault":
+                case "/sampleDefault" -> {
                     assertEquals("EH1", request.getHeader("H1"));
                     assertEquals("CV1", body.get("C1"));
                     assertEquals("CV2", body.get("C2"));
                     assertNull(body.get("C3"));
                     assertNull(body.get("C4"));
                     return new MockResponse().setBody("OK");
-                case "/sampleMapping":
+                }
+                case "/sampleMapping" -> {
                     assertEquals("EH1", request.getHeader("H1"));
                     assertEquals("CV1", body.get("C1"));
                     assertNull(body.get("C2"));
                     assertEquals("CV3", body.get("C3"));
                     assertNull(body.get("C4"));
                     return new MockResponse().setBody("OK");
-                case "/sampleContexts":
+                }
+                case "/sampleContexts" -> {
                     assertEquals("EH1", request.getHeader("H1"));
                     assertEquals("CV1", body.get("C1"));
                     assertNull(body.get("C2"));
                     assertNull(body.get("C3"));
                     assertEquals("CV4", body.get("C4"));
                     return new MockResponse().setBody("OK");
-                case "/sampleNone":
+                }
+                case "/sampleNone" -> {
                     assertNull(request.getHeader("H1"));
                     assertEquals("CV1", body.get("C1"));
                     assertEquals("CV2", body.get("C2"));
                     assertNull(body.get("C3"));
                     assertNull(body.get("C4"));
                     return new MockResponse().setBody("OK");
-                default:
+                }
+                default -> {
                     return new MockResponse()
                             .setResponseCode(HttpStatus.NOT_FOUND.value())
                             .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                }
             }
         }));
         mockWebServer.start(41170);

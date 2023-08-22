@@ -26,7 +26,7 @@ public abstract class CommonReqTest {
         mockWebServer.setDispatcher(dispatcher(request -> {
             val requestUrl = requireNonNull(request.getRequestUrl());
             switch (requestUrl.encodedPath()) {
-                case "/sample1":
+                case "/sample1" -> {
                     val acceptCharset = request.getHeader(ACCEPT_CHARSET);
                     assertEquals(ISO_8859_1.name(), acceptCharset);
                     val contentType = requireNonNull(request.getHeader(CONTENT_TYPE));
@@ -36,27 +36,26 @@ public abstract class CommonReqTest {
                     assertEquals("ccc", requestUrl.queryParameter("CCC"));
                     assertEquals("GET", request.getMethod());
                     return new MockResponse().setBody("Sample1");
-
-                case "/sample2":
+                }
+                case "/sample2" -> {
                     assertEquals("BBB=bbb", request.getBody().readUtf8());
                     assertEquals("POST", request.getMethod());
                     return new MockResponse().setBody("Sample2");
-
-                case "/sample3":
+                }
+                case "/sample3" -> {
                     assertEquals("ddd", requestUrl.queryParameter("DDD"));
                     assertNull(requestUrl.queryParameter("AAA"));
                     assertEquals("bbb", requestUrl.queryParameter("BBB"));
                     assertNull(requestUrl.queryParameter("CCC"));
                     assertEquals("GET", request.getMethod());
                     return new MockResponse().setBody("Sample3");
-
-                case "/sample4":
+                }
+                case "/sample4" -> {
                     assertEquals("CCC=ccc", request.getBody().readUtf8());
                     assertEquals("POST", request.getMethod());
                     return new MockResponse().setBody("Sample4");
-
-                case "/sample5":
-                case "/sample6":
+                }
+                case "/sample5", "/sample6" -> {
                     if (isNull(requestUrl.queryParameter("AAA"))) {
                         return new MockResponse()
                                 .setResponseCode(HttpStatus.NOT_FOUND.value())
@@ -66,7 +65,8 @@ public abstract class CommonReqTest {
                                 .setResponseCode(HttpStatus.FORBIDDEN.value())
                                 .setBody(HttpStatus.FORBIDDEN.getReasonPhrase());
                     }
-                case "/sample7":
+                }
+                case "/sample7" -> {
                     assertEquals("aaa", requestUrl.queryParameter("AAA"));
                     if ("GET".equals(request.getMethod())) {
                         assertEquals("bbb", requestUrl.queryParameter("BBB"));
@@ -78,10 +78,12 @@ public abstract class CommonReqTest {
                                 .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
                     }
                     return new MockResponse().setBody("Sample7");
-                default:
+                }
+                default -> {
                     return new MockResponse()
                             .setResponseCode(HttpStatus.NOT_FOUND.value())
                             .setBody(HttpStatus.NOT_FOUND.getReasonPhrase());
+                }
             }
         }));
         mockWebServer.start(port);
