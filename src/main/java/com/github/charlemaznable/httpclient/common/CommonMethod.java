@@ -189,16 +189,16 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
     private List<String> buildRequestUrls() {
         val urls = emptyThen(element.buildMappingUrls(method), () ->
                 newArrayList(defaultClass.mappingMethodNameDisabled ? "" : "/" + method.getName()));
-        List<String> requestUrls = newArrayList();
+        List<String> concatedUrls = newArrayList();
         for (val url : urls) {
             if (isBlank(url)) {
-                requestUrls.addAll(defaultClass.baseUrls);
+                concatedUrls.addAll(defaultClass.baseUrls);
             } else {
-                requestUrls.addAll(defaultClass.baseUrls.stream()
+                concatedUrls.addAll(defaultClass.baseUrls.stream()
                         .map(base -> checkBlank(base, () -> url, b -> b + url)).toList());
             }
         }
-        return requestUrls;
+        return concatedUrls;
     }
 
     @Override
