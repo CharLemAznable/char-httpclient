@@ -30,7 +30,7 @@ public class ReturnMapTest extends CommonReturnMapTest {
 
         val httpClient = vxLoader.getClient(MapHttpClient.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sampleFutureMap().onSuccess(map -> test.verify(() -> {
                     Map beanMap = (Map) map.get("John");
                     assertEquals("Doe", beanMap.get("name"));

@@ -30,7 +30,7 @@ public class ReturnTripleTest extends CommonReturnTripleTest {
 
         val httpClient = vxLoader.getClient(TripleHttpClient.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sampleFutureStatusCodeAndBean().onSuccess(triple -> test.verify(() -> {
                     assertEquals(HttpStatus.OK.value(), triple.getLeft());
                     assertEquals(HttpStatus.OK, triple.getMiddle());

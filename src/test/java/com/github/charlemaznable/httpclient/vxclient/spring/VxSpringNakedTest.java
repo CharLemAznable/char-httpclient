@@ -6,6 +6,7 @@ import com.github.charlemaznable.httpclient.common.testclient.TestHttpClientMock
 import com.github.charlemaznable.httpclient.common.testclient.TestHttpClientNone;
 import com.github.charlemaznable.httpclient.vxclient.VxException;
 import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import lombok.val;
@@ -33,7 +34,7 @@ public class VxSpringNakedTest extends CommonSpringNakedTest {
                 () -> getClient(TestHttpClientNone.class));
 
         val testHttpClientMocked = getClient(TestHttpClientMocked.class);
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 testHttpClientMocked.vxSample().onSuccess(response -> test.verify(() -> assertEquals("SampleError", response))),
                 testHttpClientMocked.vxSampleWrapper().onSuccess(response -> test.verify(() -> assertEquals("[SampleError]", response)))
         )).onComplete(result -> {

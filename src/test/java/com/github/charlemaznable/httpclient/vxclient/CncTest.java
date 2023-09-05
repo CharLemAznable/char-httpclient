@@ -49,7 +49,7 @@ public class CncTest extends CommonCncTest {
         val client = vxLoader.getClient(CncClient.class);
         val errorClient = vxLoader.getClient(CncErrorClient.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 client.sample1(new TestRequest()).onSuccess(response -> test.verify(() -> assertEquals(CONTENT, response.getContent()))),
                 client.sample2(new TestRequest()).onSuccess(pair -> test.verify(() -> {
                     assertEquals(HttpStatus.OK, pair.getLeft());

@@ -5,7 +5,6 @@ import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingBalance;
 import com.github.charlemaznable.httpclient.common.CommonBalancerTest;
 import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -28,7 +27,7 @@ public class BalancerTest extends CommonBalancerTest {
 
         val httpClient = vxLoader.getClient(BalancerClient.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.get(),
                 httpClient.get(),
                 httpClient.get(),
@@ -38,7 +37,7 @@ public class BalancerTest extends CommonBalancerTest {
             assertEquals(2, countSample2.get());
             assertEquals(0, countSample3.get());
 
-            CompositeFuture.all(newArrayList(
+            Future.all(newArrayList(
                     httpClient.get2(),
                     httpClient.get2(),
                     httpClient.get2(),
@@ -56,7 +55,7 @@ public class BalancerTest extends CommonBalancerTest {
 
                             val httpClientNeo = vxLoader.getClient(BalancerClientNeo.class);
 
-                            CompositeFuture.all(newArrayList(
+                            Future.all(newArrayList(
                                     httpClientNeo.get(),
                                     httpClientNeo.get(),
                                     httpClientNeo.get(),
@@ -66,7 +65,7 @@ public class BalancerTest extends CommonBalancerTest {
                                 assertEquals(2, countSample2.get());
                                 assertEquals(0, countSample3.get());
 
-                                CompositeFuture.all(newArrayList(
+                                Future.all(newArrayList(
                                         httpClientNeo.get2(),
                                         httpClientNeo.get2(),
                                         httpClientNeo.get2(),

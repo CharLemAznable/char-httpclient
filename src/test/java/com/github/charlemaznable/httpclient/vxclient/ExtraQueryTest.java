@@ -34,7 +34,7 @@ public class ExtraQueryTest extends CommonExtraQueryTest {
         val httpClient = vxLoader.getClient(ExtraHttpClient.class);
         val httpClientNeo = vxLoader.getClient(ExtraHttpClientNeo.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sampleGet("PV1").onSuccess(response -> test.verify(() -> assertEquals("OK", response))),
                 httpClient.samplePost("PV1").onSuccess(response -> test.verify(() -> assertEquals("OK", response))),
                 httpClient.samplePost("PV1", new ExtraOnMethod()).onSuccess(response -> test.verify(() -> assertEquals("OK", response))),

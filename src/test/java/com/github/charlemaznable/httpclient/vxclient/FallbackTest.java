@@ -37,8 +37,8 @@ public class FallbackTest extends CommonFallbackTest {
         val httpClientNeo = vxLoader.getClient(MappingHttpClientNeo.class);
         val disabledHttpClientNeo = vxLoader.getClient(DisabledMappingHttpClientNeo.class);
 
-        CompositeFuture.all(newArrayList(
-                CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
+                Future.all(newArrayList(
                         httpClient.sampleNotFound().onSuccess(response -> test.verify(() -> assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), response))),
                         httpClient.sampleClientError().onSuccess(response -> test.verify(() -> assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), response))),
                         httpClient.sampleMappingNotFound().onSuccess(response -> test.verify(() -> assertEquals("\"" + HttpStatus.NOT_FOUND.getReasonPhrase() + "\"", response))),
@@ -48,7 +48,7 @@ public class FallbackTest extends CommonFallbackTest {
                             f.complete();
                         }))
                 )),
-                CompositeFuture.all(newArrayList(
+                Future.all(newArrayList(
                         Future.future(f -> defaultHttpClient.sampleNotFound().onFailure(ex -> {
                             test.verify(() -> {
                                 assertTrue(ex instanceof StatusError);
@@ -95,14 +95,14 @@ public class FallbackTest extends CommonFallbackTest {
                             f.complete();
                         }))
                 )),
-                CompositeFuture.all(newArrayList(
+                Future.all(newArrayList(
                         disabledHttpClient.sampleNotFound().onSuccess(response -> test.verify(() -> assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), response))),
                         disabledHttpClient.sampleClientError().onSuccess(response -> test.verify(() -> assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), response))),
                         disabledHttpClient.sampleMappingNotFound().onSuccess(response -> test.verify(() -> assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), response))),
                         disabledHttpClient.sampleMappingClientError().onSuccess(response -> test.verify(() -> assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), response))),
                         disabledHttpClient.sampleServerError().onSuccess(response -> test.verify(() -> assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), response)))
                 )),
-                CompositeFuture.all(newArrayList(
+                Future.all(newArrayList(
                         httpClientNeo.sampleNotFound().onSuccess(response -> test.verify(() -> assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), response))),
                         httpClientNeo.sampleClientError().onSuccess(response -> test.verify(() -> assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), response))),
                         httpClientNeo.sampleMappingNotFound().onSuccess(response -> test.verify(() -> assertEquals("\"" + HttpStatus.NOT_FOUND.getReasonPhrase() + "\"", response))),
@@ -112,7 +112,7 @@ public class FallbackTest extends CommonFallbackTest {
                             f.complete();
                         }))
                 )),
-                CompositeFuture.all(newArrayList(
+                Future.all(newArrayList(
                         disabledHttpClientNeo.sampleNotFound().onSuccess(response -> test.verify(() -> assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), response))),
                         disabledHttpClientNeo.sampleClientError().onSuccess(response -> test.verify(() -> assertEquals(HttpStatus.FORBIDDEN.getReasonPhrase(), response))),
                         disabledHttpClientNeo.sampleMappingNotFound().onSuccess(response -> test.verify(() -> assertEquals(HttpStatus.NOT_FOUND.getReasonPhrase(), response))),

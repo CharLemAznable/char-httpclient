@@ -6,6 +6,7 @@ import com.github.charlemaznable.httpclient.common.testclient.TestHttpClientConc
 import com.github.charlemaznable.httpclient.common.testclient.TestHttpClientMocked;
 import com.github.charlemaznable.httpclient.common.testclient.TestHttpClientNone;
 import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import lombok.val;
@@ -32,7 +33,7 @@ public class VxSpringErrorTest extends CommonSpringErrorTest {
         assertNull(testHttpClientNone);
 
         val testHttpClientMocked = SpringContext.getBean(TestHttpClientMocked.class);
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 testHttpClientMocked.vxSample().onSuccess(response -> test.verify(() -> assertEquals("SampleError", response))),
                 testHttpClientMocked.vxSampleWrapper().onSuccess(response -> test.verify(() -> assertEquals("[SampleError]", response)))
         )).onComplete(result -> {

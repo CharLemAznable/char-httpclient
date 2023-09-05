@@ -29,7 +29,7 @@ public class UrlConcatTest extends CommonUrlConcatTest {
 
         val httpClient = vxLoader.getClient(UrlPlainHttpClient.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.empty().onSuccess(response -> test.verify(() -> assertEquals(ROOT, response))),
                 httpClient.root().onSuccess(response -> test.verify(() -> assertEquals(ROOT, response))),
                 httpClient.sample().onSuccess(response -> test.verify(() -> assertEquals(SAMPLE, response))),

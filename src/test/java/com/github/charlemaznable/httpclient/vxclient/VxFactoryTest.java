@@ -59,7 +59,7 @@ public class VxFactoryTest extends CommonFactoryTest {
         assertEquals(httpClientNeo, vxLoader.getClient(AcceptCharsetHttpClientNeo.class));
         assertEquals(httpClientNeo.hashCode(), vxLoader.getClient(AcceptCharsetHttpClientNeo.class).hashCode());
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sample().onSuccess(response -> test.verify(() -> assertEquals(ISO_8859_1.name(), response))),
                 httpClient.sample2().onSuccess(response -> test.verify(() -> assertEquals(UTF_8.name(), response))),
                 httpClient.cover(UTF_8).onSuccess(response -> test.verify(() -> assertEquals(UTF_8.name(), response))),
@@ -89,7 +89,7 @@ public class VxFactoryTest extends CommonFactoryTest {
         assertEquals(httpClientNeo, vxLoader.getClient(ContentFormatHttpClientNeo.class));
         assertEquals(httpClientNeo.hashCode(), vxLoader.getClient(ContentFormatHttpClientNeo.class).hashCode());
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sample().onSuccess(response -> test.verify(() -> assertEquals("", response))),
                 httpClient.sample2().onSuccess(response -> test.verify(() -> assertEquals("{}", response))),
                 httpClient.sample3().onSuccess(response -> test.verify(() -> assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xml/>", response))),
@@ -121,7 +121,7 @@ public class VxFactoryTest extends CommonFactoryTest {
         assertEquals(httpClientNeo, vxLoader.getClient(RequestMethodHttpClientNeo.class));
         assertEquals(httpClientNeo.hashCode(), vxLoader.getClient(RequestMethodHttpClientNeo.class).hashCode());
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sample().onSuccess(response -> test.verify(() -> assertEquals("POST", response))),
                 httpClient.sample2().onSuccess(response -> test.verify(() -> assertEquals("GET", response))),
                 httpClient.cover(HttpMethod.GET).onSuccess(response -> test.verify(() -> assertEquals("GET", response))),

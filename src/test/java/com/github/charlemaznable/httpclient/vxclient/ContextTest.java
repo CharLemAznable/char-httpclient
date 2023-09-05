@@ -35,7 +35,7 @@ public class ContextTest extends CommonContextTest {
         val httpClient = vxLoader.getClient(ContextHttpClient.class);
         val httpClientNeo = vxLoader.getClient(ContextHttpClientNeo.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sampleDefault().onSuccess(response -> test.verify(() -> assertEquals("OK", response))),
                 httpClient.sampleMapping().onSuccess(response -> test.verify(() -> assertEquals("OK", response))),
                 httpClient.sampleContexts(null, "V4").onSuccess(response -> test.verify(() -> assertEquals("OK", response))),

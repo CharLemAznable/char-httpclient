@@ -43,7 +43,7 @@ public class ReturnErrorTest extends CommonReturnErrorTest {
         assertThrows(IllegalStateException.class, httpClient::sampleFutureTriple);
         assertThrows(IllegalStateException.class, httpClient::sampleFutureTripleTUV);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 Future.future(f -> httpClient.sampleMapError().onFailure(ex -> {
                     test.verify(() -> assertTrue(ex instanceof IllegalArgumentException));
                     f.complete();

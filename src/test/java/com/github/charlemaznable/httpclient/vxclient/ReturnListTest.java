@@ -30,7 +30,7 @@ public class ReturnListTest extends CommonReturnListTest {
 
         val httpClient = vxLoader.getClient(ListHttpClient.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sampleFutureListBean().onSuccess(beans -> test.verify(() -> {
                     val bean1 = beans.get(0);
                     val bean2 = beans.get(1);

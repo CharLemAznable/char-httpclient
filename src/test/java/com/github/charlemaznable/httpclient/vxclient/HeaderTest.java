@@ -30,7 +30,7 @@ public class HeaderTest extends CommonHeaderTest {
         val httpClient = vxLoader.getClient(HeaderHttpClient.class);
         val httpClientNeo = vxLoader.getClient(HeaderHttpClientNeo.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sampleDefault().onSuccess(response -> test.verify(() -> assertEquals("OK", response))),
                 httpClient.sampleMapping().onSuccess(response -> test.verify(() -> assertEquals("OK", response))),
                 httpClient.sampleHeaders(null, "V4").onSuccess(response -> test.verify(() -> assertEquals("OK", response))),

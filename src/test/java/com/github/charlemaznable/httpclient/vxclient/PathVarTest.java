@@ -31,7 +31,7 @@ public class PathVarTest extends CommonPathVarTest {
         val httpClient = vxLoader.getClient(PathVarHttpClient.class);
         val httpClientNeo = vxLoader.getClient(PathVarHttpClientNeo.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sampleDefault().onSuccess(response -> test.verify(() -> assertEquals("V2", response))),
                 httpClient.sampleMapping().onSuccess(response -> test.verify(() -> assertEquals("V3", response))),
                 httpClient.samplePathVars("V4").onSuccess(response -> test.verify(() -> assertEquals("V4", response))),

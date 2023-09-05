@@ -37,7 +37,7 @@ public class ReturnTest extends CommonReturnTest {
 
         val httpClient = vxLoader.getClient(StatusCodeHttpClient.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sampleFutureVoid().onSuccess(result ->
                         test.verify(() -> assertNull(result))),
                 httpClient.sampleFutureStatusCode().onSuccess(statusCode ->
@@ -64,7 +64,7 @@ public class ReturnTest extends CommonReturnTest {
 
         val httpClient = vxLoader.getClient(ResponseBodyHttpClient.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sampleFutureResponseBody().onSuccess(buffer ->
                         test.verify(() -> assertNotNull(buffer))),
                 Future.future(f -> httpClient.sampleFutureByteArray()

@@ -26,7 +26,7 @@ public abstract class VxReqCommonTest extends CommonReqTest {
 
         val instance = new VxReq(vertx, "http://127.0.0.1:9300").buildInstance();
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 Future.<String>future(f ->
                         new VxReq(vertx, "http://127.0.0.1:9300/sample1")
                                 .acceptCharset(ISO_8859_1)

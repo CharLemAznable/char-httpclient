@@ -28,7 +28,7 @@ public class ConfigurerTest extends CommonConfigurerTest {
         val client = vxLoader.getClient(ConfigurerClient.class);
         val clientError = vxLoader.getClient(ConfigurerClientError.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 client.sample().onSuccess(response -> test.verify(() -> assertEquals("SAMPLE", response))),
                 Future.future(f -> client.sample2().onFailure(ex -> {
                     assertEquals("Connection refused: /127.0.0.1:41311", ex.getMessage());

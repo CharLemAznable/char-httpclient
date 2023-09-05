@@ -39,7 +39,7 @@ public class ParameterTest extends CommonParameterTest {
         val httpClient = vxLoader.getClient(GetParameterHttpClient.class);
         val httpClientNeo = vxLoader.getClient(GetParameterHttpClientNeo.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sampleDefault().onSuccess(response -> test.verify(() -> assertEquals("OK", response))),
                 httpClient.sampleMapping().onSuccess(response -> test.verify(() -> assertEquals("OK", response))),
                 httpClient.sampleParameters(null, "V4").onSuccess(response -> test.verify(() -> assertEquals("OK", response))),
@@ -68,7 +68,7 @@ public class ParameterTest extends CommonParameterTest {
         val httpClient = vxLoader.getClient(PostParameterHttpClient.class);
         val httpClientNeo = vxLoader.getClient(PostParameterHttpClientNeo.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sampleDefault().onSuccess(response -> test.verify(() -> assertEquals("OK", response))),
                 httpClient.sampleMapping().onSuccess(response -> test.verify(() -> assertEquals("OK", response))),
                 httpClient.sampleParameters(null, "V4").onSuccess(response -> test.verify(() -> assertEquals("OK", response))),

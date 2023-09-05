@@ -7,6 +7,7 @@ import com.github.charlemaznable.httpclient.common.testclient.TestHttpClientMock
 import com.github.charlemaznable.httpclient.common.testclient.TestHttpClientNone;
 import com.github.charlemaznable.httpclient.common.testclient2.TestHttpClientUnscanned;
 import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import lombok.val;
@@ -39,7 +40,7 @@ public class VxSpringTest extends CommonSpringTest {
 
         val testHttpClientMocked = SpringContext.getBean(TestHttpClientMocked.class);
         assertTrue(MockUtil.isSpy(testHttpClientMocked));
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 testHttpClientMocked.vxSample().onSuccess(response -> test.verify(() -> assertEquals(SAMPLE, response))),
                 testHttpClientMocked.vxSampleWrapper().onSuccess(response -> test.verify(() -> assertEquals("[Sample]", response)))
         )).onComplete(result -> {

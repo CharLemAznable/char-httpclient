@@ -31,7 +31,7 @@ public class ReturnPairTest extends CommonReturnPairTest {
 
         val httpClient = vxLoader.getClient(PairHttpClient.class);
 
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 httpClient.sampleFutureStatusAndBean().onSuccess(pair -> test.verify(() -> {
                     assertEquals(HttpStatus.OK.value(), pair.getKey());
                     assertEquals("John", pair.getValue().getName());

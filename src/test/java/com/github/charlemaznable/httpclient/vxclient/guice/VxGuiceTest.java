@@ -13,6 +13,7 @@ import com.google.inject.ConfigurationException;
 import com.google.inject.Guice;
 import com.google.inject.util.Providers;
 import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -64,7 +65,7 @@ public class VxGuiceTest extends CommonGuiceTest {
         assertNull(injector.getInstance(TestHttpClientNone.class));
 
         val testHttpClient2 = injector.getInstance(TestHttpClientMocked.class);
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 testHttpClient2.vxSample().onSuccess(response -> test.verify(() -> assertEquals(SAMPLE_RESULT, response))),
                 testHttpClient2.vxSampleWrapper().onSuccess(response -> test.verify(() -> assertEquals(SAMPLE_RESULT_WRAP_I, response)))
         )).onComplete(result -> {
@@ -93,7 +94,7 @@ public class VxGuiceTest extends CommonGuiceTest {
         assertNull(injector.getInstance(TestHttpClientNone.class));
 
         val testHttpClient2 = injector.getInstance(TestHttpClientMocked.class);
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 testHttpClient2.vxSample().onSuccess(response -> test.verify(() -> assertEquals(SAMPLE_ERROR_RESULT, response))),
                 testHttpClient2.vxSampleWrapper().onSuccess(response -> test.verify(() -> assertEquals(SAMPLE_ERROR_RESULT_WRAP_I, response)))
         )).onComplete(result -> {
@@ -123,7 +124,7 @@ public class VxGuiceTest extends CommonGuiceTest {
                 () -> vxModular.getClient(TestHttpClientNone.class));
 
         val testHttpClient2 = vxModular.getClient(TestHttpClientMocked.class);
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 testHttpClient2.vxSample().onSuccess(response -> test.verify(() -> assertEquals(SAMPLE_ERROR_RESULT, response))),
                 testHttpClient2.vxSampleWrapper().onSuccess(response -> test.verify(() -> assertEquals(SAMPLE_ERROR_RESULT_WRAP_I, response)))
         )).onComplete(result -> {
@@ -153,7 +154,7 @@ public class VxGuiceTest extends CommonGuiceTest {
                 injector.getInstance(TestHttpClientNone.class));
 
         val testHttpClient2 = injector.getInstance(TestHttpClientMocked.class);
-        CompositeFuture.all(newArrayList(
+        Future.all(newArrayList(
                 testHttpClient2.vxSample().onSuccess(response -> test.verify(() -> assertEquals(SAMPLE_RESULT, response))),
                 testHttpClient2.vxSampleWrapper().onSuccess(response -> test.verify(() -> assertEquals(SAMPLE_RESULT_WRAP_I, response)))
         )).onComplete(result -> {
