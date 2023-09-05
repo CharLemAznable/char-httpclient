@@ -24,7 +24,7 @@ import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUE
 import static com.github.charlemaznable.httpclient.common.CommonReq.permitsRequestBody;
 import static com.github.charlemaznable.httpclient.wfclient.elf.RequestSpecConfigElf.REQUEST_BODY_AS_STRING;
 
-final class WfExecute extends CommonExecute<WfBase, ResponseEntity<byte[]>, byte[]> {
+final class WfExecute extends CommonExecute<WfBase, WfMethod, ResponseEntity<byte[]>, byte[]> {
 
     public WfExecute(WfMethod wfMethod) {
         super(new WfBase(wfMethod.element().base()), wfMethod);

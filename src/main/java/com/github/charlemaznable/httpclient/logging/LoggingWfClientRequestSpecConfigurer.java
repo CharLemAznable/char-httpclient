@@ -11,7 +11,7 @@ public final class LoggingWfClientRequestSpecConfigurer implements RequestSpecCo
 
     @Override
     public void configRequestSpec(WebClient.RequestBodyUriSpec requestSpec,
-                                  CommonExecute<?, ?, ?> execute) {
+                                  CommonExecute<?, ?, ?, ?> execute) {
         requestSpec.attribute(Logger.class.getName(), execute.executeMethod().defaultClass().logger());
     }
 }

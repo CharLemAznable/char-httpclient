@@ -6,5 +6,5 @@ import okhttp3.Request;
 public interface RequestBuilderConfigurer {
 
     void configRequestBuilder(Request.Builder requestBuilder,
-                              CommonExecute<?, ?, ?> execute);
+                              CommonExecute<?, ?, ?, ?> execute);
 }

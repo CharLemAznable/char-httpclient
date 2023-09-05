@@ -6,5 +6,5 @@ import io.vertx.ext.web.client.impl.HttpContext;
 public interface HttpContextConfigurer {
 
     void configHttpContext(HttpContext<?> httpContext,
-                           CommonExecute<?, ?, ?> execute);
+                           CommonExecute<?, ?, ?, ?> execute);
 }

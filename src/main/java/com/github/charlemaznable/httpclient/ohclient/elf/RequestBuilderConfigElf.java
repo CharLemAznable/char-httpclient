@@ -19,7 +19,7 @@ public final class RequestBuilderConfigElf {
     }
 
     public static void configRequestBuilder(Request.Builder requestBuilder,
-                                            CommonExecute<?, ?, ?> execute) {
+                                            CommonExecute<?, ?, ?, ?> execute) {
         for (val configurer : configurers) {
             configurer.configRequestBuilder(requestBuilder, execute);
         }

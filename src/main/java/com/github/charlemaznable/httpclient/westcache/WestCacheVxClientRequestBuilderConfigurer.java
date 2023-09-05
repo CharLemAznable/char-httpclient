@@ -15,7 +15,7 @@ public final class WestCacheVxClientRequestBuilderConfigurer implements RequestB
 
     @Override
     public void configRequestBuilder(Request.Builder requestBuilder,
-                                     CommonExecute<?, ?, ?> execute) {
+                                     CommonExecute<?, ?, ?, ?> execute) {
         // westcache supported
         if (HAS_WESTCACHE) {
             val method = execute.executeMethod().method();

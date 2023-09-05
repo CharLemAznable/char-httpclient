@@ -11,7 +11,7 @@ public final class LoggingOhClientHttpContextConfigurer implements HttpContextCo
 
     @Override
     public void configHttpContext(HttpContext<?> httpContext,
-                                  CommonExecute<?, ?, ?> execute) {
+                                  CommonExecute<?, ?, ?, ?> execute) {
         httpContext.set(Logger.class.getName(), execute.executeMethod().defaultClass().logger());
     }
 }

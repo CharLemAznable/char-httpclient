@@ -19,7 +19,7 @@ public final class HttpContextConfigElf {
     }
 
     public static void configHttpContext(HttpContext<?> httpContext,
-                                         CommonExecute<?, ?, ?> execute) {
+                                         CommonExecute<?, ?, ?, ?> execute) {
         for (val configurer : configurers) {
             configurer.configHttpContext(httpContext, execute);
         }

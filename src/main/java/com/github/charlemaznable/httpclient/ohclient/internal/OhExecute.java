@@ -29,7 +29,7 @@ import static com.github.charlemaznable.httpclient.common.CommonConstant.DEFAULT
 import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUERY_FORMATTER;
 import static java.util.Objects.nonNull;
 
-final class OhExecute extends CommonExecute<OhBase, Response, ResponseBody> {
+final class OhExecute extends CommonExecute<OhBase, OhMethod, Response, ResponseBody> {
 
     public OhExecute(OhMethod ohMethod) {
         super(new OhBase(ohMethod.element().base()), ohMethod);

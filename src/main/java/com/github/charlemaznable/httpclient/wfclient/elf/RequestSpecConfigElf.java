@@ -21,7 +21,7 @@ public final class RequestSpecConfigElf {
     }
 
     public static void configRequestSpec(WebClient.RequestBodyUriSpec requestSpec,
-                                         CommonExecute<?, ?, ?> execute) {
+                                         CommonExecute<?, ?, ?, ?> execute) {
         for (val configurer : configurers) {
             configurer.configRequestSpec(requestSpec, execute);
         }

@@ -59,10 +59,10 @@ import static org.springframework.core.annotation.AnnotationUtils.findAnnotation
 @RequiredArgsConstructor
 @Getter
 @Accessors(fluent = true)
-public abstract class CommonExecute<T extends CommonBase<T>, R/* Response Type */, B/* Response Body Type */> {
+public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMethod<T>, R/* Response Type */, B/* Response Body Type */> {
 
     final T base;
-    final CommonMethod<T> executeMethod;
+    final M executeMethod;
 
     Object[] args;
     Class<? extends CncResponse> responseClass = CncResponse.CncResponseImpl.class;

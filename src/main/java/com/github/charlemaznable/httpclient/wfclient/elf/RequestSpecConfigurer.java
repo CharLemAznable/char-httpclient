@@ -6,5 +6,5 @@ import org.springframework.web.reactive.function.client.WebClient;
 public interface RequestSpecConfigurer {
 
     void configRequestSpec(WebClient.RequestBodyUriSpec requestSpec,
-                           CommonExecute<?, ?, ?> execute);
+                           CommonExecute<?, ?, ?, ?> execute);
 }

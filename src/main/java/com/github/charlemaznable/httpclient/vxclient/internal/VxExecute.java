@@ -1,12 +1,8 @@
 package com.github.charlemaznable.httpclient.vxclient.internal;
 
-import com.github.charlemaznable.core.mutiny.MutinyBuildHelper;
-import com.github.charlemaznable.core.reactor.ReactorBuildHelper;
-import com.github.charlemaznable.core.rxjava.RxJava1BuildHelper;
-import com.github.charlemaznable.core.rxjava.RxJava2BuildHelper;
-import com.github.charlemaznable.core.rxjava.RxJava3BuildHelper;
 import com.github.charlemaznable.httpclient.common.CommonExecute;
 import com.github.charlemaznable.httpclient.vxclient.elf.HttpContextConfigElf;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
@@ -17,6 +13,8 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.impl.WebClientInternal;
 import io.vertx.ext.web.codec.impl.BodyCodecImpl;
 import lombok.val;
+
+import java.util.concurrent.CompletableFuture;
 
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
@@ -30,7 +28,7 @@ import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUE
 import static com.github.charlemaznable.httpclient.common.CommonReq.parseCharset;
 import static com.github.charlemaznable.httpclient.common.CommonReq.permitsRequestBody;
 
-final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer> {
+final class VxExecute extends CommonExecute<VxBase, VxMethod, HttpResponse<Buffer>, Buffer> {
 
     public VxExecute(VxMethod vxMethod) {
         super(new VxBase(vxMethod.element().base()), vxMethod);
@@ -46,7 +44,6 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
         }
     }
 
-    @SuppressWarnings("ReactiveStreamsUnusedPublisher")
     @Override
     public Object execute() {
         val request = buildRequest();
@@ -55,23 +52,9 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
         HttpContextConfigElf.configHttpContext(context, this);
         context.set(VxExecuteRequest.class.getName(), request);
         context.prepareRequest(request.bufferHttpRequest, null, request.buffer);
-        val future = promise.future().map(this::processResponse);
-
-        if (executeMethod().returnJavaFuture()) {
-            return future.toCompletionStage().toCompletableFuture();
-        } else if (executeMethod().returnReactorMono()) {
-            return ReactorBuildHelper.buildMonoFromVertxFuture(future);
-        } else if (executeMethod().returnRxJavaSingle()) {
-            return RxJava1BuildHelper.buildSingleFromVertxFuture(future);
-        } else if (executeMethod().returnRxJava2Single()) {
-            return RxJava2BuildHelper.buildSingleFromVertxFuture(future);
-        } else if (executeMethod().returnRxJava3Single()) {
-            return RxJava3BuildHelper.buildSingleFromVertxFuture(future);
-        } else if (executeMethod().returnMutinyUni()) {
-            return MutinyBuildHelper.buildUniFromVertxFuture(future);
-        } else {
-            return future;
-        }
+        val future = promise.future().map(this::processResponse)
+                .toCompletionStage().toCompletableFuture();
+        return returnAsyncFromFuture(future);
     }
 
     private VxExecuteRequest buildRequest() {
@@ -142,5 +125,12 @@ final class VxExecute extends CommonExecute<VxBase, HttpResponse<Buffer>, Buffer
         } else {
             return super.customProcessReturnTypeValue(statusCode, responseBody, returnType);
         }
+    }
+
+    @Override
+    protected Object returnAsyncFromFuture(CompletableFuture<Object> future) {
+        if (executeMethod().returnCoreFuture) {
+            return Future.fromCompletionStage(future);
+        } else return super.returnAsyncFromFuture(future);
     }
 }

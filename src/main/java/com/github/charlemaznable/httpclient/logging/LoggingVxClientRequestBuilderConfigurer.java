@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 public final class LoggingVxClientRequestBuilderConfigurer implements RequestBuilderConfigurer {
 
     @Override
-    public void configRequestBuilder(Request.Builder requestBuilder, CommonExecute<?, ?, ?> execute) {
+    public void configRequestBuilder(Request.Builder requestBuilder, CommonExecute<?, ?, ?, ?> execute) {
         requestBuilder.tag(Logger.class, execute.executeMethod().defaultClass().logger());
     }
 }

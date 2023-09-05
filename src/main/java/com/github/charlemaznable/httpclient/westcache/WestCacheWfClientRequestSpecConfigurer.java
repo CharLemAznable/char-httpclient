@@ -15,7 +15,7 @@ public final class WestCacheWfClientRequestSpecConfigurer implements RequestSpec
 
     @Override
     public void configRequestSpec(WebClient.RequestBodyUriSpec requestSpec,
-                                  CommonExecute<?, ?, ?> execute) {
+                                  CommonExecute<?, ?, ?, ?> execute) {
         // westcache supported
         if (HAS_WESTCACHE) {
             val method = execute.executeMethod().method();

@@ -15,7 +15,7 @@ public final class WestCacheOhClientHttpContextConfigurer implements HttpContext
 
     @Override
     public void configHttpContext(HttpContext<?> httpContext,
-                                  CommonExecute<?, ?, ?> execute) {
+                                  CommonExecute<?, ?, ?, ?> execute) {
         // westcache supported
         if (HAS_WESTCACHE) {
             val method = execute.executeMethod().method();
