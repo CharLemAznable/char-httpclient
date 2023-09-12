@@ -18,7 +18,7 @@ import java.util.concurrent.Future;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static com.github.charlemaznable.core.lang.Await.awaitForSeconds;
-import static com.github.charlemaznable.core.lang.function.Unchecker.unchecked;
+import static org.jooq.lambda.Sneaky.runnable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CircuitBreakerTest extends CommonCircuitBreakerTest {
@@ -118,7 +118,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         awaitForSeconds(10);
         val service3HalfOpen = new Thread[5];
         for (int i = 0; i < 5; i++) {
-            service3HalfOpen[i] = new Thread(unchecked(() -> assertEquals("OK", httpClient.getWithAnno().get())), "service3HalfOpen" + i);
+            service3HalfOpen[i] = new Thread(runnable(() -> assertEquals("OK", httpClient.getWithAnno().get())), "service3HalfOpen" + i);
             service3HalfOpen[i].start();
         }
         for (int i = 0; i < 5; i++) {
@@ -127,7 +127,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         assertEquals(15, countSample.get());
         val service3Normal = new Thread[5];
         for (int i = 0; i < 5; i++) {
-            service3Normal[i] = new Thread(unchecked(() -> assertEquals("OK", httpClient.getWithAnno().get())), "service3Normal" + i);
+            service3Normal[i] = new Thread(runnable(() -> assertEquals("OK", httpClient.getWithAnno().get())), "service3Normal" + i);
             service3Normal[i].start();
         }
         for (int i = 0; i < 5; i++) {
@@ -149,7 +149,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         errorState.set(false);
         val service4Normal = new Thread[5];
         for (int i = 0; i < 5; i++) {
-            service4Normal[i] = new Thread(unchecked(() -> assertEquals("OK", httpClient.getWithDisableConfig().toCompletableFuture().get())), "service4Normal" + i);
+            service4Normal[i] = new Thread(runnable(() -> assertEquals("OK", httpClient.getWithDisableConfig().toCompletableFuture().get())), "service4Normal" + i);
             service4Normal[i].start();
         }
         for (int i = 0; i < 5; i++) {

@@ -1,6 +1,5 @@
 package com.github.charlemaznable.httpclient.common.resilience4j;
 
-import com.github.charlemaznable.core.lang.function.RunnableWithException;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.configurer.configservice.ResilienceCircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
@@ -8,6 +7,7 @@ import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import org.jooq.lambda.fi.lang.CheckedRunnable;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -50,23 +50,23 @@ public abstract class CommonCircuitBreakerTest {
         mockWebServer.shutdown();
     }
 
-    protected Runnable runQuietly(RunnableWithException runnable) {
+    protected Runnable runQuietly(CheckedRunnable runnable) {
         return () -> {
             try {
                 runnable.run();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 // ignored
             }
         };
     }
 
-    protected Runnable checkOptionalException(RunnableWithException runnable) {
+    protected Runnable checkOptionalException(CheckedRunnable runnable) {
         return () -> {
             try {
                 runnable.run();
             } catch (ExecutionException e) {
                 assertTrue(e.getCause() instanceof CallNotPermittedException);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 assertTrue(e instanceof CallNotPermittedException);
             }
         };

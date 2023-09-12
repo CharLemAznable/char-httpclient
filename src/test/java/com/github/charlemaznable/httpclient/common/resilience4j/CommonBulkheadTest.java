@@ -1,6 +1,5 @@
 package com.github.charlemaznable.httpclient.common.resilience4j;
 
-import com.github.charlemaznable.core.lang.function.RunnableWithException;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.configurer.configservice.ResilienceBulkheadConfig;
 import io.github.resilience4j.bulkhead.BulkheadFullException;
@@ -8,6 +7,7 @@ import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import org.jooq.lambda.fi.lang.CheckedRunnable;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,12 +46,12 @@ public abstract class CommonBulkheadTest {
         mockWebServer.shutdown();
     }
 
-    protected void checkOptionalException(RunnableWithException runnable) {
+    protected void checkOptionalException(CheckedRunnable runnable) {
         try {
             runnable.run();
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof BulkheadFullException);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             assertTrue(e instanceof BulkheadFullException);
         }
     }

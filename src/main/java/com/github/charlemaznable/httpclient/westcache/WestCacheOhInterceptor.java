@@ -26,13 +26,13 @@ import java.util.concurrent.TimeUnit;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Str.toStr;
-import static com.github.charlemaznable.core.lang.function.Unchecker.unchecked;
 import static com.github.charlemaznable.httpclient.westcache.WestCacheConstant.buildDefaultStatusCodes;
 import static com.google.common.cache.CacheBuilder.newBuilder;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static okio.Okio.buffer;
 import static okio.Okio.source;
+import static org.jooq.lambda.Sneaky.supplier;
 
 public final class WestCacheOhInterceptor implements Interceptor {
 
@@ -90,7 +90,7 @@ public final class WestCacheOhInterceptor implements Interceptor {
         });
         if (cachedOptional.isEmpty()) return nullThen(
                 networkResponse.getResponse(),
-                unchecked(() -> chain.proceed(request)));
+                supplier(() -> chain.proceed(request)));
 
         val cacheResponse = cachedOptional.get();
         return new Response.Builder()

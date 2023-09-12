@@ -26,13 +26,13 @@ import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
 import static com.github.charlemaznable.core.lang.Str.toStr;
-import static com.github.charlemaznable.core.lang.function.Unchecker.unchecked;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT_TYPE;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.DEFAULT_CONTENT_FORMATTER;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUERY_FORMATTER;
 import static java.util.Objects.nonNull;
+import static org.jooq.lambda.Sneaky.function;
 
 public final class OhReq extends CommonReq<OhReq> {
 
@@ -180,7 +180,7 @@ public final class OhReq extends CommonReq<OhReq> {
                         statusCode, responseBody);
             }
 
-            return notNullThen(responseBody, unchecked(ResponseBody::string));
+            return notNullThen(responseBody, function(ResponseBody::string));
         }
 
         private String applyFallback(FallbackFunction<?> function,
@@ -190,7 +190,7 @@ public final class OhReq extends CommonReq<OhReq> {
                         @Override
                         public String responseBodyAsString() {
                             return toStr(notNullThen(getResponseBody(),
-                                    unchecked(ResponseBody::string)));
+                                    function(ResponseBody::string)));
                         }
                     }));
         }

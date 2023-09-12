@@ -21,13 +21,14 @@ import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
-import static com.github.charlemaznable.core.lang.function.Unchecker.unchecked;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT_TYPE;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.DEFAULT_CONTENT_FORMATTER;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUERY_FORMATTER;
 import static java.util.Objects.nonNull;
+import static org.jooq.lambda.Sneaky.function;
+import static org.jooq.lambda.Sneaky.supplier;
 
 final class OhExecute extends CommonExecute<OhBase, OhMethod, Response, ResponseBody> {
 
@@ -54,7 +55,7 @@ final class OhExecute extends CommonExecute<OhBase, OhMethod, Response, Response
                 return future;
             }));
         }
-        return decorateSyncExecute(unchecked(() -> processResponse(
+        return decorateSyncExecute(supplier(() -> processResponse(
                 base().client.newCall(buildRequest()).execute())));
     }
 
@@ -123,7 +124,7 @@ final class OhExecute extends CommonExecute<OhBase, OhMethod, Response, Response
         } else if (BufferedSource.class == returnType) {
             return (notNullThen(responseBody, ResponseBody::source));
         } else if (byte[].class == returnType) {
-            return notNullThen(responseBody, unchecked(ResponseBody::bytes));
+            return notNullThen(responseBody, function(ResponseBody::bytes));
         } else if (Reader.class == returnType) {
             return notNullThen(responseBody, ResponseBody::charStream);
         } else {
