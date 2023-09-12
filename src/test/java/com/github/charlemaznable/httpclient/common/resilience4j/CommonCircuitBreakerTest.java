@@ -116,7 +116,7 @@ public abstract class CommonCircuitBreakerTest {
 
         @Override
         public String waitDurationInOpenState() {
-            return "10";
+            return "10S";
         }
 
         @Override
