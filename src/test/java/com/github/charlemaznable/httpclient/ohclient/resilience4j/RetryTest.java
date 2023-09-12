@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class RetryTest extends CommonRetryTest {
 
     @Test
-    public void testRetry() {
+    public void testOhRetry() {
         startMockWebServer();
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());

@@ -33,7 +33,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
 
     @Timeout(value = 1, timeUnit = TimeUnit.MINUTES)
     @Test
-    public void testCircuitBreaker(Vertx vertx, VertxTestContext test) {
+    public void testVxCircuitBreaker(Vertx vertx, VertxTestContext test) {
         startMockWebServer();
 
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));

@@ -23,7 +23,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
 
     @SneakyThrows
     @Test
-    public void testRateLimiter() {
+    public void testWfRateLimiter() {
         startMockWebServer();
 
         val wfLoader = WfFactory.wfLoader(reflectFactory());

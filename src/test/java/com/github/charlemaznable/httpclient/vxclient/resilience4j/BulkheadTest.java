@@ -32,7 +32,7 @@ public class BulkheadTest extends CommonBulkheadTest {
 
     @Timeout(value = 1, timeUnit = TimeUnit.MINUTES)
     @Test
-    public void testBulkhead(Vertx vertx, VertxTestContext test) {
+    public void testVxBulkhead(Vertx vertx, VertxTestContext test) {
         startMockWebServer();
 
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));

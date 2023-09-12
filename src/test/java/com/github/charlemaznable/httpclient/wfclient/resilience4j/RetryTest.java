@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class RetryTest extends CommonRetryTest {
 
     @Test
-    public void testRetry() {
+    public void testWfRetry() {
         startMockWebServer();
 
         val wfLoader = WfFactory.wfLoader(reflectFactory());

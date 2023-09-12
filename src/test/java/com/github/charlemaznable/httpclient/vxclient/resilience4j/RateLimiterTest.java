@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class RateLimiterTest extends CommonRateLimiterTest {
 
     @Test
-    public void testRateLimiter(Vertx vertx, VertxTestContext test) {
+    public void testVxRateLimiter(Vertx vertx, VertxTestContext test) {
         startMockWebServer();
 
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));

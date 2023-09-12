@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class RetryTest extends CommonRetryTest {
 
     @Test
-    public void testRetry(Vertx vertx, VertxTestContext test) {
+    public void testVxRetry(Vertx vertx, VertxTestContext test) {
         startMockWebServer();
 
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));

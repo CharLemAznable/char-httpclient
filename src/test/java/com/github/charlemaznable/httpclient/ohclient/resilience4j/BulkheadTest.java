@@ -22,7 +22,7 @@ public class BulkheadTest extends CommonBulkheadTest {
 
     @SneakyThrows
     @Test
-    public void testBulkhead() {
+    public void testOhBulkhead() {
         startMockWebServer();
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());

@@ -25,7 +25,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
 
     @SneakyThrows
     @Test
-    public void testCircuitBreaker() {
+    public void testWfCircuitBreaker() {
         startMockWebServer();
 
         val wfLoader = WfFactory.wfLoader(reflectFactory());

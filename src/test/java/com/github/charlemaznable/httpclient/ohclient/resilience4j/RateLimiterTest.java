@@ -22,7 +22,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
 
     @SneakyThrows
     @Test
-    public void testRateLimiter() {
+    public void testOhRateLimiter() {
         startMockWebServer();
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());

@@ -23,7 +23,7 @@ public class BulkheadTest extends CommonBulkheadTest {
 
     @SneakyThrows
     @Test
-    public void testBulkhead() {
+    public void testWfBulkhead() {
         startMockWebServer();
 
         val wfLoader = WfFactory.wfLoader(reflectFactory());

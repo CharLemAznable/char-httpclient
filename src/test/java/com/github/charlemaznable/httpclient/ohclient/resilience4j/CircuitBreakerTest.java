@@ -24,7 +24,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
 
     @SneakyThrows
     @Test
-    public void testCircuitBreaker() {
+    public void testOhCircuitBreaker() {
         startMockWebServer();
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());
