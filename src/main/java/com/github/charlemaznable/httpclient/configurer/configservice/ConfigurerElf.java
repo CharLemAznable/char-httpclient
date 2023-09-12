@@ -9,7 +9,9 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
+import static com.github.charlemaznable.core.lang.Condition.checkBlank;
 import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -25,13 +27,23 @@ final class ConfigurerElf {
         for (val pair : pairs) {
             int idx = pair.indexOf('=');
             if (idx == -1) {
-                result.add(Pair.of(decode(pair, UTF_8.name()), null));
+                result.add(Pair.of(decode(pair, UTF_8), null));
             } else {
-                String name = decode(pair.substring(0, idx), UTF_8.name());
-                String value = decode(pair.substring(idx + 1), UTF_8.name());
+                String name = decode(pair.substring(0, idx), UTF_8);
+                String value = decode(pair.substring(idx + 1), UTF_8);
                 result.add(Pair.of(name, (T) value));
             }
         }
         return result;
+    }
+
+    static <T> T parseStringToValue(String str, T defaultValue, Function<String, T> parser) {
+        return checkBlank(str, () -> defaultValue, value -> {
+            try {
+                return parser.apply(value);
+            } catch (Exception e) {
+                return defaultValue;
+            }
+        });
     }
 }

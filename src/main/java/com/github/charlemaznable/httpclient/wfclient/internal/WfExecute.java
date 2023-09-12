@@ -42,10 +42,10 @@ final class WfExecute extends CommonExecute<WfBase, WfMethod, ResponseEntity<byt
 
     @Override
     public Object execute() {
-        val future = buildRequestSpec()
+        return adaptationFromFuture(decorateAsyncExecute(() ->
+                buildRequestSpec()
                 .exchangeToMono(this::buildWfResponse)
-                .mapNotNull(this::processResponse).toFuture();
-        return returnAsyncFromFuture(future);
+                .mapNotNull(this::processResponse).toFuture()));
     }
 
     private WebClient.RequestBodyUriSpec buildRequestSpec() {

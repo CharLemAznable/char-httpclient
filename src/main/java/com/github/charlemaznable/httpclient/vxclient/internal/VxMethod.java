@@ -6,6 +6,8 @@ import lombok.val;
 
 import java.lang.reflect.Method;
 
+import static com.github.charlemaznable.core.lang.Clz.isAssignable;
+
 final class VxMethod extends CommonMethod<VxBase> {
 
     boolean returnCoreFuture;
@@ -19,7 +21,7 @@ final class VxMethod extends CommonMethod<VxBase> {
     @Override
     protected boolean checkReturnFuture(Class<?> returnType) {
         val superReturnFuture = super.checkReturnFuture(returnType);
-        returnCoreFuture = Future.class == returnType;
+        returnCoreFuture = checkReturnCoreFuture(returnType);
         if (!superReturnFuture && !returnCoreFuture) {
             throw new IllegalStateException(method().getName() +
                     " must return io.vertx.core.Future<?>[io.vertx:vertx-core]" +
@@ -31,6 +33,11 @@ final class VxMethod extends CommonMethod<VxBase> {
                     " or io.smallrye.mutiny.Uni<?>[io.smallrye.reactive:mutiny]");
         }
         return true;
+    }
+
+    private boolean checkReturnCoreFuture(Class<?> returnType) {
+        return Object.class != returnType
+                && isAssignable(Future.class, returnType);
     }
 
     @Override

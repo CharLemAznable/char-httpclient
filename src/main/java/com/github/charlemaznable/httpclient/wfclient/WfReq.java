@@ -16,7 +16,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static com.github.charlemaznable.core.codec.Bytes.string;
@@ -66,11 +66,11 @@ public final class WfReq extends CommonReq<WfReq> {
         return buildInstance().post();
     }
 
-    public Future<String> getFuture() {
+    public CompletableFuture<String> getFuture() {
         return buildInstance().getFuture();
     }
 
-    public Future<String> postFuture() {
+    public CompletableFuture<String> postFuture() {
         return buildInstance().postFuture();
     }
 
@@ -96,11 +96,11 @@ public final class WfReq extends CommonReq<WfReq> {
             return this.execute(this::buildPostRequestSpec);
         }
 
-        public Future<String> getFuture() {
+        public CompletableFuture<String> getFuture() {
             return this.get().toFuture();
         }
 
-        public Future<String> postFuture() {
+        public CompletableFuture<String> postFuture() {
             return this.post().toFuture();
         }
 

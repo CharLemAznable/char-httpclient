@@ -7,6 +7,7 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
@@ -40,7 +41,7 @@ public class ReturnMapTest extends CommonReturnMapTest {
     @Mapping("${root}:41193")
     public interface MapHttpClient {
 
-        Mono<Map<String, Object>> sampleMap();
+        Mono<HashMap<String, Object>> sampleMap();
 
         Mono<Map<String, Object>> sampleMapNull();
     }

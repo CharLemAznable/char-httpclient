@@ -46,15 +46,15 @@ final class VxExecute extends CommonExecute<VxBase, VxMethod, HttpResponse<Buffe
 
     @Override
     public Object execute() {
-        val request = buildRequest();
-        val promise = Promise.<HttpResponse<Buffer>>promise();
-        val context = base().client.createContext(promise);
-        HttpContextConfigElf.configHttpContext(context, this);
-        context.set(VxExecuteRequest.class.getName(), request);
-        context.prepareRequest(request.bufferHttpRequest, null, request.buffer);
-        val future = promise.future().map(this::processResponse)
-                .toCompletionStage().toCompletableFuture();
-        return returnAsyncFromFuture(future);
+        return adaptationFromFuture(decorateAsyncExecute(() -> {
+            val request = buildRequest();
+            val promise = Promise.<HttpResponse<Buffer>>promise();
+            val context = base().client.createContext(promise);
+            HttpContextConfigElf.configHttpContext(context, this);
+            context.set(VxExecuteRequest.class.getName(), request);
+            context.prepareRequest(request.bufferHttpRequest, null, request.buffer);
+            return promise.future().map(this::processResponse).toCompletionStage();
+        }));
     }
 
     private VxExecuteRequest buildRequest() {
@@ -114,13 +114,13 @@ final class VxExecute extends CommonExecute<VxBase, VxMethod, HttpResponse<Buffe
 
     @Override
     protected Object customProcessReturnTypeValue(int statusCode, Buffer responseBody, Class<?> returnType) {
-        if (Buffer.class.isAssignableFrom(returnType)) {
+        if (Buffer.class == returnType) {
             return responseBody;
         } else if (byte[].class == returnType) {
             return notNullThen(responseBody, Buffer::getBytes);
-        } else if (JsonObject.class.isAssignableFrom(returnType)) {
+        } else if (JsonObject.class == returnType) {
             return notNullThen(responseBody, BodyCodecImpl.JSON_OBJECT_DECODER);
-        } else if (JsonArray.class.isAssignableFrom(returnType)) {
+        } else if (JsonArray.class == returnType) {
             return notNullThen(responseBody, BodyCodecImpl.JSON_ARRAY_DECODER);
         } else {
             return super.customProcessReturnTypeValue(statusCode, responseBody, returnType);
@@ -128,9 +128,9 @@ final class VxExecute extends CommonExecute<VxBase, VxMethod, HttpResponse<Buffe
     }
 
     @Override
-    protected Object returnAsyncFromFuture(CompletableFuture<Object> future) {
+    protected Object adaptationFromFuture(CompletableFuture<Object> future) {
         if (executeMethod().returnCoreFuture) {
             return Future.fromCompletionStage(future);
-        } else return super.returnAsyncFromFuture(future);
+        } else return super.adaptationFromFuture(future);
     }
 }

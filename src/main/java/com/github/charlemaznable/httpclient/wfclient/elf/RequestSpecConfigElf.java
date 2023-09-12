@@ -6,6 +6,9 @@ import lombok.val;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ServiceLoader;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static lombok.AccessLevel.PRIVATE;
 
@@ -14,10 +17,12 @@ public final class RequestSpecConfigElf {
 
     public static final String REQUEST_BODY_AS_STRING = "RequestBodyAsStringSpecAttributeKey";
 
-    private static final ServiceLoader<RequestSpecConfigurer> configurers;
+    private static final CopyOnWriteArrayList<RequestSpecConfigurer> configurers;
 
     static {
-        configurers = ServiceLoader.load(RequestSpecConfigurer.class);
+        configurers = StreamSupport
+                .stream(ServiceLoader.load(RequestSpecConfigurer.class).spliterator(), false)
+                .collect(Collectors.toCollection(CopyOnWriteArrayList::new));
     }
 
     public static void configRequestSpec(WebClient.RequestBodyUriSpec requestSpec,

@@ -18,7 +18,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
@@ -68,11 +68,11 @@ public final class OhReq extends CommonReq<OhReq> {
         return buildInstance().post();
     }
 
-    public Future<String> getFuture() {
+    public CompletableFuture<String> getFuture() {
         return buildInstance().getFuture();
     }
 
-    public Future<String> postFuture() {
+    public CompletableFuture<String> postFuture() {
         return buildInstance().postFuture();
     }
 
@@ -98,11 +98,11 @@ public final class OhReq extends CommonReq<OhReq> {
             return this.execute(this::buildPostRequest);
         }
 
-        public Future<String> getFuture() {
+        public CompletableFuture<String> getFuture() {
             return this.enqueue(this::buildGetRequest);
         }
 
-        public Future<String> postFuture() {
+        public CompletableFuture<String> postFuture() {
             return this.enqueue(this::buildPostRequest);
         }
 
@@ -111,7 +111,7 @@ public final class OhReq extends CommonReq<OhReq> {
             return this.processResponse(httpClient.newCall(requestSupplier.get()).execute());
         }
 
-        private Future<String> enqueue(Supplier<Request> requestSupplier) {
+        private CompletableFuture<String> enqueue(Supplier<Request> requestSupplier) {
             val future = new OhCallbackFuture<>(this::processResponse);
             httpClient.newCall(requestSupplier.get()).enqueue(future);
             return future;

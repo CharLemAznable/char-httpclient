@@ -14,6 +14,7 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
@@ -59,7 +60,7 @@ public class ReturnListTest extends CommonReturnListTest {
 
         Future<List<Bean>> sampleFutureListBean();
 
-        Future<List<String>> sampleFutureListString();
+        Future<ArrayList<String>> sampleFutureListString();
 
         Future<List<Buffer>> sampleFutureListBuffer();
     }

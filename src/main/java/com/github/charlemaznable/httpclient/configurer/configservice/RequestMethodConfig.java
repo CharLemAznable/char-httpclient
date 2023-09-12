@@ -4,7 +4,7 @@ import com.github.charlemaznable.configservice.Config;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.configurer.RequestMethodConfigurer;
 
-import static com.github.charlemaznable.core.lang.Condition.notNullThen;
+import static com.github.charlemaznable.httpclient.configurer.configservice.ConfigurerElf.parseStringToValue;
 
 public interface RequestMethodConfig extends RequestMethodConfigurer {
 
@@ -13,10 +13,6 @@ public interface RequestMethodConfig extends RequestMethodConfigurer {
 
     @Override
     default HttpMethod requestMethod() {
-        try {
-            return notNullThen(requestMethodString(), HttpMethod::valueOf);
-        } catch (Exception e) {
-            return null;
-        }
+        return parseStringToValue(requestMethodString(), null, HttpMethod::valueOf);
     }
 }

@@ -5,6 +5,11 @@ import com.github.charlemaznable.httpclient.annotation.ExtraUrlQuery;
 import com.github.charlemaznable.httpclient.annotation.MappingBalance;
 import com.github.charlemaznable.httpclient.annotation.RequestExtend;
 import com.github.charlemaznable.httpclient.annotation.ResponseParse;
+import io.github.resilience4j.bulkhead.Bulkhead;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.retry.Retry;
+import io.netty.channel.DefaultEventLoop;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
@@ -13,6 +18,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.nio.charset.Charset;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Mapp.newEnumMap;
@@ -45,6 +51,12 @@ public abstract class CommonBase<T extends CommonBase<T>> {
     ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder;
     MappingBalance.MappingBalancer mappingBalancer = new MappingBalance.RandomBalancer();
 
+    Bulkhead bulkhead;
+    RateLimiter rateLimiter;
+    CircuitBreaker circuitBreaker;
+    Retry retry;
+    ScheduledExecutorService retryExecutor = new DefaultEventLoop();
+
     public CommonBase(CommonBase<?> other) {
         this.acceptCharset = other.acceptCharset;
         this.contentFormatter = other.contentFormatter;
@@ -61,5 +73,10 @@ public abstract class CommonBase<T extends CommonBase<T>> {
         this.responseParser = other.responseParser;
         this.extraUrlQueryBuilder = other.extraUrlQueryBuilder;
         this.mappingBalancer = other.mappingBalancer;
+        this.bulkhead = other.bulkhead;
+        this.rateLimiter = other.rateLimiter;
+        this.circuitBreaker = other.circuitBreaker;
+        this.retry = other.retry;
+        this.retryExecutor = other.retryExecutor;
     }
 }

@@ -13,8 +13,8 @@ import lombok.val;
 
 import javax.annotation.Nonnull;
 import java.util.Comparator;
-import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -30,13 +30,13 @@ public final class WfFactory {
 
     private static final LoadingCache<Factory, WfLoader>
             wfLoaderCache = simpleCache(from(WfLoader::new));
-    private static final List<WfClientEnhancer> enhancers;
+    private static final CopyOnWriteArrayList<WfClientEnhancer> enhancers;
 
     static {
         enhancers = StreamSupport
                 .stream(ServiceLoader.load(WfClientEnhancer.class).spliterator(), false)
                 .sorted(Comparator.comparingInt(WfClientEnhancer::getOrder).reversed())
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(CopyOnWriteArrayList::new));
     }
 
     public static <T> T getClient(Class<T> wfClass) {

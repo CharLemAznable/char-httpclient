@@ -13,8 +13,8 @@ import lombok.val;
 
 import javax.annotation.Nonnull;
 import java.util.Comparator;
-import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -30,13 +30,13 @@ public final class OhFactory {
 
     private static final LoadingCache<Factory, OhLoader>
             ohLoaderCache = simpleCache(from(OhLoader::new));
-    private static final List<OhClientEnhancer> enhancers;
+    private static final CopyOnWriteArrayList<OhClientEnhancer> enhancers;
 
     static {
         enhancers = StreamSupport
                 .stream(ServiceLoader.load(OhClientEnhancer.class).spliterator(), false)
                 .sorted(Comparator.comparingInt(OhClientEnhancer::getOrder).reversed())
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(CopyOnWriteArrayList::new));
     }
 
     public static <T> T getClient(Class<T> ohClass) {

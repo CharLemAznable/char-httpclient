@@ -29,6 +29,7 @@ public interface StatusSeriesFallbacksConfig extends StatusSeriesFallbacksConfig
                     .trimResults().withKeyValueSeparator("=").split(v);
             return mapping.entrySet().parallelStream()
                     .filter(e -> nonNull(HttpStatus.Series.resolve(intOf(e.getKey()))))
+                    .filter(e -> nonNull(findClass(e.getValue())))
                     .filter(e -> isAssignable(findClass(e.getValue()), FallbackFunction.class))
                     .collect(toMap(e -> HttpStatus.Series.valueOf(intOf(e.getKey())),
                             e -> onClass(e.getValue()).create().get()));

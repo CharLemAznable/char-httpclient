@@ -94,18 +94,18 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
 
     private void checkCacheResponse(HttpContext<Buffer> httpContext, WestCacheContext context,
                                     Runnable runIfLocalCacheDoesNotExists) {
-        vertx.<Optional<CacheResponse>>executeBlocking(block -> block.complete(
-            LoadingCachee.get(localCache, context)), result -> {
-            if (result.succeeded()) {
-                if (result.result().isPresent()) {
-                    dispatchCacheResponse(httpContext, result.result().get());
-                } else {
-                    runIfLocalCacheDoesNotExists.run();
-                }
-            } else {
-                httpContext.next();
-            }
-        });
+        vertx.executeBlocking(() -> LoadingCachee.get(localCache, context))
+                .onComplete(result -> {
+                    if (result.succeeded()) {
+                        if (result.result().isPresent()) {
+                            dispatchCacheResponse(httpContext, result.result().get());
+                        } else {
+                            runIfLocalCacheDoesNotExists.run();
+                        }
+                    } else {
+                        httpContext.next();
+                    }
+                });
     }
 
     private void handleDispatchResponse(HttpContext<Buffer> httpContext, WestCacheContext context) {
@@ -113,12 +113,11 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
             httpContext.next();
             return;
         }
-        vertx.<Void>executeBlocking(block -> {
+        vertx.<Void>executeBlocking(() -> {
             val response = httpContext.response();
             val statusCode = response.statusCode();
             if (!cachedStatusCodes.contains(statusCode)) {
-                block.complete();
-                return;
+                return null;
             }
 
             val cacheResponse = new CacheResponse();
@@ -132,8 +131,8 @@ public final class WestCacheVxInterceptor implements Handler<HttpContext<?>> {
             cacheResponse.setBody(cacheResponseBody);
             localCache.put(context, Optional.of(cacheResponse));
             context.cachePut(cacheResponse);
-            block.complete();
-        }, result -> lockMap.remove(context));
+            return null;
+        }).onComplete(result -> lockMap.remove(context));
         httpContext.next();
     }
 

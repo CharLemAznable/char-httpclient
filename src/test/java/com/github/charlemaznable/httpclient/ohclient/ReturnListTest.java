@@ -9,6 +9,7 @@ import okio.BufferedSource;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -68,9 +69,9 @@ public class ReturnListTest extends CommonReturnListTest {
 
         Future<List<Bean>> sampleFutureListBean();
 
-        List<String> sampleListString();
+        ArrayList<String> sampleListString();
 
-        Future<List<String>> sampleFutureListString();
+        Future<ArrayList<String>> sampleFutureListString();
 
         List<BufferedSource> sampleListBufferedSource();
     }

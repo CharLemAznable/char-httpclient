@@ -5,7 +5,7 @@ import com.github.charlemaznable.httpclient.configurer.AcceptCharsetConfigurer;
 
 import java.nio.charset.Charset;
 
-import static com.github.charlemaznable.core.lang.Condition.notNullThen;
+import static com.github.charlemaznable.httpclient.configurer.configservice.ConfigurerElf.parseStringToValue;
 
 public interface AcceptCharsetConfig extends AcceptCharsetConfigurer {
 
@@ -14,10 +14,6 @@ public interface AcceptCharsetConfig extends AcceptCharsetConfigurer {
 
     @Override
     default Charset acceptCharset() {
-        try {
-            return notNullThen(acceptCharsetString(), Charset::forName);
-        } catch (Exception e) {
-            return null;
-        }
+        return parseStringToValue(acceptCharsetString(), null, Charset::forName);
     }
 }

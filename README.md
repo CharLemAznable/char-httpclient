@@ -21,7 +21,7 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=CharLemAznable_char-httpclient&metric=coverage)](https://sonarcloud.io/dashboard?id=CharLemAznable_char-httpclient)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=CharLemAznable_char-httpclient&metric=duplicated_lines_density)](https://sonarcloud.io/dashboard?id=CharLemAznable_char-httpclient)
 
-封装http客户端, 使用okhttp/vertx-web-client.
+封装http客户端, 使用okhttp/vertx-web-client/webflux-webclient.
 
 ##### Maven Dependency
 
@@ -272,6 +272,10 @@ public interface MyHttpClient {
 
 指定客户端负载均衡方式, 默认为随机选择, 可使用内置的RoundRobin轮询, 也可自定义负载均衡方式.
 
+##### ```ResilienceBulkhead``` ```ResilienceRateLimiter``` ```ResilienceCircuitBreaker``` ```ResilienceRetry```
+
+使用resilience4j支持的容错机制, 装饰顺序为: Retry ( CircuitBreaker ( RateLimiter ( Bulkhead ( Function ) ) ) ) .
+
 #### 响应解析
 
 默认按照请求方法的返回值类型解析响应内容:
@@ -282,9 +286,9 @@ public interface MyHttpClient {
 5. vertx-web-client: Buffer / byte[] / JsonObject / JsonArray / String: 响应体原文
 6. webflux-webclient: byte[] / String: 响应体原文
 7. JavaBean: 优先按配置的```@ResponseParse```解析, 否则尝试解析xml/json
-8. Collection / Map: 将JavaBean映射为Collection/Map
+8. List / Map: 将JavaBean映射为List/Map
 9. Pair / Triple: 支持同时返回多种格式的响应解析结果, 例如状态码和JavaBean
-10. Future: 支持异步获取响应
+10. Future / CompletionStage: 支持异步获取响应
 11. 特殊支持: 方法参数类型实现```CncRequest```接口后, 指定返回类型实现```CncResponse```接口, 则可支持泛型请求对应泛型响应.
 
 #### 支持环境变量

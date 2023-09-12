@@ -14,11 +14,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
+import static com.github.charlemaznable.core.lang.Clz.isAssignable;
 import static com.github.charlemaznable.core.lang.Condition.checkBlank;
 import static com.github.charlemaznable.core.lang.Condition.emptyThen;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
@@ -46,7 +48,7 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
     // async return types check start
     @Getter
     @Accessors(fluent = true)
-    boolean returnJavaFuture;
+    boolean returnJavaConcurrent; // Future<V> or CompletionStage<V> or CompletableFuture<V>
     @Getter
     @Accessors(fluent = true)
     boolean returnReactorMono;
@@ -63,7 +65,7 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
     @Accessors(fluent = true)
     boolean returnMutinyUni;
     // async return types check finish
-    boolean returnCollection; // Collection<E>
+    boolean returnList; // List<E>
     boolean returnMap; // Map<K, V>
     boolean returnPair; // Pair<L, R>
     boolean returnTriple; // Triple<L, M, R>
@@ -81,10 +83,10 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
     private void initializeReturnTypes() {
         Class<?> returnType = method.getReturnType();
         returnFuture = checkReturnFuture(returnType);
-        returnCollection = Collection.class.isAssignableFrom(returnType);
-        returnMap = Map.class.isAssignableFrom(returnType);
-        returnPair = Pair.class.isAssignableFrom(returnType);
-        returnTriple = Triple.class.isAssignableFrom(returnType);
+        returnList = checkReturnList(returnType);
+        returnMap = checkReturnMap(returnType);
+        returnPair = checkReturnPair(returnType);
+        returnTriple = checkReturnTriple(returnType);
 
         val genericReturnType = method.getGenericReturnType();
         if (!(genericReturnType instanceof ParameterizedType parameterizedType)) {
@@ -100,10 +102,10 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
             val futureTypeArgument = actualTypeArguments[0];
             if (futureTypeArgument instanceof Class) {
                 returnType = (Class<?>) futureTypeArgument;
-                returnCollection = Collection.class.isAssignableFrom(returnType);
-                returnMap = Map.class.isAssignableFrom(returnType);
-                returnPair = Pair.class.isAssignableFrom(returnType);
-                returnTriple = Triple.class.isAssignableFrom(returnType);
+                returnList = checkReturnList(returnType);
+                returnMap = checkReturnMap(returnType);
+                returnPair = checkReturnPair(returnType);
+                returnTriple = checkReturnTriple(returnType);
             }
             if (!(futureTypeArgument instanceof ParameterizedType)) {
                 // 错误的泛型时
@@ -112,14 +114,14 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
             }
             parameterizedType = (ParameterizedType) futureTypeArgument;
             returnType = (Class<?>) parameterizedType.getRawType();
-            returnCollection = Collection.class.isAssignableFrom(returnType);
-            returnMap = Map.class.isAssignableFrom(returnType);
-            returnPair = Pair.class.isAssignableFrom(returnType);
-            returnTriple = Triple.class.isAssignableFrom(returnType);
+            returnList = checkReturnList(returnType);
+            returnMap = checkReturnMap(returnType);
+            returnPair = checkReturnPair(returnType);
+            returnTriple = checkReturnTriple(returnType);
             actualTypeArguments = parameterizedType.getActualTypeArguments();
         }
 
-        if (returnCollection || returnPair || returnTriple) {
+        if (returnList || returnPair || returnTriple) {
             // 以泛型参数类型作为返回值解析目标类型
             returnTypes = processActualTypeArguments(actualTypeArguments);
         } else {
@@ -129,19 +131,42 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
     }
 
     protected boolean checkReturnFuture(Class<?> returnType) {
-        returnJavaFuture = Future.class == returnType;
+        returnJavaConcurrent = checkReturnJavaConcurrent(returnType);
         returnReactorMono = ReactorCheckHelper.checkReturnReactorMono(returnType);
         returnRxJavaSingle = RxJavaCheckHelper.checkReturnRxJavaSingle(returnType);
         returnRxJava2Single = RxJavaCheckHelper.checkReturnRxJava2Single(returnType);
         returnRxJava3Single = RxJavaCheckHelper.checkReturnRxJava3Single(returnType);
         returnMutinyUni = MutinyCheckHelper.checkReturnMutinyUni(returnType);
-        return returnJavaFuture || returnReactorMono
+        return returnJavaConcurrent || returnReactorMono
                 || returnRxJavaSingle || returnRxJava2Single || returnRxJava3Single
                 || returnMutinyUni;
     }
 
+    private boolean checkReturnJavaConcurrent(Class<?> returnType) {
+        return Object.class != returnType
+                && isAssignable(CompletableFuture.class, returnType);
+    }
+
+    private boolean checkReturnList(Class<?> returnType) {
+        return isAssignable(ArrayList.class, returnType)
+                && isAssignable(returnType, Iterable.class);
+    }
+
+    private boolean checkReturnMap(Class<?> returnType) {
+        return isAssignable(HashMap.class, returnType)
+                && isAssignable(returnType, Map.class);
+    }
+
+    private boolean checkReturnPair(Class<?> returnType) {
+        return Pair.class == returnType;
+    }
+
+    private boolean checkReturnTriple(Class<?> returnType) {
+        return Triple.class == returnType;
+    }
+
     private void checkUnParameterizedType(Type type, boolean checkReturnFutureOrNot) {
-        if (checkReturnFutureOrNot || returnCollection || returnPair || returnTriple) {
+        if (checkReturnFutureOrNot || returnList || returnPair || returnTriple) {
             // 如返回支持的泛型类型则抛出异常
             // 不包括Map<K, V>
             throw new IllegalStateException(RETURN_GENERIC_ERROR);
@@ -159,8 +184,7 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
 
     private void checkTypeVariableBounds(Type type) {
         val bounds = ((TypeVariable<?>) type).getBounds();
-        if (bounds.length != 1 || !CncResponse.class
-                .isAssignableFrom((Class<?>) bounds[0])) {
+        if (bounds.length != 1 || !isAssignable((Class<?>) bounds[0], CncResponse.class)) {
             throw new IllegalStateException(RETURN_GENERIC_ERROR);
         }
     }

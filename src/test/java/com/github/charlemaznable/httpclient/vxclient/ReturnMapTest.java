@@ -12,6 +12,7 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
@@ -46,7 +47,7 @@ public class ReturnMapTest extends CommonReturnMapTest {
     @Mapping("${root}:41193")
     public interface MapHttpClient {
 
-        Future<Map<String, Object>> sampleFutureMap();
+        Future<HashMap<String, Object>> sampleFutureMap();
 
         Future<Map<String, Object>> sampleFutureMapNull();
     }

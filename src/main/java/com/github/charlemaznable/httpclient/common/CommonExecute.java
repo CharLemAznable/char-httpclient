@@ -18,6 +18,11 @@ import com.github.charlemaznable.httpclient.annotation.PathVar;
 import com.github.charlemaznable.httpclient.annotation.RequestBodyRaw;
 import com.github.charlemaznable.httpclient.annotation.RequestExtend;
 import com.github.charlemaznable.httpclient.annotation.ResponseParse;
+import io.github.resilience4j.bulkhead.Bulkhead;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.decorators.Decorators;
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.retry.Retry;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -31,17 +36,22 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.github.charlemaznable.core.codec.Json.desc;
+import static com.github.charlemaznable.core.codec.Json.json;
 import static com.github.charlemaznable.core.codec.Json.spec;
 import static com.github.charlemaznable.core.codec.Json.unJson;
 import static com.github.charlemaznable.core.codec.Json.unJsonArray;
 import static com.github.charlemaznable.core.codec.Xml.unXml;
+import static com.github.charlemaznable.core.lang.Clz.isAssignable;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
@@ -90,15 +100,23 @@ public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMet
             base.contentFormatter = contentFormatter;
         } else if (argument instanceof HttpMethod httpMethod) {
             base.httpMethod = httpMethod;
-        } else if (argument instanceof RequestExtend.RequestExtender requestExtender) {
-            base.requestExtender = requestExtender;
-        } else if (argument instanceof ResponseParse.ResponseParser responseParser) {
-            base.responseParser = responseParser;
-        } else if (argument instanceof ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder) {
-            base.extraUrlQueryBuilder = extraUrlQueryBuilder;
+        } else if (isAssignable(parameterType, RequestExtend.RequestExtender.class)) {
+            base.requestExtender = (RequestExtend.RequestExtender) argument;
+        } else if (isAssignable(parameterType, ResponseParse.ResponseParser.class)) {
+            base.responseParser = (ResponseParse.ResponseParser) argument;
+        } else if (isAssignable(parameterType, ExtraUrlQuery.ExtraUrlQueryBuilder.class)) {
+            base.extraUrlQueryBuilder = (ExtraUrlQuery.ExtraUrlQueryBuilder) argument;
         } else if (argument instanceof MappingBalance.MappingBalancer mappingBalancer) {
             base.mappingBalancer = mappingBalancer;
-        } else if (CncRequest.class.isAssignableFrom(parameterType)) {
+        } else if (isAssignable(parameterType, Bulkhead.class)) {
+            base.bulkhead = (Bulkhead) argument;
+        } else if (isAssignable(parameterType, RateLimiter.class)) {
+            base.rateLimiter = (RateLimiter) argument;
+        } else if (isAssignable(parameterType, CircuitBreaker.class)) {
+            base.circuitBreaker = (CircuitBreaker) argument;
+        } else if (isAssignable(parameterType, Retry.class)) {
+            base.retry = (Retry) argument;
+        }else if (isAssignable(parameterType, CncRequest.class)) {
             this.responseClass = checkNull(argument,
                     () -> CncResponse.CncResponseImpl.class,
                     xx -> ((CncRequest<? extends CncResponse>) xx).responseClass());
@@ -248,7 +266,7 @@ public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMet
 
         val responseObjs = processResponseBody(
                 statusCode, responseBody, responseClass);
-        if (executeMethod.returnCollection) {
+        if (executeMethod.returnList) {
             val responseObj = responseObjs.get(0);
             if (responseObj instanceof Collection) {
                 return newArrayList((Collection<?>) responseObj);
@@ -260,7 +278,7 @@ public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMet
             if (responseObj instanceof Map) {
                 return newHashMap((Map<?, ?>) responseObj);
             } else {
-                return desc(responseObj);
+                return unJson(json(responseObj), HashMap.class);
             }
         } else if (executeMethod.returnPair) {
             return Pair.of(responseObjs.get(0),
@@ -350,11 +368,11 @@ public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMet
     }
 
     private boolean returnUnCollectionString(Class<?> returnType) {
-        return String.class == returnType && !executeMethod.returnCollection;
+        return String.class == returnType && !executeMethod.returnList;
     }
 
     @SuppressWarnings("ReactiveStreamsUnusedPublisher")
-    protected Object returnAsyncFromFuture(CompletableFuture<Object> future) {
+    protected Object adaptationFromFuture(CompletableFuture<Object> future) {
         if (executeMethod.returnReactorMono()) {
             return ReactorBuildHelper.buildMonoFromFuture(future);
         } else if (executeMethod.returnRxJavaSingle()) {
@@ -368,5 +386,23 @@ public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMet
         } else {
             return future;
         }
+    }
+
+    protected Object decorateSyncExecute(Supplier<Object> supplier) {
+        val decorateSupplier = Decorators.ofSupplier(supplier);
+        notNullThenRun(base.bulkhead, decorateSupplier::withBulkhead);
+        notNullThenRun(base.rateLimiter, decorateSupplier::withRateLimiter);
+        notNullThenRun(base.circuitBreaker, decorateSupplier::withCircuitBreaker);
+        notNullThenRun(base.retry, decorateSupplier::withRetry);
+        return decorateSupplier.get();
+    }
+
+    protected CompletableFuture<Object> decorateAsyncExecute(Supplier<CompletionStage<Object>> stageSupplier) {
+        val decorateCompletionStage = Decorators.ofCompletionStage(stageSupplier);
+        notNullThenRun(base.bulkhead, decorateCompletionStage::withBulkhead);
+        notNullThenRun(base.rateLimiter, decorateCompletionStage::withRateLimiter);
+        notNullThenRun(base.circuitBreaker, decorateCompletionStage::withCircuitBreaker);
+        notNullThenRun(base.retry, retry -> decorateCompletionStage.withRetry(retry, base.retryExecutor));
+        return decorateCompletionStage.get().toCompletableFuture();
     }
 }

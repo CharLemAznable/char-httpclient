@@ -18,6 +18,10 @@ import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingBalance;
 import com.github.charlemaznable.httpclient.annotation.RequestExtend;
 import com.github.charlemaznable.httpclient.annotation.RequestMethod;
+import com.github.charlemaznable.httpclient.annotation.ResilienceBulkhead;
+import com.github.charlemaznable.httpclient.annotation.ResilienceCircuitBreaker;
+import com.github.charlemaznable.httpclient.annotation.ResilienceRateLimiter;
+import com.github.charlemaznable.httpclient.annotation.ResilienceRetry;
 import com.github.charlemaznable.httpclient.annotation.ResponseParse;
 import com.github.charlemaznable.httpclient.annotation.StatusFallback;
 import com.github.charlemaznable.httpclient.annotation.StatusSeriesFallback;
@@ -37,10 +41,23 @@ import com.github.charlemaznable.httpclient.configurer.MappingConfigurer;
 import com.github.charlemaznable.httpclient.configurer.RequestExtendConfigurer;
 import com.github.charlemaznable.httpclient.configurer.RequestExtendDisabledConfigurer;
 import com.github.charlemaznable.httpclient.configurer.RequestMethodConfigurer;
+import com.github.charlemaznable.httpclient.configurer.ResilienceBulkheadConfigurer;
+import com.github.charlemaznable.httpclient.configurer.ResilienceCircuitBreakerConfigurer;
+import com.github.charlemaznable.httpclient.configurer.ResilienceRateLimiterConfigurer;
+import com.github.charlemaznable.httpclient.configurer.ResilienceRetryConfigurer;
 import com.github.charlemaznable.httpclient.configurer.ResponseParseConfigurer;
 import com.github.charlemaznable.httpclient.configurer.ResponseParseDisabledConfigurer;
 import com.github.charlemaznable.httpclient.configurer.StatusFallbacksConfigurer;
 import com.github.charlemaznable.httpclient.configurer.StatusSeriesFallbacksConfigurer;
+import io.github.resilience4j.bulkhead.Bulkhead;
+import io.github.resilience4j.bulkhead.BulkheadConfig;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.ratelimiter.RateLimiterConfig;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
+import io.netty.channel.DefaultEventLoop;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
@@ -50,12 +67,16 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiConsumer;
 
+import static com.github.charlemaznable.core.lang.Condition.blankThen;
+import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.emptyThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
@@ -128,6 +149,11 @@ public abstract class CommonElement<T extends CommonBase<T>> {
         base.responseParser = buildResponseParser(element, superBase.responseParser);
         base.extraUrlQueryBuilder = buildExtraUrlQueryBuilder(element, superBase.extraUrlQueryBuilder);
         base.mappingBalancer = buildMappingBalancer(element, superBase.mappingBalancer);
+        base.bulkhead = buildBulkhead(element, superBase.bulkhead);
+        base.rateLimiter = buildRateLimiter(element, superBase.rateLimiter);
+        base.circuitBreaker = buildCircuitBreaker(element, superBase.circuitBreaker);
+        base.retry = buildRetry(element, superBase.retry);
+        base.retryExecutor = buildRetryExecutor(element, superBase.retryExecutor);
     }
 
     public void tearDownAfterInitialization(Class<?> clazz, Method method, CommonElement<T> superElement) {
@@ -312,5 +338,70 @@ public abstract class CommonElement<T extends CommonBase<T>> {
             return mappingBalanceConfigurer.mappingBalancer();
         val mappingBalance = getMergedAnnotation(element, MappingBalance.class);
         return notNullThen(mappingBalance, anno -> FactoryContext.build(factory, anno.value()));
+    }
+
+    private Bulkhead buildBulkhead(AnnotatedElement element, Bulkhead defaultValue) {
+        if (configurer instanceof ResilienceBulkheadConfigurer bulkheadConfigurer)
+            return bulkheadConfigurer.bulkhead();
+        val bulkhead = getMergedAnnotation(element, ResilienceBulkhead.class);
+        return checkNull(bulkhead, () -> defaultValue, anno -> Bulkhead.of(
+                blankThen(anno.value(), () -> "Bulkhead-" + defaultResilienceName(element)),
+                BulkheadConfig.custom().maxConcurrentCalls(anno.maxConcurrentCalls())
+                        .maxWaitDuration(Duration.ofMillis(anno.maxWaitDurationInMillis())).build()));
+    }
+
+    private RateLimiter buildRateLimiter(AnnotatedElement element, RateLimiter defaultValue) {
+        if (configurer instanceof ResilienceRateLimiterConfigurer rateLimiterConfigurer)
+            return rateLimiterConfigurer.rateLimiter();
+        val rateLimiter = getMergedAnnotation(element, ResilienceRateLimiter.class);
+        return checkNull(rateLimiter, () -> defaultValue, anno -> RateLimiter.of(
+                blankThen(anno.value(), () -> "RateLimiter-" + defaultResilienceName(element)),
+                RateLimiterConfig.custom().limitForPeriod(anno.limitForPeriod())
+                        .limitRefreshPeriod(Duration.ofNanos(anno.limitRefreshPeriodInNanos()))
+                        .timeoutDuration(Duration.ofMillis(anno.timeoutDurationInMillis())).build()));
+    }
+
+    private CircuitBreaker buildCircuitBreaker(AnnotatedElement element, CircuitBreaker defaultValue) {
+        if (configurer instanceof ResilienceCircuitBreakerConfigurer circuitBreakerConfigurer)
+            return circuitBreakerConfigurer.circuitBreaker();
+        val circuitBreaker = getMergedAnnotation(element, ResilienceCircuitBreaker.class);
+        return checkNull(circuitBreaker, () -> defaultValue, anno -> CircuitBreaker.of(
+                blankThen(anno.value(), () -> "CircuitBreaker-" + defaultResilienceName(element)),
+                CircuitBreakerConfig.custom().slidingWindow(anno.slidingWindowSize(),
+                                anno.minimumNumberOfCalls(), anno.slidingWindowType())
+                        .failureRateThreshold(anno.failureRateThreshold())
+                        .slowCallRateThreshold(anno.slowCallRateThreshold())
+                        .slowCallDurationThreshold(Duration.ofSeconds(anno.slowCallDurationThresholdInSeconds()))
+                        .automaticTransitionFromOpenToHalfOpenEnabled(anno.automaticTransitionFromOpenToHalfOpenEnabled())
+                        .waitDurationInOpenState(Duration.ofSeconds(anno.waitDurationInOpenStateInSeconds()))
+                        .permittedNumberOfCallsInHalfOpenState(anno.permittedNumberOfCallsInHalfOpenState())
+                        .maxWaitDurationInHalfOpenState(Duration.ofSeconds(anno.maxWaitDurationInHalfOpenStateInSeconds())).build()));
+    }
+
+    private Retry buildRetry(AnnotatedElement element, Retry defaultValue) {
+        if (configurer instanceof ResilienceRetryConfigurer retryConfigurer)
+            return retryConfigurer.retry();
+        val retry = getMergedAnnotation(element, ResilienceRetry.class);
+        return checkNull(retry, () -> defaultValue, anno -> Retry.of(
+                blankThen(anno.value(), () -> "Retry-" + defaultResilienceName(element)),
+                RetryConfig.custom().maxAttempts(anno.maxAttempts())
+                        .waitDuration(Duration.ofMillis(anno.waitDurationInMillis())).build()));
+    }
+
+    private ScheduledExecutorService buildRetryExecutor(AnnotatedElement element, ScheduledExecutorService defaultValue) {
+        if (configurer instanceof ResilienceRetryConfigurer retryConfigurer)
+            return retryConfigurer.isolatedExecutor() ? new DefaultEventLoop() : defaultValue;
+        val isolatedExecutor = getMergedAnnotation(element, ResilienceRetry.IsolatedExecutor.class);
+        return checkNull(isolatedExecutor, () -> defaultValue, anno -> new DefaultEventLoop());
+    }
+
+    private String defaultResilienceName(AnnotatedElement element) {
+        if (element instanceof Class<?> clazz) {
+            return clazz.getSimpleName();
+        } else if (element instanceof Method method) {
+            return method.getDeclaringClass().getSimpleName() + "#" + method.getName();
+        } else {
+            return "Unamed#" + Integer.toHexString(element.hashCode());
+        }
     }
 }

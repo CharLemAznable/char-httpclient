@@ -45,16 +45,17 @@ final class OhExecute extends CommonExecute<OhBase, OhMethod, Response, Response
         }
     }
 
-    @SneakyThrows
     @Override
     public Object execute() {
-        val call = base().client.newCall(buildRequest());
         if (executeMethod().returnFuture()) {
-            val future = new OhCallbackFuture<>(this::processResponse);
-            call.enqueue(future);
-            return returnAsyncFromFuture(future);
+            return adaptationFromFuture(decorateAsyncExecute(() -> {
+                val future = new OhCallbackFuture<>(this::processResponse);
+                base().client.newCall(buildRequest()).enqueue(future);
+                return future;
+            }));
         }
-        return processResponse(call.execute());
+        return decorateSyncExecute(unchecked(() -> processResponse(
+                base().client.newCall(buildRequest()).execute())));
     }
 
     private Request buildRequest() {
@@ -115,15 +116,15 @@ final class OhExecute extends CommonExecute<OhBase, OhMethod, Response, Response
 
     @Override
     protected Object customProcessReturnTypeValue(int statusCode, ResponseBody responseBody, Class<?> returnType) {
-        if (ResponseBody.class.isAssignableFrom(returnType)) {
+        if (ResponseBody.class == returnType) {
             return responseBody;
         } else if (InputStream.class == returnType) {
             return notNullThen(responseBody, ResponseBody::byteStream);
-        } else if (BufferedSource.class.isAssignableFrom(returnType)) {
+        } else if (BufferedSource.class == returnType) {
             return (notNullThen(responseBody, ResponseBody::source));
         } else if (byte[].class == returnType) {
             return notNullThen(responseBody, unchecked(ResponseBody::bytes));
-        } else if (Reader.class.isAssignableFrom(returnType)) {
+        } else if (Reader.class == returnType) {
             return notNullThen(responseBody, ResponseBody::charStream);
         } else {
             return super.customProcessReturnTypeValue(statusCode, responseBody, returnType);

@@ -7,6 +7,7 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
@@ -45,6 +46,6 @@ public class ReturnListTest extends CommonReturnListTest {
 
         Mono<List<Bean>> sampleListBean();
 
-        Mono<List<String>> sampleListString();
+        Mono<ArrayList<String>> sampleListString();
     }
 }

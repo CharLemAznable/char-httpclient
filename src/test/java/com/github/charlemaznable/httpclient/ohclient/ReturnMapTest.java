@@ -7,6 +7,7 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -31,16 +32,16 @@ public class ReturnMapTest extends CommonReturnMapTest {
         Map beanMap = (Map) map.get("John");
         assertEquals("Doe", beanMap.get("name"));
 
-        Future<Map<String, Object>> futureMap = httpClient.sampleFutureMap();
-        await().forever().pollDelay(Duration.ofMillis(100)).until(futureMap::isDone);
-        map = futureMap.get();
+        Future<HashMap<String, Object>> futureHashMap = httpClient.sampleFutureMap();
+        await().forever().pollDelay(Duration.ofMillis(100)).until(futureHashMap::isDone);
+        map = futureHashMap.get();
         beanMap = (Map) map.get("John");
         assertEquals("Doe", beanMap.get("name"));
 
         map = httpClient.sampleMapNull();
         assertNull(map);
 
-        futureMap = httpClient.sampleFutureMapNull();
+        Future<Map<String, Object>> futureMap = httpClient.sampleFutureMapNull();
         await().forever().pollDelay(Duration.ofMillis(100)).until(futureMap::isDone);
         map = futureMap.get();
         assertNull(map);
@@ -54,7 +55,7 @@ public class ReturnMapTest extends CommonReturnMapTest {
 
         Map<String, Object> sampleMap();
 
-        Future<Map<String, Object>> sampleFutureMap();
+        Future<HashMap<String, Object>> sampleFutureMap();
 
         Map<String, Object> sampleMapNull();
 

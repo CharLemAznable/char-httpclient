@@ -15,8 +15,8 @@ import lombok.val;
 
 import javax.annotation.Nonnull;
 import java.util.Comparator;
-import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -33,13 +33,13 @@ public final class VxFactory {
 
     private static final LoadingCache<Factory, VxLoader>
             vxLoaderCache = simpleCache(from(VxLoader::new));
-    private static final List<VxClientEnhancer> enhancers;
+    private static final CopyOnWriteArrayList<VxClientEnhancer> enhancers;
 
     static {
         enhancers = StreamSupport
                 .stream(ServiceLoader.load(VxClientEnhancer.class).spliterator(), false)
                 .sorted(Comparator.comparingInt(VxClientEnhancer::getOrder).reversed())
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(CopyOnWriteArrayList::new));
     }
 
     public static <T> T getClient(Class<T> vxClass) {
