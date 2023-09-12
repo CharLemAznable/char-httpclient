@@ -6,6 +6,7 @@ import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled
 import com.github.charlemaznable.httpclient.annotation.ResilienceRetry;
 import com.github.charlemaznable.httpclient.common.StatusError;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonRetryTest;
+import com.github.charlemaznable.httpclient.configurer.ResilienceRetryConfigurer;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory;
 import io.github.resilience4j.retry.Retry;
@@ -65,6 +66,7 @@ public class RetryTest extends CommonRetryTest {
         @ConfigureWith(CustomRetryConfig.class)
         String getWithConfig();
 
+        @ConfigureWith(IgnoredRetryConfig.class)
         String getWithParam(Retry retry);
 
         @ResilienceRetry(maxAttempts = 2)
@@ -73,5 +75,13 @@ public class RetryTest extends CommonRetryTest {
 
         @ConfigureWith(DisabledRetryConfig.class)
         CompletionStage<String> getWithDisableConfig();
+    }
+
+    public static class IgnoredRetryConfig implements ResilienceRetryConfigurer {
+
+        @Override
+        public Retry retry() {
+            return Retry.ofDefaults("IgnoredRetry");
+        }
     }
 }
