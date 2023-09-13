@@ -345,7 +345,7 @@ public abstract class CommonElement<T extends CommonBase<T>> {
             return bulkheadConfigurer.bulkhead();
         val bulkhead = getMergedAnnotation(element, ResilienceBulkhead.class);
         return checkNull(bulkhead, () -> defaultValue, anno -> Bulkhead.of(
-                blankThen(anno.value(), () -> "Bulkhead-" + defaultResilienceName(element)),
+                blankThen(anno.name(), () -> "Bulkhead-" + defaultResilienceName(element)),
                 BulkheadConfig.custom().maxConcurrentCalls(anno.maxConcurrentCalls())
                         .maxWaitDuration(Duration.ofMillis(anno.maxWaitDurationInMillis())).build()));
     }
@@ -355,7 +355,7 @@ public abstract class CommonElement<T extends CommonBase<T>> {
             return rateLimiterConfigurer.rateLimiter();
         val rateLimiter = getMergedAnnotation(element, ResilienceRateLimiter.class);
         return checkNull(rateLimiter, () -> defaultValue, anno -> RateLimiter.of(
-                blankThen(anno.value(), () -> "RateLimiter-" + defaultResilienceName(element)),
+                blankThen(anno.name(), () -> "RateLimiter-" + defaultResilienceName(element)),
                 RateLimiterConfig.custom().limitForPeriod(anno.limitForPeriod())
                         .limitRefreshPeriod(Duration.ofNanos(anno.limitRefreshPeriodInNanos()))
                         .timeoutDuration(Duration.ofMillis(anno.timeoutDurationInMillis())).build()));
@@ -366,7 +366,7 @@ public abstract class CommonElement<T extends CommonBase<T>> {
             return circuitBreakerConfigurer.circuitBreaker();
         val circuitBreaker = getMergedAnnotation(element, ResilienceCircuitBreaker.class);
         return checkNull(circuitBreaker, () -> defaultValue, anno -> CircuitBreaker.of(
-                blankThen(anno.value(), () -> "CircuitBreaker-" + defaultResilienceName(element)),
+                blankThen(anno.name(), () -> "CircuitBreaker-" + defaultResilienceName(element)),
                 CircuitBreakerConfig.custom().slidingWindow(anno.slidingWindowSize(),
                                 anno.minimumNumberOfCalls(), anno.slidingWindowType())
                         .failureRateThreshold(anno.failureRateThreshold())
@@ -383,7 +383,7 @@ public abstract class CommonElement<T extends CommonBase<T>> {
             return retryConfigurer.retry();
         val retry = getMergedAnnotation(element, ResilienceRetry.class);
         return checkNull(retry, () -> defaultValue, anno -> Retry.of(
-                blankThen(anno.value(), () -> "Retry-" + defaultResilienceName(element)),
+                blankThen(anno.name(), () -> "Retry-" + defaultResilienceName(element)),
                 RetryConfig.custom().maxAttempts(anno.maxAttempts())
                         .waitDuration(Duration.ofMillis(anno.waitDurationInMillis())).build()));
     }

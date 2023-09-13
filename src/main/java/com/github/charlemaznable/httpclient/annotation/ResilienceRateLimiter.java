@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ResilienceRateLimiter {
 
-    String value() default "";
+    String name() default "";
 
     int limitForPeriod() default 50;
 

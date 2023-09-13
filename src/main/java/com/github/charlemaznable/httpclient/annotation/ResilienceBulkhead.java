@@ -15,7 +15,7 @@ import static io.github.resilience4j.bulkhead.BulkheadConfig.DEFAULT_MAX_CONCURR
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ResilienceBulkhead {
 
-    String value() default "";
+    String name() default "";
 
     int maxConcurrentCalls() default DEFAULT_MAX_CONCURRENT_CALLS;
 

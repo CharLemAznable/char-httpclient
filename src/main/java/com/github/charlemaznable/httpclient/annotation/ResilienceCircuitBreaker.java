@@ -24,7 +24,7 @@ import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ResilienceCircuitBreaker {
 
-    String value() default "";
+    String name() default "";
 
     CircuitBreakerConfig.SlidingWindowType slidingWindowType() default CircuitBreakerConfig.SlidingWindowType.COUNT_BASED;
 

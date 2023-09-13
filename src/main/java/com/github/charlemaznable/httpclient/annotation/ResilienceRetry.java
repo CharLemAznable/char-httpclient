@@ -15,7 +15,7 @@ import static io.github.resilience4j.retry.RetryConfig.DEFAULT_MAX_ATTEMPTS;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ResilienceRetry {
 
-    String value() default "";
+    String name() default "";
 
     int maxAttempts() default DEFAULT_MAX_ATTEMPTS;
 
