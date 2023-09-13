@@ -7,6 +7,7 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static com.github.charlemaznable.httpclient.common.Utils.swallow;
 
 public class WeatherOhClientTest {
 
@@ -16,8 +17,8 @@ public class WeatherOhClientTest {
 
         val client = ohLoader.getClient(WeatherOhClient.class);
 
-        client.getSupportProvince(new GetSupportProvince.Request());
-        client.getSupportCity(new GetSupportCity.Request());
-        client.getSupportCity(new GetSupportCity.Request().setProvinceName("山东"));
+        swallow(() -> client.getSupportProvince(new GetSupportProvince.Request()));
+        swallow(() -> client.getSupportCity(new GetSupportCity.Request()));
+        swallow(() -> client.getSupportCity(new GetSupportCity.Request().setProvinceName("山东")));
     }
 }

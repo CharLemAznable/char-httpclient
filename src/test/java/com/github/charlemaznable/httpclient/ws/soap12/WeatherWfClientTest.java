@@ -7,6 +7,7 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static com.github.charlemaznable.httpclient.common.Utils.swallow;
 
 public class WeatherWfClientTest {
 
@@ -16,8 +17,8 @@ public class WeatherWfClientTest {
 
         val client = wfLoader.getClient(WeatherWfClient.class);
 
-        client.getSupportProvince(new GetSupportProvince.Request()).block();
-        client.getSupportCity(new GetSupportCity.Request()).block();
-        client.getSupportCity(new GetSupportCity.Request().setProvinceName("山东")).block();
+        swallow(() -> client.getSupportProvince(new GetSupportProvince.Request()).block());
+        swallow(() -> client.getSupportCity(new GetSupportCity.Request()).block());
+        swallow(() -> client.getSupportCity(new GetSupportCity.Request().setProvinceName("山东")).block());
     }
 }
