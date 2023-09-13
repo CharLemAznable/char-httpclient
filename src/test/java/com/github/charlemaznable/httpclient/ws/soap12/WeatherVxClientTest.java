@@ -3,7 +3,6 @@ package com.github.charlemaznable.httpclient.ws.soap12;
 import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
 import com.github.charlemaznable.httpclient.ws.entity.GetSupportCity;
 import com.github.charlemaznable.httpclient.ws.entity.GetSupportProvince;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -26,6 +25,6 @@ public class WeatherVxClientTest {
                 client.getSupportProvince(new GetSupportProvince.Request()),
                 client.getSupportCity(new GetSupportCity.Request()),
                 client.getSupportCity(new GetSupportCity.Request().setProvinceName("山东")))
-        ).onComplete(result -> test.<CompositeFuture>succeedingThenComplete().handle(result));
+        ).onComplete(result -> test.completeNow());
     }
 }

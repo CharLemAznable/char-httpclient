@@ -7,7 +7,6 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class WeatherWfClientTest {
 
@@ -17,13 +16,8 @@ public class WeatherWfClientTest {
 
         val client = wfLoader.getClient(WeatherWfClient.class);
 
-        assertDoesNotThrow(() ->
-                client.getSupportProvince(new GetSupportProvince.Request()).block());
-
-        assertDoesNotThrow(() ->
-                client.getSupportCity(new GetSupportCity.Request()).block());
-
-        assertDoesNotThrow(() ->
-                client.getSupportCity(new GetSupportCity.Request().setProvinceName("山东")).block());
+        client.getSupportProvince(new GetSupportProvince.Request()).block();
+        client.getSupportCity(new GetSupportCity.Request()).block();
+        client.getSupportCity(new GetSupportCity.Request().setProvinceName("山东")).block();
     }
 }

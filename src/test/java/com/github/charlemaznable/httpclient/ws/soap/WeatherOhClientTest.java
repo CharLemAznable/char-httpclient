@@ -7,7 +7,6 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class WeatherOhClientTest {
 
@@ -17,13 +16,8 @@ public class WeatherOhClientTest {
 
         val client = ohLoader.getClient(WeatherOhClient.class);
 
-        assertDoesNotThrow(() ->
-                client.getSupportProvince(new GetSupportProvince.Request()));
-
-        assertDoesNotThrow(() ->
-                client.getSupportCity(new GetSupportCity.Request()));
-
-        assertDoesNotThrow(() ->
-                client.getSupportCity(new GetSupportCity.Request().setProvinceName("江苏")));
+        client.getSupportProvince(new GetSupportProvince.Request());
+        client.getSupportCity(new GetSupportCity.Request());
+        client.getSupportCity(new GetSupportCity.Request().setProvinceName("江苏"));
     }
 }
