@@ -11,7 +11,7 @@ import io.vertx.core.Future;
 import static com.github.charlemaznable.httpclient.ws.common.Constants.CONTENT_KEY;
 import static com.github.charlemaznable.httpclient.ws.common.Constants.SOAP_ACTION_KEY;
 
-@WsVxClient("http://ws.webxml.com.cn/WebServices/WeatherWebService.asmx")
+@WsVxClient("http://www.webxml.com.cn/WebServices/WeatherWebService.asmx")
 @DefaultFallbackDisabled
 public interface WeatherVxClient {
 

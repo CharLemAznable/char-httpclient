@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
 import static com.github.charlemaznable.httpclient.ws.common.Constants.CONTENT_KEY;
 import static com.github.charlemaznable.httpclient.ws.common.Constants.SOAP_ACTION_KEY;
 
-@WsWfClient("http://ws.webxml.com.cn/WebServices/WeatherWebService.asmx")
+@WsWfClient("http://www.webxml.com.cn/WebServices/WeatherWebService.asmx")
 @DefaultFallbackDisabled
 public interface WeatherWfClient {
 

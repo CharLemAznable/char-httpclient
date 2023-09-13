@@ -10,7 +10,7 @@ import com.github.charlemaznable.httpclient.ws.entity.GetSupportProvince;
 import static com.github.charlemaznable.httpclient.ws.common.Constants.CONTENT_KEY;
 import static com.github.charlemaznable.httpclient.ws.common.Constants.SOAP_ACTION_KEY;
 
-@WsOhClient("http://ws.webxml.com.cn/WebServices/WeatherWebService.asmx")
+@WsOhClient("http://www.webxml.com.cn/WebServices/WeatherWebService.asmx")
 @DefaultFallbackDisabled
 public interface WeatherOhClient {
 
