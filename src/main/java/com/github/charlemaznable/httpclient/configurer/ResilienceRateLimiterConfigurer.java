@@ -7,7 +7,7 @@ public interface ResilienceRateLimiterConfigurer extends Configurer {
 
     RateLimiter rateLimiter(String defaultName);
 
-    default ResilienceRateLimiterRecover<?> rateLimiterRecover() {
+    default <T> ResilienceRateLimiterRecover<T> rateLimiterRecover() {
         return null;
     }
 }

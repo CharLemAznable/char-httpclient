@@ -142,8 +142,9 @@ public interface ResilienceCircuitBreakerConfig extends ResilienceCircuitBreaker
     @Config("circuitBreakerRecover")
     String circuitBreakerRecoverString();
 
+    @SuppressWarnings("unchecked")
     @Override
-    default ResilienceCircuitBreakerRecover<?> circuitBreakerRecover() {
+    default <T> ResilienceCircuitBreakerRecover<T> circuitBreakerRecover() {
         return Objectt.parseObject(circuitBreakerRecoverString(), ResilienceCircuitBreakerRecover.class);
     }
 }

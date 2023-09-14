@@ -59,8 +59,9 @@ public interface ResilienceBulkheadConfig extends ResilienceBulkheadConfigurer {
     @Config("bulkheadRecover")
     String bulkheadRecoverString();
 
+    @SuppressWarnings("unchecked")
     @Override
-    default ResilienceBulkheadRecover<?> bulkheadRecover() {
+    default <T> ResilienceBulkheadRecover<T> bulkheadRecover() {
         return Objectt.parseObject(bulkheadRecoverString(), ResilienceBulkheadRecover.class);
     }
 }

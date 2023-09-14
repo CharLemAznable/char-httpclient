@@ -62,6 +62,7 @@ public class RetryTest extends CommonRetryTest {
         @ConfigureWith(CustomRetryConfig.class)
         Mono<String> getWithConfig();
 
+        @ResilienceRetry
         @ConfigureWith(CustomFallbackConfig.class)
         Mono<String> getWithParam(Retry retry);
 

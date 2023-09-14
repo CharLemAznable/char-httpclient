@@ -66,8 +66,9 @@ public interface ResilienceRateLimiterConfig extends ResilienceRateLimiterConfig
     @Config("rateLimiterRecover")
     String rateLimiterRecoverString();
 
+    @SuppressWarnings("unchecked")
     @Override
-    default ResilienceRateLimiterRecover<?> rateLimiterRecover() {
+    default <T> ResilienceRateLimiterRecover<T> rateLimiterRecover() {
         return Objectt.parseObject(rateLimiterRecoverString(), ResilienceRateLimiterRecover.class);
     }
 }

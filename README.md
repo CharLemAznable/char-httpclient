@@ -272,7 +272,7 @@ public interface MyHttpClient {
 
 指定客户端负载均衡方式, 默认为随机选择, 可使用内置的RoundRobin轮询, 也可自定义负载均衡方式.
 
-##### ```ResilienceBulkhead``` ```ResilienceRateLimiter``` ```ResilienceCircuitBreaker``` ```ResilienceRetry```
+##### ```ResilienceBulkhead``` ```ResilienceRateLimiter``` ```ResilienceCircuitBreaker``` ```ResilienceRetry``` ```ResilienceFallback```
 
 使用resilience4j支持的容错机制, 装饰顺序为: Retry ( CircuitBreaker ( RateLimiter ( Bulkhead ( Function ) ) ) ) .
 

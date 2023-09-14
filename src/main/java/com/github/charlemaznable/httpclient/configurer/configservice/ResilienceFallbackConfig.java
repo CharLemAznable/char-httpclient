@@ -10,8 +10,9 @@ public interface ResilienceFallbackConfig extends ResilienceFallbackConfigurer {
     @Config("recover")
     String recoverString();
 
+    @SuppressWarnings("unchecked")
     @Override
-    default ResilienceRecover<?> recover() {
+    default <T> ResilienceRecover<T> recover() {
         return Objectt.parseObject(recoverString(), ResilienceRecover.class);
     }
 }

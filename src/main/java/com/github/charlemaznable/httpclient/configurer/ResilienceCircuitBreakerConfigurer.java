@@ -7,7 +7,7 @@ public interface ResilienceCircuitBreakerConfigurer extends Configurer {
 
     CircuitBreaker circuitBreaker(String defaultName);
 
-    default ResilienceCircuitBreakerRecover<?> circuitBreakerRecover() {
+    default <T> ResilienceCircuitBreakerRecover<T> circuitBreakerRecover() {
         return null;
     }
 }

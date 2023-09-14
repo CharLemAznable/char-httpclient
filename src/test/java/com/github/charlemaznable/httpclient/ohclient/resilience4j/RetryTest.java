@@ -61,6 +61,7 @@ public class RetryTest extends CommonRetryTest {
         @ConfigureWith(CustomRetryConfig.class)
         String getWithConfig();
 
+        @ResilienceRetry
         @ConfigureWith(CustomFallbackConfig.class)
         String getWithParam(Retry retry);
 

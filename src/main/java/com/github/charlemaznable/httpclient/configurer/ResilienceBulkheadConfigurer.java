@@ -7,7 +7,7 @@ public interface ResilienceBulkheadConfigurer extends Configurer {
 
     Bulkhead bulkhead(String defaultName);
 
-    default ResilienceBulkheadRecover<?> bulkheadRecover() {
+    default <T> ResilienceBulkheadRecover<T> bulkheadRecover() {
         return null;
     }
 }
