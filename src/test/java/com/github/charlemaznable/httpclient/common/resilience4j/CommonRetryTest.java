@@ -1,7 +1,12 @@
 package com.github.charlemaznable.httpclient.common.resilience4j;
 
 import com.github.charlemaznable.httpclient.common.HttpStatus;
+import com.github.charlemaznable.httpclient.common.ResilienceRecover;
+import com.github.charlemaznable.httpclient.configurer.ResilienceFallbackConfigurer;
+import com.github.charlemaznable.httpclient.configurer.ResilienceRetryConfigurer;
+import com.github.charlemaznable.httpclient.configurer.configservice.ResilienceFallbackConfig;
 import com.github.charlemaznable.httpclient.configurer.configservice.ResilienceRetryConfig;
+import io.github.resilience4j.retry.Retry;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.MockResponse;
@@ -45,11 +50,25 @@ public abstract class CommonRetryTest {
         mockWebServer.shutdown();
     }
 
+    public static class DefaultRetryConfig
+            implements ResilienceRetryConfigurer, ResilienceFallbackConfigurer {
+
+        @Override
+        public Retry retry(String defaultName) {
+            return Retry.ofDefaults(defaultName);
+        }
+    }
+
     public static class CustomRetryConfig implements ResilienceRetryConfig {
 
         @Override
+        public String enabledRetryString() {
+            return "true";
+        }
+
+        @Override
         public String retryName() {
-            return "DefaultRetry";
+            return null;
         }
 
         @Override
@@ -68,7 +87,28 @@ public abstract class CommonRetryTest {
         }
     }
 
+    public static class CustomFallbackConfig implements ResilienceFallbackConfig {
+
+        @Override
+        public String recoverString() {
+            return "@" + CustomResilienceRecover.class.getName();
+        }
+    }
+
+    public static class CustomResilienceRecover implements ResilienceRecover<String> {
+
+        @Override
+        public String apply(Throwable throwable) {
+            return "NotOK";
+        }
+    }
+
     public static class DisabledRetryConfig implements ResilienceRetryConfig {
+
+        @Override
+        public String enabledRetryString() {
+            return "false";
+        }
 
         @Override
         public String retryName() {

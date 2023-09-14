@@ -3,6 +3,7 @@ package com.github.charlemaznable.httpclient.vxclient.resilience4j;
 import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
+import com.github.charlemaznable.httpclient.annotation.ResilienceFallback;
 import com.github.charlemaznable.httpclient.annotation.ResilienceRetry;
 import com.github.charlemaznable.httpclient.common.StatusError;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonRetryTest;
@@ -36,12 +37,12 @@ public class RetryTest extends CommonRetryTest {
             test.verify(() -> assertEquals("OK", response));
 
             countSample.set(0);
-            httpClient.getWithParam(null).onFailure(exception1 -> {
-                test.verify(() -> assertTrue(exception1 instanceof StatusError));
+            httpClient.getWithParam(null).onSuccess(response1 -> {
+                test.verify(() -> assertEquals("NotOK", response1));
 
                 countSample.set(0);
-                httpClient.getWithAnno().onFailure(exception2 -> {
-                    test.verify(() -> assertTrue(exception2 instanceof StatusError));
+                httpClient.getWithAnno().onSuccess(response2 -> {
+                    test.verify(() -> assertEquals("NotOK", response2));
 
                     countSample.set(0);
                     httpClient.getWithDisableConfig().onFailure(exception3 -> {
@@ -58,16 +59,17 @@ public class RetryTest extends CommonRetryTest {
     @Mapping("${root}:41440/sample")
     @MappingMethodNameDisabled
     @VxClient
-    @ResilienceRetry
+    @ConfigureWith(DefaultRetryConfig.class)
     public interface RetryClient {
 
         @ConfigureWith(CustomRetryConfig.class)
         Future<String> getWithConfig();
 
+        @ConfigureWith(CustomFallbackConfig.class)
         Future<String> getWithParam(Retry retry);
 
-        @ResilienceRetry(maxAttempts = 2)
-        @ResilienceRetry.IsolatedExecutor
+        @ResilienceRetry(maxAttempts = 2, isolatedExecutor = true)
+        @ResilienceFallback(CustomResilienceRecover.class)
         Future<String> getWithAnno();
 
         @ConfigureWith(DisabledRetryConfig.class)

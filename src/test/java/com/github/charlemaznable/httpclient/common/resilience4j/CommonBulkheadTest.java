@@ -1,21 +1,21 @@
 package com.github.charlemaznable.httpclient.common.resilience4j;
 
 import com.github.charlemaznable.httpclient.common.HttpStatus;
+import com.github.charlemaznable.httpclient.common.ResilienceBulkheadRecover;
+import com.github.charlemaznable.httpclient.configurer.ResilienceBulkheadConfigurer;
 import com.github.charlemaznable.httpclient.configurer.configservice.ResilienceBulkheadConfig;
+import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.bulkhead.BulkheadFullException;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.jooq.lambda.fi.lang.CheckedRunnable;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.charlemaznable.core.lang.Await.awaitForSeconds;
 import static com.github.charlemaznable.httpclient.common.Utils.dispatcher;
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class CommonBulkheadTest {
 
@@ -46,21 +46,24 @@ public abstract class CommonBulkheadTest {
         mockWebServer.shutdown();
     }
 
-    protected void checkOptionalException(CheckedRunnable runnable) {
-        try {
-            runnable.run();
-        } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof BulkheadFullException);
-        } catch (Throwable e) {
-            assertTrue(e instanceof BulkheadFullException);
+    public static class DefaultBulkheadConfig implements ResilienceBulkheadConfigurer {
+
+        @Override
+        public Bulkhead bulkhead(String defaultName) {
+            return Bulkhead.ofDefaults(defaultName);
         }
     }
 
     public static class CustomBulkheadConfig implements ResilienceBulkheadConfig {
 
         @Override
+        public String enabledBulkheadString() {
+            return "true";
+        }
+
+        @Override
         public String bulkheadName() {
-            return "DefaultBulkhead";
+            return null;
         }
 
         @Override
@@ -72,9 +75,27 @@ public abstract class CommonBulkheadTest {
         public String maxWaitDuration() {
             return "10SECONDS";
         }
+
+        @Override
+        public String bulkheadRecoverString() {
+            return "@" + CustomResilienceBulkheadRecover.class.getName();
+        }
+    }
+
+    public static class CustomResilienceBulkheadRecover implements ResilienceBulkheadRecover<String> {
+
+        @Override
+        public String apply(BulkheadFullException e) {
+            return "OK";
+        }
     }
 
     public static class DisabledBulkheadConfig implements ResilienceBulkheadConfig {
+
+        @Override
+        public String enabledBulkheadString() {
+            return "false";
+        }
 
         @Override
         public String bulkheadName() {
@@ -88,6 +109,11 @@ public abstract class CommonBulkheadTest {
 
         @Override
         public String maxWaitDuration() {
+            return null;
+        }
+
+        @Override
+        public String bulkheadRecoverString() {
             return null;
         }
     }

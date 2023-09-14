@@ -1,10 +1,12 @@
 package com.github.charlemaznable.httpclient.configurer.configservice;
 
 import com.github.charlemaznable.configservice.Config;
+import com.github.charlemaznable.core.lang.Objectt;
+import com.github.charlemaznable.httpclient.common.ResilienceCircuitBreakerRecover;
 import com.github.charlemaznable.httpclient.configurer.ResilienceCircuitBreakerConfigurer;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
-import lombok.val;
+import org.apache.commons.lang3.BooleanUtils;
 
 import java.time.Duration;
 
@@ -12,7 +14,8 @@ import static com.github.charlemaznable.configservice.impl.Functions.TO_BOOLEAN_
 import static com.github.charlemaznable.configservice.impl.Functions.TO_DURATION_FUNCTION;
 import static com.github.charlemaznable.configservice.impl.Functions.TO_FLOAT_FUNCTION;
 import static com.github.charlemaznable.configservice.impl.Functions.TO_INT_FUNCTION;
-import static com.github.charlemaznable.core.lang.Str.isBlank;
+import static com.github.charlemaznable.core.lang.Condition.checkNotBlank;
+import static com.github.charlemaznable.core.lang.Condition.nonBlank;
 import static com.github.charlemaznable.httpclient.configurer.configservice.ConfigurerElf.parseStringToValue;
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT_FAILURE_RATE_THRESHOLD;
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT_MINIMUM_NUMBER_OF_CALLS;
@@ -24,6 +27,13 @@ import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT_WAIT_DURATION_IN_OPEN_STATE;
 
 public interface ResilienceCircuitBreakerConfig extends ResilienceCircuitBreakerConfigurer {
+
+    @Config("enabledCircuitBreaker")
+    String enabledCircuitBreakerString();
+
+    default boolean enabledCircuitBreaker() {
+        return BooleanUtils.toBoolean(enabledCircuitBreakerString());
+    }
 
     @Config("circuitBreakerName")
     String circuitBreakerName();
@@ -113,18 +123,27 @@ public interface ResilienceCircuitBreakerConfig extends ResilienceCircuitBreaker
     }
 
     @Override
-    default CircuitBreaker circuitBreaker() {
-        val circuitBreakerName = circuitBreakerName();
-        if (isBlank(circuitBreakerName)) return null;
-        return CircuitBreaker.of(circuitBreakerName, CircuitBreakerConfig.custom()
-                .slidingWindow(parseSlidingWindowSize(),
-                        parseMinimumNumberOfCalls(), parseSlidingWindowType())
-                .failureRateThreshold(parseFailureRateThreshold())
-                .slowCallRateThreshold(parseSlowCallRateThreshold())
-                .slowCallDurationThreshold(parseSlowCallDurationThreshold())
-                .automaticTransitionFromOpenToHalfOpenEnabled(parseAutomaticTransitionFromOpenToHalfOpenEnabled())
-                .waitDurationInOpenState(parseWaitDurationInOpenState())
-                .permittedNumberOfCallsInHalfOpenState(parsePermittedNumberOfCallsInHalfOpenState())
-                .maxWaitDurationInHalfOpenState(parseMaxWaitDurationInHalfOpenState()).build());
+    default CircuitBreaker circuitBreaker(String defaultName) {
+        if (!enabledCircuitBreaker()) return null;
+        return CircuitBreaker.of(
+                checkNotBlank(nonBlank(circuitBreakerName(), defaultName)),
+                CircuitBreakerConfig.custom()
+                        .slidingWindow(parseSlidingWindowSize(),
+                                parseMinimumNumberOfCalls(), parseSlidingWindowType())
+                        .failureRateThreshold(parseFailureRateThreshold())
+                        .slowCallRateThreshold(parseSlowCallRateThreshold())
+                        .slowCallDurationThreshold(parseSlowCallDurationThreshold())
+                        .automaticTransitionFromOpenToHalfOpenEnabled(parseAutomaticTransitionFromOpenToHalfOpenEnabled())
+                        .waitDurationInOpenState(parseWaitDurationInOpenState())
+                        .permittedNumberOfCallsInHalfOpenState(parsePermittedNumberOfCallsInHalfOpenState())
+                        .maxWaitDurationInHalfOpenState(parseMaxWaitDurationInHalfOpenState()).build());
+    }
+
+    @Config("circuitBreakerRecover")
+    String circuitBreakerRecoverString();
+
+    @Override
+    default ResilienceCircuitBreakerRecover<?> circuitBreakerRecover() {
+        return Objectt.parseObject(circuitBreakerRecoverString(), ResilienceCircuitBreakerRecover.class);
     }
 }

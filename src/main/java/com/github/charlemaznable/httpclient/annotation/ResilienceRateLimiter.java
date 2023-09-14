@@ -1,5 +1,7 @@
 package com.github.charlemaznable.httpclient.annotation;
 
+import com.github.charlemaznable.httpclient.common.ResilienceRateLimiterRecover;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -20,4 +22,6 @@ public @interface ResilienceRateLimiter {
     long limitRefreshPeriodInNanos() default 500;
 
     long timeoutDurationInMillis() default 5000;
+
+    Class<? extends ResilienceRateLimiterRecover> fallback() default ResilienceRateLimiterRecover.class;
 }

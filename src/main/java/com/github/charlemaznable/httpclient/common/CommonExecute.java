@@ -20,7 +20,6 @@ import com.github.charlemaznable.httpclient.annotation.RequestExtend;
 import com.github.charlemaznable.httpclient.annotation.ResponseParse;
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.github.resilience4j.decorators.Decorators;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.retry.Retry;
 import lombok.AllArgsConstructor;
@@ -389,20 +388,19 @@ public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMet
     }
 
     protected Object decorateSyncExecute(Supplier<Object> supplier) {
-        val decorateSupplier = Decorators.ofSupplier(supplier);
-        notNullThenRun(base.bulkhead, decorateSupplier::withBulkhead);
-        notNullThenRun(base.rateLimiter, decorateSupplier::withRateLimiter);
-        notNullThenRun(base.circuitBreaker, decorateSupplier::withCircuitBreaker);
-        notNullThenRun(base.retry, decorateSupplier::withRetry);
-        return decorateSupplier.get();
+        return ResilienceDecorators.ofSupplier(supplier)
+                .withBulkhead(base.bulkhead, base.bulkheadRecover)
+                .withRateLimiter(base.rateLimiter, base.rateLimiterRecover)
+                .withCircuitBreaker(base.circuitBreaker, base.circuitBreakerRecover)
+                .withRetry(base.retry).withRecover(base.recover).get();
     }
 
     protected CompletableFuture<Object> decorateAsyncExecute(Supplier<CompletionStage<Object>> stageSupplier) {
-        val decorateCompletionStage = Decorators.ofCompletionStage(stageSupplier);
-        notNullThenRun(base.bulkhead, decorateCompletionStage::withBulkhead);
-        notNullThenRun(base.rateLimiter, decorateCompletionStage::withRateLimiter);
-        notNullThenRun(base.circuitBreaker, decorateCompletionStage::withCircuitBreaker);
-        notNullThenRun(base.retry, retry -> decorateCompletionStage.withRetry(retry, base.retryExecutor));
-        return decorateCompletionStage.get().toCompletableFuture();
+        return ResilienceDecorators.ofCompletionStage(stageSupplier)
+                .withBulkhead(base.bulkhead, base.bulkheadRecover)
+                .withRateLimiter(base.rateLimiter, base.rateLimiterRecover)
+                .withCircuitBreaker(base.circuitBreaker, base.circuitBreakerRecover)
+                .withRetry(base.retry, base.retryExecutor).withRecover(base.recover)
+                .get().toCompletableFuture();
     }
 }

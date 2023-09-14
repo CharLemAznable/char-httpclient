@@ -1,5 +1,7 @@
 package com.github.charlemaznable.httpclient.annotation;
 
+import com.github.charlemaznable.httpclient.common.ResilienceRecover;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -7,19 +9,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import static io.github.resilience4j.retry.RetryConfig.DEFAULT_MAX_ATTEMPTS;
-
+@SuppressWarnings("rawtypes")
 @Documented
 @Inherited
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ResilienceRetry {
+public @interface ResilienceFallback {
 
-    String name() default "";
-
-    int maxAttempts() default DEFAULT_MAX_ATTEMPTS;
-
-    long waitDurationInMillis() default 500L;
-
-    boolean isolatedExecutor() default false;
+    Class<? extends ResilienceRecover> value();
 }

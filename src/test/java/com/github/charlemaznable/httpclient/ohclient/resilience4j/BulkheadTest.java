@@ -16,6 +16,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static org.jooq.lambda.Sneaky.runnable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BulkheadTest extends CommonBulkheadTest {
@@ -30,7 +31,7 @@ public class BulkheadTest extends CommonBulkheadTest {
 
         val service = new Thread[10];
         for (int i = 0; i < 10; i++) {
-            service[i] = new Thread(() -> checkOptionalException(() ->
+            service[i] = new Thread(runnable(() ->
                     assertEquals("OK", httpClient.getWithConfig())), "service" + i);
             service[i].start();
         }
@@ -41,7 +42,7 @@ public class BulkheadTest extends CommonBulkheadTest {
 
         val service2 = new Thread[10];
         for (int i = 0; i < 10; i++) {
-            service2[i] = new Thread(() -> checkOptionalException(() ->
+            service2[i] = new Thread(runnable(() ->
                     assertEquals("OK", httpClient.getWithParam(null))), "service2" + i);
             service2[i].start();
         }
@@ -52,7 +53,7 @@ public class BulkheadTest extends CommonBulkheadTest {
 
         val service3 = new Thread[10];
         for (int i = 0; i < 10; i++) {
-            service3[i] = new Thread(() -> checkOptionalException(() ->
+            service3[i] = new Thread(runnable(() ->
                     assertEquals("OK", httpClient.getWithAnno().get())), "service3" + i);
             service3[i].start();
         }
@@ -63,7 +64,7 @@ public class BulkheadTest extends CommonBulkheadTest {
 
         val service4 = new Thread[10];
         for (int i = 0; i < 10; i++) {
-            service4[i] = new Thread(() -> checkOptionalException(() ->
+            service4[i] = new Thread(runnable(() ->
                     assertEquals("OK", httpClient.getWithDisableConfig().toCompletableFuture().get())), "service4" + i);
             service4[i].start();
         }
@@ -78,7 +79,7 @@ public class BulkheadTest extends CommonBulkheadTest {
     @Mapping("${root}:41410/sample")
     @MappingMethodNameDisabled
     @OhClient
-    @ResilienceBulkhead
+    @ConfigureWith(DefaultBulkheadConfig.class)
     public interface BulkheadClient {
 
         @ConfigureWith(CustomBulkheadConfig.class)
@@ -86,7 +87,8 @@ public class BulkheadTest extends CommonBulkheadTest {
 
         String getWithParam(Bulkhead bulkhead);
 
-        @ResilienceBulkhead(maxConcurrentCalls = 5)
+        @ResilienceBulkhead(maxConcurrentCalls = 5,
+                fallback = CustomResilienceBulkheadRecover.class)
         Future<String> getWithAnno();
 
         @ConfigureWith(DisabledBulkheadConfig.class)

@@ -10,7 +10,6 @@ import com.github.charlemaznable.httpclient.vxclient.VxClient;
 import com.github.charlemaznable.httpclient.vxclient.VxFactory;
 import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
 import io.github.resilience4j.ratelimiter.RateLimiter;
-import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -20,10 +19,7 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.concurrent.ExecutionException;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
 public class RateLimiterTest extends CommonRateLimiterTest {
@@ -37,28 +33,32 @@ public class RateLimiterTest extends CommonRateLimiterTest {
 
         val getWithConfigs = Listt.<Future<String>>newArrayList();
         for (int i = 0; i < 4; i++) {
-            getWithConfigs.add(checkOptionalException(httpClient.getWithConfig(), test));
+            getWithConfigs.add(httpClient.getWithConfig()
+                    .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
         }
         Future.all(getWithConfigs).onComplete(result -> {
             test.verify(() -> assertEquals(2, countSample.get()));
 
             val getWithParams = Listt.<Future<String>>newArrayList();
             for (int i = 0; i < 4; i++) {
-                getWithParams.add(checkOptionalException(httpClient.getWithParam(null), test));
+                getWithParams.add(httpClient.getWithParam(null)
+                        .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
             }
             Future.all(getWithParams).onComplete(result2 -> {
                 test.verify(() -> assertEquals(6, countSample.get()));
 
                 val getWithAnno = Listt.<Future<String>>newArrayList();
                 for (int i = 0; i < 4; i++) {
-                    getWithAnno.add(checkOptionalException(httpClient.getWithAnno(), test));
+                    getWithAnno.add(httpClient.getWithAnno()
+                            .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
                 }
                 Future.all(getWithAnno).onComplete(result3 -> {
                     test.verify(() -> assertEquals(8, countSample.get()));
 
                     val getWithDisableConfigs = Listt.<Future<String>>newArrayList();
                     for (int i = 0; i < 4; i++) {
-                        getWithDisableConfigs.add(checkOptionalException(httpClient.getWithDisableConfig(), test));
+                        getWithDisableConfigs.add(httpClient.getWithDisableConfig()
+                                .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
                     }
                     Future.all(getWithDisableConfigs).onComplete(result4 -> {
                         test.verify(() -> assertEquals(12, countSample.get()));
@@ -71,23 +71,10 @@ public class RateLimiterTest extends CommonRateLimiterTest {
         });
     }
 
-    private Future<String> checkOptionalException(Future<String> resultFuture, VertxTestContext test) {
-        return resultFuture
-                .onSuccess(response -> test.verify(() -> assertEquals("OK", response)))
-                .otherwise(e -> {
-                    if (e instanceof ExecutionException) {
-                        test.verify(() -> assertTrue(e.getCause() instanceof RequestNotPermitted));
-                    } else {
-                        test.verify(() -> assertTrue(e instanceof RequestNotPermitted));
-                    }
-                    return null;
-                });
-    }
-
     @Mapping("${root}:41420/sample")
     @MappingMethodNameDisabled
     @VxClient
-    @ResilienceRateLimiter
+    @ConfigureWith(DefaultRateLimiterConfig.class)
     public interface RateLimiterClient {
 
         @ConfigureWith(CustomRateLimiterConfig.class)
@@ -97,7 +84,8 @@ public class RateLimiterTest extends CommonRateLimiterTest {
 
         @ResilienceRateLimiter(limitForPeriod = 2,
                 limitRefreshPeriodInNanos = 2000_000_000L,
-                timeoutDurationInMillis = 0)
+                timeoutDurationInMillis = 0,
+                fallback = CustomResilienceRateLimiterRecover.class)
         Future<String> getWithAnno();
 
         @ConfigureWith(DisabledRateLimiterConfig.class)

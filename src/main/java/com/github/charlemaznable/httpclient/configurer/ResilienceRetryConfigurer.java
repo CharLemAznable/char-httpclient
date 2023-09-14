@@ -4,7 +4,7 @@ import io.github.resilience4j.retry.Retry;
 
 public interface ResilienceRetryConfigurer extends Configurer {
 
-    Retry retry();
+    Retry retry(String defaultName);
 
     default boolean isolatedExecutor() {
         return false;

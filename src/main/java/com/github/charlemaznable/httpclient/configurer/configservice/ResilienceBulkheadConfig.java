@@ -1,21 +1,31 @@
 package com.github.charlemaznable.httpclient.configurer.configservice;
 
 import com.github.charlemaznable.configservice.Config;
+import com.github.charlemaznable.core.lang.Objectt;
+import com.github.charlemaznable.httpclient.common.ResilienceBulkheadRecover;
 import com.github.charlemaznable.httpclient.configurer.ResilienceBulkheadConfigurer;
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.bulkhead.BulkheadConfig;
-import lombok.val;
+import org.apache.commons.lang3.BooleanUtils;
 
 import java.time.Duration;
 
 import static com.github.charlemaznable.configservice.impl.Functions.TO_DURATION_FUNCTION;
 import static com.github.charlemaznable.configservice.impl.Functions.TO_INT_FUNCTION;
-import static com.github.charlemaznable.core.lang.Str.isBlank;
+import static com.github.charlemaznable.core.lang.Condition.checkNotBlank;
+import static com.github.charlemaznable.core.lang.Condition.nonBlank;
 import static com.github.charlemaznable.httpclient.configurer.configservice.ConfigurerElf.parseStringToValue;
 import static io.github.resilience4j.bulkhead.BulkheadConfig.DEFAULT_MAX_CONCURRENT_CALLS;
 import static io.github.resilience4j.bulkhead.BulkheadConfig.DEFAULT_MAX_WAIT_DURATION;
 
 public interface ResilienceBulkheadConfig extends ResilienceBulkheadConfigurer {
+
+    @Config("enabledBulkhead")
+    String enabledBulkheadString();
+
+    default boolean enabledBulkhead() {
+        return BooleanUtils.toBoolean(enabledBulkheadString());
+    }
 
     @Config("bulkheadName")
     String bulkheadName();
@@ -37,11 +47,20 @@ public interface ResilienceBulkheadConfig extends ResilienceBulkheadConfigurer {
     }
 
     @Override
-    default Bulkhead bulkhead() {
-        val bulkheadName = bulkheadName();
-        if (isBlank(bulkheadName)) return null;
-        return Bulkhead.of(bulkheadName, BulkheadConfig.custom()
-                .maxConcurrentCalls(parseMaxConcurrentCalls())
-                .maxWaitDuration(parseMaxWaitDuration()).build());
+    default Bulkhead bulkhead(String defaultName) {
+        if (!enabledBulkhead()) return null;
+        return Bulkhead.of(
+                checkNotBlank(nonBlank(bulkheadName(), defaultName)),
+                BulkheadConfig.custom()
+                        .maxConcurrentCalls(parseMaxConcurrentCalls())
+                        .maxWaitDuration(parseMaxWaitDuration()).build());
+    }
+
+    @Config("bulkheadRecover")
+    String bulkheadRecoverString();
+
+    @Override
+    default ResilienceBulkheadRecover<?> bulkheadRecover() {
+        return Objectt.parseObject(bulkheadRecoverString(), ResilienceBulkheadRecover.class);
     }
 }

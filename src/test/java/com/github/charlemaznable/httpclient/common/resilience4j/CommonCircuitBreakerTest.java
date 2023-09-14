@@ -1,21 +1,22 @@
 package com.github.charlemaznable.httpclient.common.resilience4j;
 
 import com.github.charlemaznable.httpclient.common.HttpStatus;
+import com.github.charlemaznable.httpclient.common.ResilienceCircuitBreakerRecover;
+import com.github.charlemaznable.httpclient.configurer.ResilienceCircuitBreakerConfigurer;
 import com.github.charlemaznable.httpclient.configurer.configservice.ResilienceCircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.jooq.lambda.fi.lang.CheckedRunnable;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.charlemaznable.httpclient.common.Utils.dispatcher;
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class CommonCircuitBreakerTest {
 
@@ -60,23 +61,24 @@ public abstract class CommonCircuitBreakerTest {
         };
     }
 
-    protected Runnable checkOptionalException(CheckedRunnable runnable) {
-        return () -> {
-            try {
-                runnable.run();
-            } catch (ExecutionException e) {
-                assertTrue(e.getCause() instanceof CallNotPermittedException);
-            } catch (Throwable e) {
-                assertTrue(e instanceof CallNotPermittedException);
-            }
-        };
+    public static class DefaultCircuitBreakerConfig implements ResilienceCircuitBreakerConfigurer {
+
+        @Override
+        public CircuitBreaker circuitBreaker(String defaultName) {
+            return CircuitBreaker.ofDefaults(defaultName);
+        }
     }
 
     public static class CustomCircuitBreakerConfig implements ResilienceCircuitBreakerConfig {
 
         @Override
+        public String enabledCircuitBreakerString() {
+            return "true";
+        }
+
+        @Override
         public String circuitBreakerName() {
-            return "DefaultCircuitBreaker";
+            return null;
         }
 
         @Override
@@ -128,9 +130,27 @@ public abstract class CommonCircuitBreakerTest {
         public String maxWaitDurationInHalfOpenState() {
             return null;
         }
+
+        @Override
+        public String circuitBreakerRecoverString() {
+            return "@" + CustomResilienceCircuitBreakerRecover.class.getName();
+        }
+    }
+
+    public static class CustomResilienceCircuitBreakerRecover implements ResilienceCircuitBreakerRecover<String> {
+
+        @Override
+        public String apply(CallNotPermittedException e) {
+            return "OK";
+        }
     }
 
     public static class DisabledCircuitBreakerConfig implements ResilienceCircuitBreakerConfig {
+
+        @Override
+        public String enabledCircuitBreakerString() {
+            return "false";
+        }
 
         @Override
         public String circuitBreakerName() {
@@ -184,6 +204,11 @@ public abstract class CommonCircuitBreakerTest {
 
         @Override
         public String maxWaitDurationInHalfOpenState() {
+            return null;
+        }
+
+        @Override
+        public String circuitBreakerRecoverString() {
             return null;
         }
     }

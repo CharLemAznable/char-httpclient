@@ -1,5 +1,6 @@
 package com.github.charlemaznable.httpclient.annotation;
 
+import com.github.charlemaznable.httpclient.common.ResilienceCircuitBreakerRecover;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 
 import java.lang.annotation.Documented;
@@ -45,4 +46,6 @@ public @interface ResilienceCircuitBreaker {
     int permittedNumberOfCallsInHalfOpenState() default DEFAULT_PERMITTED_CALLS_IN_HALF_OPEN_STATE;
 
     int maxWaitDurationInHalfOpenStateInSeconds() default DEFAULT_WAIT_DURATION_IN_HALF_OPEN_STATE;
+
+    Class<? extends ResilienceCircuitBreakerRecover> fallback() default ResilienceCircuitBreakerRecover.class;
 }

@@ -1,5 +1,7 @@
 package com.github.charlemaznable.httpclient.annotation;
 
+import com.github.charlemaznable.httpclient.common.ResilienceBulkheadRecover;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -20,4 +22,6 @@ public @interface ResilienceBulkhead {
     int maxConcurrentCalls() default DEFAULT_MAX_CONCURRENT_CALLS;
 
     long maxWaitDurationInMillis() default 0;
+
+    Class<? extends ResilienceBulkheadRecover> fallback() default ResilienceBulkheadRecover.class;
 }

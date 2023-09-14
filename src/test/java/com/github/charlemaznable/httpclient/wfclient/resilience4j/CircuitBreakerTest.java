@@ -44,7 +44,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         assertEquals(10, countSample.get());
         val serviceNotPermitted = new Thread[5];
         for (int i = 0; i < 5; i++) {
-            serviceNotPermitted[i] = new Thread(checkOptionalException(() -> httpClient.getWithConfig().block()), "serviceNotPermitted" + i);
+            serviceNotPermitted[i] = new Thread(() -> assertEquals("OK", httpClient.getWithConfig().block()), "serviceNotPermitted" + i);
             serviceNotPermitted[i].start();
         }
         for (int i = 0; i < 5; i++) {
@@ -107,7 +107,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         assertEquals(10, countSample.get());
         val service3NotPermitted = new Thread[5];
         for (int i = 0; i < 5; i++) {
-            service3NotPermitted[i] = new Thread(checkOptionalException(() -> httpClient.getWithAnno().get()), "service3NotPermitted" + i);
+            service3NotPermitted[i] = new Thread(runnable(() -> assertEquals("OK", httpClient.getWithAnno().get())), "service3NotPermitted" + i);
             service3NotPermitted[i].start();
         }
         for (int i = 0; i < 5; i++) {
@@ -163,7 +163,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
     @Mapping("${root}:41430/sample")
     @MappingMethodNameDisabled
     @WfClient
-    @ResilienceCircuitBreaker
+    @ConfigureWith(DefaultCircuitBreakerConfig.class)
     public interface CircuitBreakerClient {
 
         @ConfigureWith(CustomCircuitBreakerConfig.class)
@@ -175,8 +175,8 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
                 slidingWindowSize = 10,
                 minimumNumberOfCalls = 10,
                 waitDurationInOpenStateInSeconds = 10,
-                permittedNumberOfCallsInHalfOpenState = 5
-        )
+                permittedNumberOfCallsInHalfOpenState = 5,
+                fallback = CustomResilienceCircuitBreakerRecover.class)
         Future<String> getWithAnno();
 
         @ConfigureWith(DisabledCircuitBreakerConfig.class)

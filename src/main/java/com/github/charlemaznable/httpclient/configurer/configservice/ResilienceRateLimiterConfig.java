@@ -1,20 +1,30 @@
 package com.github.charlemaznable.httpclient.configurer.configservice;
 
 import com.github.charlemaznable.configservice.Config;
+import com.github.charlemaznable.core.lang.Objectt;
+import com.github.charlemaznable.httpclient.common.ResilienceRateLimiterRecover;
 import com.github.charlemaznable.httpclient.configurer.ResilienceRateLimiterConfigurer;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
-import lombok.val;
+import org.apache.commons.lang3.BooleanUtils;
 
 import java.time.Duration;
 
 import static com.github.charlemaznable.configservice.impl.Functions.TO_DURATION_FUNCTION;
 import static com.github.charlemaznable.configservice.impl.Functions.TO_INT_FUNCTION;
 import static com.github.charlemaznable.configservice.impl.Functions.TO_LONG_FUNCTION;
-import static com.github.charlemaznable.core.lang.Str.isBlank;
+import static com.github.charlemaznable.core.lang.Condition.checkNotBlank;
+import static com.github.charlemaznable.core.lang.Condition.nonBlank;
 import static com.github.charlemaznable.httpclient.configurer.configservice.ConfigurerElf.parseStringToValue;
 
 public interface ResilienceRateLimiterConfig extends ResilienceRateLimiterConfigurer {
+
+    @Config("enabledRateLimiter")
+    String enabledRateLimiterString();
+
+    default boolean enabledRateLimiter() {
+        return BooleanUtils.toBoolean(enabledRateLimiterString());
+    }
 
     @Config("rateLimiterName")
     String rateLimiterName();
@@ -43,12 +53,21 @@ public interface ResilienceRateLimiterConfig extends ResilienceRateLimiterConfig
     }
 
     @Override
-    default RateLimiter rateLimiter() {
-        val rateLimiterName = rateLimiterName();
-        if (isBlank(rateLimiterName)) return null;
-        return RateLimiter.of(rateLimiterName, RateLimiterConfig.custom()
-                .limitForPeriod(parseLimitForPeriod())
-                .limitRefreshPeriod(parseLimitRefreshPeriod())
-                .timeoutDuration(parseTimeoutDuration()).build());
+    default RateLimiter rateLimiter(String defaultName) {
+        if (!enabledRateLimiter()) return null;
+        return RateLimiter.of(
+                checkNotBlank(nonBlank(rateLimiterName(), defaultName)),
+                RateLimiterConfig.custom()
+                        .limitForPeriod(parseLimitForPeriod())
+                        .limitRefreshPeriod(parseLimitRefreshPeriod())
+                        .timeoutDuration(parseTimeoutDuration()).build());
+    }
+
+    @Config("rateLimiterRecover")
+    String rateLimiterRecoverString();
+
+    @Override
+    default ResilienceRateLimiterRecover<?> rateLimiterRecover() {
+        return Objectt.parseObject(rateLimiterRecoverString(), ResilienceRateLimiterRecover.class);
     }
 }

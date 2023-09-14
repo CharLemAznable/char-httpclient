@@ -9,7 +9,6 @@ import com.github.charlemaznable.httpclient.common.resilience4j.CommonCircuitBre
 import com.github.charlemaznable.httpclient.vxclient.VxClient;
 import com.github.charlemaznable.httpclient.vxclient.VxFactory;
 import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -21,12 +20,10 @@ import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.charlemaznable.core.lang.Await.awaitForSeconds;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
 public class CircuitBreakerTest extends CommonCircuitBreakerTest {
@@ -50,7 +47,8 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
 
             val getWithConfigsNotPermitted = Listt.<Future<String>>newArrayList();
             for (int i = 0; i < 5; i++) {
-                getWithConfigsNotPermitted.add(checkOptionalException(httpClient.getWithConfig(), test));
+                getWithConfigsNotPermitted.add(httpClient.getWithConfig()
+                        .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
             }
             Future.all(getWithConfigsNotPermitted).onComplete(resultNotPermitted -> {
                 test.verify(() -> assertEquals(10, countSample.get()));
@@ -102,7 +100,8 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
 
                                     val getWithAnnosNotPermitted = Listt.<Future<String>>newArrayList();
                                     for (int i = 0; i < 5; i++) {
-                                        getWithAnnosNotPermitted.add(checkOptionalException(httpClient.getWithAnno(), test));
+                                        getWithAnnosNotPermitted.add(httpClient.getWithAnno()
+                                                .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
                                     }
                                     Future.all(getWithAnnosNotPermitted).onComplete(result3NotPermitted -> {
                                         test.verify(() -> assertEquals(10, countSample.get()));
@@ -163,22 +162,10 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         return resultFuture.otherwise(e ->  null);
     }
 
-    private Future<String> checkOptionalException(Future<String> resultFuture, VertxTestContext test) {
-        return resultFuture
-                .otherwise(e -> {
-                    if (e instanceof ExecutionException) {
-                        test.verify(() -> assertTrue(e.getCause() instanceof CallNotPermittedException));
-                    } else {
-                        test.verify(() -> assertTrue(e instanceof CallNotPermittedException));
-                    }
-                    return null;
-                });
-    }
-
     @Mapping("${root}:41430/sample")
     @MappingMethodNameDisabled
     @VxClient
-    @ResilienceCircuitBreaker
+    @ConfigureWith(DefaultCircuitBreakerConfig.class)
     public interface CircuitBreakerClient {
 
         @ConfigureWith(CustomCircuitBreakerConfig.class)
@@ -190,8 +177,8 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
                 slidingWindowSize = 10,
                 minimumNumberOfCalls = 10,
                 waitDurationInOpenStateInSeconds = 10,
-                permittedNumberOfCallsInHalfOpenState = 5
-        )
+                permittedNumberOfCallsInHalfOpenState = 5,
+                fallback = CustomResilienceCircuitBreakerRecover.class)
         Future<String> getWithAnno();
 
         @ConfigureWith(DisabledCircuitBreakerConfig.class)

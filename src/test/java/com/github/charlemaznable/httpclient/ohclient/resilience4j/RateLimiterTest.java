@@ -16,6 +16,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
+import static org.jooq.lambda.Sneaky.runnable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RateLimiterTest extends CommonRateLimiterTest {
@@ -30,7 +31,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
 
         val service = new Thread[4];
         for (int i = 0; i < 4; i++) {
-            service[i] = new Thread(() -> checkOptionalException(() ->
+            service[i] = new Thread(runnable(() ->
                     assertEquals("OK", httpClient.getWithConfig())), "service" + i);
             service[i].start();
         }
@@ -41,7 +42,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
 
         val service2 = new Thread[4];
         for (int i = 0; i < 4; i++) {
-            service2[i] = new Thread(() -> checkOptionalException(() ->
+            service2[i] = new Thread(runnable(() ->
                     assertEquals("OK", httpClient.getWithParam(null))), "service2" + i);
             service2[i].start();
         }
@@ -52,7 +53,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
 
         val service3 = new Thread[4];
         for (int i = 0; i < 4; i++) {
-            service3[i] = new Thread(() -> checkOptionalException(() ->
+            service3[i] = new Thread(runnable(() ->
                     assertEquals("OK", httpClient.getWithAnno().get())), "service3" + i);
             service3[i].start();
         }
@@ -63,7 +64,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
 
         val service4 = new Thread[4];
         for (int i = 0; i < 4; i++) {
-            service4[i] = new Thread(() -> checkOptionalException(() ->
+            service4[i] = new Thread(runnable(() ->
                     assertEquals("OK", httpClient.getWithDisableConfig().toCompletableFuture().get())), "service4" + i);
             service4[i].start();
         }
@@ -78,7 +79,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
     @Mapping("${root}:41420/sample")
     @MappingMethodNameDisabled
     @OhClient
-    @ResilienceRateLimiter
+    @ConfigureWith(DefaultRateLimiterConfig.class)
     public interface RateLimiterClient {
 
         @ConfigureWith(CustomRateLimiterConfig.class)
@@ -88,7 +89,8 @@ public class RateLimiterTest extends CommonRateLimiterTest {
 
         @ResilienceRateLimiter(limitForPeriod = 2,
                 limitRefreshPeriodInNanos = 2000_000_000L,
-                timeoutDurationInMillis = 0)
+                timeoutDurationInMillis = 0,
+                fallback = CustomResilienceRateLimiterRecover.class)
         Future<String> getWithAnno();
 
         @ConfigureWith(DisabledRateLimiterConfig.class)

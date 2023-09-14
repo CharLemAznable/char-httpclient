@@ -52,10 +52,14 @@ public abstract class CommonBase<T extends CommonBase<T>> {
     MappingBalance.MappingBalancer mappingBalancer = new MappingBalance.RandomBalancer();
 
     Bulkhead bulkhead;
+    ResilienceBulkheadRecover<?> bulkheadRecover;
     RateLimiter rateLimiter;
+    ResilienceRateLimiterRecover<?> rateLimiterRecover;
     CircuitBreaker circuitBreaker;
+    ResilienceCircuitBreakerRecover<?> circuitBreakerRecover;
     Retry retry;
     ScheduledExecutorService retryExecutor = new DefaultEventLoop();
+    ResilienceRecover<?> recover;
 
     public CommonBase(CommonBase<?> other) {
         this.acceptCharset = other.acceptCharset;
@@ -74,9 +78,13 @@ public abstract class CommonBase<T extends CommonBase<T>> {
         this.extraUrlQueryBuilder = other.extraUrlQueryBuilder;
         this.mappingBalancer = other.mappingBalancer;
         this.bulkhead = other.bulkhead;
+        this.bulkheadRecover = other.bulkheadRecover;
         this.rateLimiter = other.rateLimiter;
+        this.rateLimiterRecover = other.rateLimiterRecover;
         this.circuitBreaker = other.circuitBreaker;
+        this.circuitBreakerRecover = other.circuitBreakerRecover;
         this.retry = other.retry;
         this.retryExecutor = other.retryExecutor;
+        this.recover = other.recover;
     }
 }

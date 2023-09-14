@@ -1,20 +1,20 @@
 package com.github.charlemaznable.httpclient.common.resilience4j;
 
 import com.github.charlemaznable.httpclient.common.HttpStatus;
+import com.github.charlemaznable.httpclient.common.ResilienceRateLimiterRecover;
+import com.github.charlemaznable.httpclient.configurer.ResilienceRateLimiterConfigurer;
 import com.github.charlemaznable.httpclient.configurer.configservice.ResilienceRateLimiterConfig;
+import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.jooq.lambda.fi.lang.CheckedRunnable;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.charlemaznable.httpclient.common.Utils.dispatcher;
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class CommonRateLimiterTest {
 
@@ -44,21 +44,24 @@ public abstract class CommonRateLimiterTest {
         mockWebServer.shutdown();
     }
 
-    protected void checkOptionalException(CheckedRunnable runnable) {
-        try {
-            runnable.run();
-        } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof RequestNotPermitted);
-        } catch (Throwable e) {
-            assertTrue(e instanceof RequestNotPermitted);
+    public static class DefaultRateLimiterConfig implements ResilienceRateLimiterConfigurer {
+
+        @Override
+        public RateLimiter rateLimiter(String defaultName) {
+            return RateLimiter.ofDefaults(defaultName);
         }
     }
 
     public static class CustomRateLimiterConfig implements ResilienceRateLimiterConfig {
 
         @Override
+        public String enabledRateLimiterString() {
+            return "true";
+        }
+
+        @Override
         public String rateLimiterName() {
-            return "DefaultRateLimiter";
+            return null;
         }
 
         @Override
@@ -75,9 +78,27 @@ public abstract class CommonRateLimiterTest {
         public String timeoutDuration() {
             return "0";
         }
+
+        @Override
+        public String rateLimiterRecoverString() {
+            return "@" + CustomResilienceRateLimiterRecover.class.getName();
+        }
+    }
+
+    public static class CustomResilienceRateLimiterRecover implements ResilienceRateLimiterRecover<String> {
+
+        @Override
+        public String apply(RequestNotPermitted requestNotPermitted) {
+            return "OK";
+        }
     }
 
     public static class DisabledRateLimiterConfig implements ResilienceRateLimiterConfig {
+
+        @Override
+        public String enabledRateLimiterString() {
+            return "false";
+        }
 
         @Override
         public String rateLimiterName() {
@@ -96,6 +117,11 @@ public abstract class CommonRateLimiterTest {
 
         @Override
         public String timeoutDuration() {
+            return null;
+        }
+
+        @Override
+        public String rateLimiterRecoverString() {
             return null;
         }
     }

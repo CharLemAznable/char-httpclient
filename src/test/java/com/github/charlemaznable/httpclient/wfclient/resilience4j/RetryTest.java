@@ -3,12 +3,14 @@ package com.github.charlemaznable.httpclient.wfclient.resilience4j;
 import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
+import com.github.charlemaznable.httpclient.annotation.ResilienceFallback;
 import com.github.charlemaznable.httpclient.annotation.ResilienceRetry;
 import com.github.charlemaznable.httpclient.common.StatusError;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonRetryTest;
 import com.github.charlemaznable.httpclient.wfclient.WfClient;
 import com.github.charlemaznable.httpclient.wfclient.WfFactory;
 import io.github.resilience4j.retry.Retry;
+import lombok.SneakyThrows;
 import lombok.val;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
@@ -19,11 +21,11 @@ import java.util.concurrent.Future;
 
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RetryTest extends CommonRetryTest {
 
+    @SneakyThrows
     @Test
     public void testWfRetry() {
         startMockWebServer();
@@ -35,16 +37,10 @@ public class RetryTest extends CommonRetryTest {
         assertEquals("OK", httpClient.getWithConfig().block());
 
         countSample.set(0);
-        assertThrows(StatusError.class, () ->
-                httpClient.getWithParam(null).block());
+        assertEquals("NotOK", httpClient.getWithParam(null).block());
 
         countSample.set(0);
-        try {
-            httpClient.getWithAnno().get();
-        } catch (Exception e) {
-            assertTrue(e instanceof ExecutionException);
-            assertTrue(e.getCause() instanceof StatusError);
-        }
+        assertEquals("NotOK", httpClient.getWithAnno().get());
 
         countSample.set(0);
         try {
@@ -60,16 +56,17 @@ public class RetryTest extends CommonRetryTest {
     @Mapping("${root}:41440/sample")
     @MappingMethodNameDisabled
     @WfClient
-    @ResilienceRetry
+    @ConfigureWith(DefaultRetryConfig.class)
     public interface RetryClient {
 
         @ConfigureWith(CustomRetryConfig.class)
         Mono<String> getWithConfig();
 
+        @ConfigureWith(CustomFallbackConfig.class)
         Mono<String> getWithParam(Retry retry);
 
-        @ResilienceRetry(maxAttempts = 2)
-        @ResilienceRetry.IsolatedExecutor
+        @ResilienceRetry(maxAttempts = 2, isolatedExecutor = true)
+        @ResilienceFallback(CustomResilienceRecover.class)
         Future<String> getWithAnno();
 
         @ConfigureWith(DisabledRetryConfig.class)
