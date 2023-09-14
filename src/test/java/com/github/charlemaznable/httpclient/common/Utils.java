@@ -5,7 +5,6 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.jetbrains.annotations.NotNull;
-import org.jooq.lambda.fi.lang.CheckedRunnable;
 import org.jooq.lambda.fi.util.function.CheckedFunction;
 
 import static lombok.AccessLevel.PRIVATE;
@@ -22,12 +21,5 @@ public final class Utils {
                 return function(checkedFunction).apply(request);
             }
         };
-    }
-
-    public static void swallow(CheckedRunnable runnable) {
-        try {
-            runnable.run();
-        } catch (Throwable ignored) {
-        }
     }
 }

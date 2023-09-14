@@ -5,7 +5,8 @@ import com.github.charlemaznable.httpclient.annotation.Parameter;
 import com.github.charlemaznable.httpclient.ws.WsWfClient12;
 import com.github.charlemaznable.httpclient.ws.entity.GetSupportCity;
 import com.github.charlemaznable.httpclient.ws.entity.GetSupportProvince;
-import reactor.core.publisher.Mono;
+
+import java.util.concurrent.CompletableFuture;
 
 import static com.github.charlemaznable.httpclient.ws.common.Constants.CONTENT_KEY;
 
@@ -13,9 +14,9 @@ import static com.github.charlemaznable.httpclient.ws.common.Constants.CONTENT_K
 @DefaultFallbackDisabled
 public interface WeatherWfClient {
 
-    Mono<GetSupportProvince.Response> getSupportProvince(
+    CompletableFuture<GetSupportProvince.Response> getSupportProvince(
             @Parameter(CONTENT_KEY) GetSupportProvince.Request request);
 
-    Mono<GetSupportCity.Response> getSupportCity(
+    CompletableFuture<GetSupportCity.Response> getSupportCity(
             @Parameter(CONTENT_KEY) GetSupportCity.Request request);
 }

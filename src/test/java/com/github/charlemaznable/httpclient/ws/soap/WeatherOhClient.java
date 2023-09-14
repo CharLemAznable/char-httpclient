@@ -7,6 +7,8 @@ import com.github.charlemaznable.httpclient.ws.WsOhClient;
 import com.github.charlemaznable.httpclient.ws.entity.GetSupportCity;
 import com.github.charlemaznable.httpclient.ws.entity.GetSupportProvince;
 
+import java.util.concurrent.CompletableFuture;
+
 import static com.github.charlemaznable.httpclient.ws.common.Constants.CONTENT_KEY;
 import static com.github.charlemaznable.httpclient.ws.common.Constants.SOAP_ACTION_KEY;
 
@@ -15,10 +17,10 @@ import static com.github.charlemaznable.httpclient.ws.common.Constants.SOAP_ACTI
 public interface WeatherOhClient {
 
     @FixedHeader(name = SOAP_ACTION_KEY, value = GetSupportProvince.SOAP_ACTION)
-    GetSupportProvince.Response getSupportProvince(
+    CompletableFuture<GetSupportProvince.Response> getSupportProvince(
             @Parameter(CONTENT_KEY) GetSupportProvince.Request request);
 
     @FixedHeader(name = SOAP_ACTION_KEY, value = GetSupportCity.SOAP_ACTION)
-    GetSupportCity.Response getSupportCity(
+    CompletableFuture<GetSupportCity.Response> getSupportCity(
             @Parameter(CONTENT_KEY) GetSupportCity.Request request);
 }
