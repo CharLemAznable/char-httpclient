@@ -7,7 +7,9 @@ import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCirc
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonCircuitBreakerTest;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory;
+import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());
         val httpClient = ohLoader.getClient(CircuitBreakerClient.class);
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         errorState.set(true);
         countSample.set(0);
@@ -92,6 +95,8 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
             service2Normal[i].join();
         }
         assertEquals(15, countSample.get());
+
+        httpClient.bindTo(null);
 
         errorState.set(true);
         countSample.set(0);
@@ -163,7 +168,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
     @MappingMethodNameDisabled
     @OhClient
     @ConfigureWith(DefaultCircuitBreakerConfig.class)
-    public interface CircuitBreakerClient {
+    public interface CircuitBreakerClient extends ResilienceMeterBinder {
 
         @ConfigureWith(CustomCircuitBreakerConfig.class)
         String getWithConfig();

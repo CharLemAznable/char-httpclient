@@ -7,10 +7,12 @@ import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceFall
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceRetry;
 import com.github.charlemaznable.httpclient.common.StatusError;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonRetryTest;
+import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
 import com.github.charlemaznable.httpclient.vxclient.VxClient;
 import com.github.charlemaznable.httpclient.vxclient.VxFactory;
 import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
 import io.github.resilience4j.retry.Retry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -31,6 +33,7 @@ public class RetryTest extends CommonRetryTest {
 
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));
         val httpClient = vxLoader.getClient(RetryClient.class);
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         countSample.set(0);
         httpClient.getWithConfig().onSuccess(response -> {
@@ -39,6 +42,8 @@ public class RetryTest extends CommonRetryTest {
             countSample.set(0);
             httpClient.getWithParam(null).onSuccess(response1 -> {
                 test.verify(() -> assertEquals("NotOK", response1));
+
+                httpClient.bindTo(null);
 
                 countSample.set(0);
                 httpClient.getWithAnno().onSuccess(response2 -> {
@@ -60,7 +65,7 @@ public class RetryTest extends CommonRetryTest {
     @MappingMethodNameDisabled
     @VxClient
     @ConfigureWith(DefaultRetryConfig.class)
-    public interface RetryClient {
+    public interface RetryClient extends ResilienceMeterBinder {
 
         @ConfigureWith(CustomRetryConfig.class)
         Future<String> getWithConfig();

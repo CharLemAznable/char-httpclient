@@ -3,10 +3,11 @@ package com.github.charlemaznable.httpclient.common;
 import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.configurer.MappingMethodNameDisabledConfigurer;
+import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
 import com.google.common.cache.LoadingCache;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,17 +21,16 @@ import static com.github.charlemaznable.core.lang.LoadingCachee.simpleCache;
 import static com.google.common.cache.CacheLoader.from;
 import static org.springframework.core.annotation.AnnotatedElementUtils.isAnnotated;
 
-public abstract class CommonClass<T extends CommonBase<T>> implements Reloadable {
+@Accessors(fluent = true)
+public abstract class CommonClass<T extends CommonBase<T>>
+        implements Reloadable, ResilienceMeterBinder {
 
     @Getter
-    @Accessors(fluent = true)
     final CommonElement<T> element;
     final T defaultBase;
     @Getter
-    @Accessors(fluent = true)
     final Class<?> clazz;
     @Getter
-    @Accessors(fluent = true)
     final Logger logger;
 
     List<String> baseUrls;
@@ -71,13 +71,22 @@ public abstract class CommonClass<T extends CommonBase<T>> implements Reloadable
         }
     }
 
+    @Override
+    public void bindTo(MeterRegistry registry) {
+        synchronized (element.configLock) {
+            element.bindTo(registry);
+            commonMethodCache.asMap().values().forEach(
+                    method -> method.element.bindTo(registry));
+        }
+    }
+
     protected abstract CommonMethod<T> loadMethod(Method method);
 
     protected Object execute(Method method, Object[] args) throws Exception {
-        if (method.getDeclaringClass().equals(Reloadable.class)) {
+        if (method.getDeclaringClass().equals(Reloadable.class) ||
+                method.getDeclaringClass().equals(ResilienceMeterBinder.class)) {
             return method.invoke(this, args);
         }
-        val commonMethod = get(commonMethodCache, method);
-        return commonMethod.execute(args);
+        return get(commonMethodCache, method).execute(args);
     }
 }

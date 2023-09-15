@@ -25,6 +25,7 @@ import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.channel.DefaultEventLoop;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
@@ -46,15 +47,38 @@ public final class ResilienceElement {
     final Configurer configurer;
 
     public void initialize(AnnotatedElement element, ResilienceBase superBase) {
+        base.removeBulkheadMetrics();
         base.bulkhead = buildBulkhead(element, superBase.bulkhead);
+        base.publishBulkheadMetrics();
         base.bulkheadRecover = buildBulkheadRecover(element, superBase.bulkheadRecover);
+
+        base.removeRateLimiterMetrics();
         base.rateLimiter = buildRateLimiter(element, superBase.rateLimiter);
+        base.publishRateLimiterMetrics();
         base.rateLimiterRecover = buildRateLimiterRecover(element, superBase.rateLimiterRecover);
+
+        base.removeCircuitBreakerMetrics();
         base.circuitBreaker = buildCircuitBreaker(element, superBase.circuitBreaker);
+        base.publishCircuitBreakerMetrics();
         base.circuitBreakerRecover = buildCircuitBreakerRecover(element, superBase.circuitBreakerRecover);
+
+        base.removeRetryMetrics();
         base.retry = buildRetry(element, superBase.retry);
+        base.publishRetryMetrics();
         base.retryExecutor = buildRetryExecutor(element, superBase.retryExecutor);
         base.recover = buildRecover(element, superBase.recover);
+    }
+
+    public void bindTo(MeterRegistry registry) {
+        base.removeBulkheadMetrics();
+        base.removeRateLimiterMetrics();
+        base.removeCircuitBreakerMetrics();
+        base.removeRetryMetrics();
+        base.meterRegistry = registry;
+        base.publishBulkheadMetrics();
+        base.publishRateLimiterMetrics();
+        base.publishCircuitBreakerMetrics();
+        base.publishRetryMetrics();
     }
 
     private Bulkhead buildBulkhead(AnnotatedElement element, Bulkhead defaultValue) {

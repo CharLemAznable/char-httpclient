@@ -7,6 +7,7 @@ import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.ohclient.enhancer.OhClientEnhancer;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhClass;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhDummy;
+import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
 import com.google.common.cache.LoadingCache;
 import lombok.NoArgsConstructor;
 import lombok.val;
@@ -72,7 +73,7 @@ public final class OhFactory {
             return wrapWithEnhancer(ohClass,
                     BuddyEnhancer.create(OhDummy.class,
                             new Object[]{ohClass},
-                            new Class[]{ohClass, Reloadable.class},
+                            new Class[]{ohClass, Reloadable.class, ResilienceMeterBinder.class},
                             invocation -> {
                                 if (invocation.getMethod().isDefault() ||
                                         invocation.getMethod().getDeclaringClass()

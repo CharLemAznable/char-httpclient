@@ -5,9 +5,11 @@ import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreaker;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonCircuitBreakerTest;
+import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
 import com.github.charlemaznable.httpclient.wfclient.WfClient;
 import com.github.charlemaznable.httpclient.wfclient.WfFactory;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
 
         val wfLoader = WfFactory.wfLoader(reflectFactory());
         val httpClient = wfLoader.getClient(CircuitBreakerClient.class);
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         errorState.set(true);
         countSample.set(0);
@@ -93,6 +96,8 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
             service2Normal[i].join();
         }
         assertEquals(15, countSample.get());
+
+        httpClient.bindTo(null);
 
         errorState.set(true);
         countSample.set(0);
@@ -164,7 +169,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
     @MappingMethodNameDisabled
     @WfClient
     @ConfigureWith(DefaultCircuitBreakerConfig.class)
-    public interface CircuitBreakerClient {
+    public interface CircuitBreakerClient extends ResilienceMeterBinder {
 
         @ConfigureWith(CustomCircuitBreakerConfig.class)
         Mono<String> getWithConfig();

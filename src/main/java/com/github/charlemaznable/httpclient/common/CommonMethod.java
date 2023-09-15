@@ -26,16 +26,14 @@ import static com.github.charlemaznable.core.lang.Condition.emptyThen;
 import static com.github.charlemaznable.core.lang.Listt.newArrayList;
 import static com.github.charlemaznable.core.lang.Str.isBlank;
 
+@Accessors(fluent = true)
 public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadable {
 
     @Getter
-    @Accessors(fluent = true)
     final CommonElement<T> element;
     @Getter
-    @Accessors(fluent = true)
     final CommonClass<T> defaultClass;
     @Getter
-    @Accessors(fluent = true)
     final Method method;
 
     List<String> requestUrls;
@@ -43,26 +41,19 @@ public abstract class CommonMethod<T extends CommonBase<T>> implements Reloadabl
     static final String RETURN_GENERIC_ERROR = "Method return type generic Error";
 
     @Getter
-    @Accessors(fluent = true)
     boolean returnFuture; // Future<V>, etc.
     // async return types check start
     @Getter
-    @Accessors(fluent = true)
     boolean returnJavaConcurrent; // Future<V> or CompletionStage<V> or CompletableFuture<V>
     @Getter
-    @Accessors(fluent = true)
     boolean returnReactorMono;
     @Getter
-    @Accessors(fluent = true)
     boolean returnRxJavaSingle;
     @Getter
-    @Accessors(fluent = true)
     boolean returnRxJava2Single;
     @Getter
-    @Accessors(fluent = true)
     boolean returnRxJava3Single;
     @Getter
-    @Accessors(fluent = true)
     boolean returnMutinyUni;
     // async return types check finish
     boolean returnList; // List<E>

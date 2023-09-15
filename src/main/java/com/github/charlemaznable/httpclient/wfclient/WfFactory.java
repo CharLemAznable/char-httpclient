@@ -4,6 +4,7 @@ import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.BuddyEnhancer;
 import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.core.lang.Reloadable;
+import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
 import com.github.charlemaznable.httpclient.wfclient.enhancer.WfClientEnhancer;
 import com.github.charlemaznable.httpclient.wfclient.internal.WfClass;
 import com.github.charlemaznable.httpclient.wfclient.internal.WfDummy;
@@ -72,7 +73,7 @@ public final class WfFactory {
             return wrapWithEnhancer(wfClass,
                     BuddyEnhancer.create(WfDummy.class,
                             new Object[]{wfClass},
-                            new Class[]{wfClass, Reloadable.class},
+                            new Class[]{wfClass, Reloadable.class, ResilienceMeterBinder.class},
                             invocation -> {
                                 if (invocation.getMethod().isDefault() ||
                                         invocation.getMethod().getDeclaringClass()

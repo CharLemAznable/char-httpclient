@@ -3,13 +3,15 @@ package com.github.charlemaznable.httpclient.ohclient.resilience4j;
 import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
-import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceFallback;
-import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceRetry;
 import com.github.charlemaznable.httpclient.common.StatusError;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonRetryTest;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory;
+import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceFallback;
+import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceRetry;
+import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
 import io.github.resilience4j.retry.Retry;
+import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.junit.jupiter.api.Test;
@@ -31,12 +33,15 @@ public class RetryTest extends CommonRetryTest {
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());
         val httpClient = ohLoader.getClient(RetryClient.class);
+        httpClient.bindTo(new LoggingMeterRegistry());
 
         countSample.set(0);
         assertEquals("OK", httpClient.getWithConfig());
 
         countSample.set(0);
         assertEquals("NotOK", httpClient.getWithParam(null));
+
+        httpClient.bindTo(null);
 
         countSample.set(0);
         assertEquals("NotOK", httpClient.getWithAnno().get());
@@ -56,7 +61,7 @@ public class RetryTest extends CommonRetryTest {
     @MappingMethodNameDisabled
     @OhClient
     @ConfigureWith(DefaultRetryConfig.class)
-    public interface RetryClient {
+    public interface RetryClient extends ResilienceMeterBinder {
 
         @ConfigureWith(CustomRetryConfig.class)
         String getWithConfig();

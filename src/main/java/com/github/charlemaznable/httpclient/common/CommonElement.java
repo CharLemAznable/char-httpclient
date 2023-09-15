@@ -42,6 +42,7 @@ import com.github.charlemaznable.httpclient.configurer.ResponseParseDisabledConf
 import com.github.charlemaznable.httpclient.configurer.StatusFallbacksConfigurer;
 import com.github.charlemaznable.httpclient.configurer.StatusSeriesFallbacksConfigurer;
 import com.github.charlemaznable.httpclient.resilience.common.ResilienceElement;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
@@ -74,19 +75,19 @@ import static org.springframework.core.annotation.AnnotatedElementUtils.getMerge
 import static org.springframework.core.annotation.AnnotatedElementUtils.isAnnotated;
 
 @RequiredArgsConstructor
+@Accessors(fluent = true)
 public abstract class CommonElement<T extends CommonBase<T>> {
 
     @Getter
-    @Accessors(fluent = true)
     final T base;
     @Getter
-    @Accessors(fluent = true)
     final Factory factory;
 
     ConfigListener configListener;
     @Getter
-    @Accessors(fluent = true)
     Configurer configurer;
+    ResilienceElement resilienceElement;
+
     final Object configLock = new Object();
 
     public void initializeConfigListener(Runnable reloader) {
@@ -97,6 +98,7 @@ public abstract class CommonElement<T extends CommonBase<T>> {
         checkConfigurerIsRegisterThenRun(ConfigListenerRegister::removeConfigListener);
         configurer = buildConfigurer(element);
         checkConfigurerIsRegisterThenRun(ConfigListenerRegister::addConfigListener);
+        resilienceElement = new ResilienceElement(base.resilienceBase, factory, configurer);
     }
 
     public void setUpBeforeInitialization(Class<?> clazz, Method method, CommonElement<T> superElement) {
@@ -129,8 +131,7 @@ public abstract class CommonElement<T extends CommonBase<T>> {
         base.responseParser = buildResponseParser(element, superBase.responseParser);
         base.extraUrlQueryBuilder = buildExtraUrlQueryBuilder(element, superBase.extraUrlQueryBuilder);
         base.mappingBalancer = buildMappingBalancer(element, superBase.mappingBalancer);
-        new ResilienceElement(base.resilienceBase, factory, configurer)
-                .initialize(element, superBase.resilienceBase);
+        resilienceElement.initialize(element, superBase.resilienceBase);
     }
 
     public void tearDownAfterInitialization(Class<?> clazz, Method method, CommonElement<T> superElement) {
@@ -141,6 +142,10 @@ public abstract class CommonElement<T extends CommonBase<T>> {
         } else {
             InitializationConfigurer.INSTANCE.tearDownAfterInitialization(clazz, method);
         }
+    }
+
+    public void bindTo(MeterRegistry registry) {
+        resilienceElement.bindTo(registry);
     }
 
     public List<String> buildMappingUrls(AnnotatedElement element) {

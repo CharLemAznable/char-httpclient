@@ -7,7 +7,9 @@ import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceRate
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonRateLimiterTest;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory;
+import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
 import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());
         val httpClient = ohLoader.getClient(RateLimiterClient.class);
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         val service = new Thread[4];
         for (int i = 0; i < 4; i++) {
@@ -50,6 +53,8 @@ public class RateLimiterTest extends CommonRateLimiterTest {
             service2[i].join();
         }
         assertEquals(6, countSample.get());
+
+        httpClient.bindTo(null);
 
         val service3 = new Thread[4];
         for (int i = 0; i < 4; i++) {
@@ -80,7 +85,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
     @MappingMethodNameDisabled
     @OhClient
     @ConfigureWith(DefaultRateLimiterConfig.class)
-    public interface RateLimiterClient {
+    public interface RateLimiterClient extends ResilienceMeterBinder {
 
         @ConfigureWith(CustomRateLimiterConfig.class)
         String getWithConfig();

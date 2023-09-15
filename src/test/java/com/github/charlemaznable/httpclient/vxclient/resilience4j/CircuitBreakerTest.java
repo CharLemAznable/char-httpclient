@@ -6,10 +6,12 @@ import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreaker;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonCircuitBreakerTest;
+import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
 import com.github.charlemaznable.httpclient.vxclient.VxClient;
 import com.github.charlemaznable.httpclient.vxclient.VxFactory;
 import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -35,6 +37,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
 
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));
         val httpClient = vxLoader.getClient(CircuitBreakerClient.class);
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         errorState.set(true);
         countSample.set(0);
@@ -88,6 +91,8 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
                             }
                             Future.all(getWithParamsNormal).onComplete(result2Normal -> {
                                 test.verify(() -> assertEquals(15, countSample.get()));
+
+                                httpClient.bindTo(null);
 
                                 errorState.set(true);
                                 countSample.set(0);
@@ -166,7 +171,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
     @MappingMethodNameDisabled
     @VxClient
     @ConfigureWith(DefaultCircuitBreakerConfig.class)
-    public interface CircuitBreakerClient {
+    public interface CircuitBreakerClient extends ResilienceMeterBinder {
 
         @ConfigureWith(CustomCircuitBreakerConfig.class)
         Future<String> getWithConfig();
