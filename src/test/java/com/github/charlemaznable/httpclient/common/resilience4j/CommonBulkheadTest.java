@@ -1,9 +1,9 @@
 package com.github.charlemaznable.httpclient.common.resilience4j;
 
 import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.resilience.function.ResilienceBulkheadRecover;
 import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceBulkheadConfigurer;
 import com.github.charlemaznable.httpclient.resilience.configurer.configservice.ResilienceBulkheadConfig;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceBulkheadRecover;
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.bulkhead.BulkheadFullException;
 import lombok.SneakyThrows;

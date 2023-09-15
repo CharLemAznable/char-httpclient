@@ -2,8 +2,8 @@ package com.github.charlemaznable.httpclient.resilience.configurer.configservice
 
 import com.github.charlemaznable.configservice.Config;
 import com.github.charlemaznable.core.lang.Objectt;
-import com.github.charlemaznable.httpclient.resilience.function.ResilienceBulkheadRecover;
 import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceBulkheadConfigurer;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceBulkheadRecover;
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.bulkhead.BulkheadConfig;
 import org.apache.commons.lang3.BooleanUtils;

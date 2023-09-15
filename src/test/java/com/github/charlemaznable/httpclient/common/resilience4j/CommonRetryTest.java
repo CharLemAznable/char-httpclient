@@ -1,11 +1,11 @@
 package com.github.charlemaznable.httpclient.common.resilience4j;
 
 import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.resilience.function.ResilienceRecover;
 import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceFallbackConfigurer;
 import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceRetryConfigurer;
 import com.github.charlemaznable.httpclient.resilience.configurer.configservice.ResilienceFallbackConfig;
 import com.github.charlemaznable.httpclient.resilience.configurer.configservice.ResilienceRetryConfig;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceRecover;
 import io.github.resilience4j.retry.Retry;
 import lombok.SneakyThrows;
 import lombok.val;

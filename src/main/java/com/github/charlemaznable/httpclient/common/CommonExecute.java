@@ -116,7 +116,7 @@ public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMet
             base.resilienceBase.circuitBreaker((CircuitBreaker) argument);
         } else if (isAssignable(parameterType, Retry.class)) {
             base.resilienceBase.retry((Retry) argument);
-        }else if (isAssignable(parameterType, CncRequest.class)) {
+        } else if (isAssignable(parameterType, CncRequest.class)) {
             this.responseClass = checkNull(argument,
                     () -> CncResponse.CncResponseImpl.class,
                     xx -> ((CncRequest<? extends CncResponse>) xx).responseClass());

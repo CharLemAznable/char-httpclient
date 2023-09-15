@@ -11,7 +11,7 @@ import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceFall
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceRetry;
 import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
 import io.github.resilience4j.retry.Retry;
-import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ public class RetryTest extends CommonRetryTest {
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());
         val httpClient = ohLoader.getClient(RetryClient.class);
-        httpClient.bindTo(new LoggingMeterRegistry());
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         countSample.set(0);
         assertEquals("OK", httpClient.getWithConfig());

@@ -48,25 +48,29 @@ public final class ResilienceElement {
 
     public void initialize(AnnotatedElement element, ResilienceBase superBase) {
         base.removeBulkheadMetrics();
+        base.removeRateLimiterMetrics();
+        base.removeCircuitBreakerMetrics();
+        base.removeRetryMetrics();
+
         base.bulkhead = buildBulkhead(element, superBase.bulkhead);
-        base.publishBulkheadMetrics();
         base.bulkheadRecover = buildBulkheadRecover(element, superBase.bulkheadRecover);
 
-        base.removeRateLimiterMetrics();
         base.rateLimiter = buildRateLimiter(element, superBase.rateLimiter);
-        base.publishRateLimiterMetrics();
         base.rateLimiterRecover = buildRateLimiterRecover(element, superBase.rateLimiterRecover);
 
-        base.removeCircuitBreakerMetrics();
         base.circuitBreaker = buildCircuitBreaker(element, superBase.circuitBreaker);
-        base.publishCircuitBreakerMetrics();
         base.circuitBreakerRecover = buildCircuitBreakerRecover(element, superBase.circuitBreakerRecover);
 
-        base.removeRetryMetrics();
         base.retry = buildRetry(element, superBase.retry);
-        base.publishRetryMetrics();
         base.retryExecutor = buildRetryExecutor(element, superBase.retryExecutor);
         base.recover = buildRecover(element, superBase.recover);
+
+        base.meterRegistry = superBase.meterRegistry;
+
+        base.publishBulkheadMetrics();
+        base.publishCircuitBreakerMetrics();
+        base.publishRateLimiterMetrics();
+        base.publishRetryMetrics();
     }
 
     public void bindTo(MeterRegistry registry) {

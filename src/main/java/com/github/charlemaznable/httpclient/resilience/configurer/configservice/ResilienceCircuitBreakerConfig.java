@@ -2,8 +2,8 @@ package com.github.charlemaznable.httpclient.resilience.configurer.configservice
 
 import com.github.charlemaznable.configservice.Config;
 import com.github.charlemaznable.core.lang.Objectt;
-import com.github.charlemaznable.httpclient.resilience.function.ResilienceCircuitBreakerRecover;
 import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceCircuitBreakerConfigurer;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceCircuitBreakerRecover;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.apache.commons.lang3.BooleanUtils;

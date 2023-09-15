@@ -2,8 +2,8 @@ package com.github.charlemaznable.httpclient.resilience.configurer.configservice
 
 import com.github.charlemaznable.configservice.Config;
 import com.github.charlemaznable.core.lang.Objectt;
-import com.github.charlemaznable.httpclient.resilience.function.ResilienceRecover;
 import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceFallbackConfigurer;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceRecover;
 
 public interface ResilienceFallbackConfig extends ResilienceFallbackConfigurer {
 

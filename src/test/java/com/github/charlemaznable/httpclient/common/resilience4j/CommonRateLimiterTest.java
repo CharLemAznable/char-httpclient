@@ -1,9 +1,9 @@
 package com.github.charlemaznable.httpclient.common.resilience4j;
 
 import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.resilience.function.ResilienceRateLimiterRecover;
 import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceRateLimiterConfigurer;
 import com.github.charlemaznable.httpclient.resilience.configurer.configservice.ResilienceRateLimiterConfig;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceRateLimiterRecover;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import lombok.SneakyThrows;

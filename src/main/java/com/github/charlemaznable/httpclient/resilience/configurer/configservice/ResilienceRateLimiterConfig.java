@@ -2,8 +2,8 @@ package com.github.charlemaznable.httpclient.resilience.configurer.configservice
 
 import com.github.charlemaznable.configservice.Config;
 import com.github.charlemaznable.core.lang.Objectt;
-import com.github.charlemaznable.httpclient.resilience.function.ResilienceRateLimiterRecover;
 import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceRateLimiterConfigurer;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceRateLimiterRecover;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import org.apache.commons.lang3.BooleanUtils;

@@ -1,7 +1,7 @@
 package com.github.charlemaznable.httpclient.vxclient;
 
-import com.github.charlemaznable.httpclient.common.CommonReqTest;
 import com.github.charlemaznable.httpclient.annotation.ContentFormat;
+import com.github.charlemaznable.httpclient.common.CommonReqTest;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.StatusError;

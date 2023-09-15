@@ -4,8 +4,8 @@ import com.github.charlemaznable.core.lang.Listt;
 import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
-import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreaker;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonCircuitBreakerTest;
+import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreaker;
 import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
 import com.github.charlemaznable.httpclient.vxclient.VxClient;
 import com.github.charlemaznable.httpclient.vxclient.VxFactory;
@@ -164,7 +164,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
     }
 
     protected Future<String> runQuietly(Future<String> resultFuture, VertxTestContext test) {
-        return resultFuture.otherwise(e ->  null);
+        return resultFuture.otherwise(e -> null);
     }
 
     @Mapping("${root}:41430/sample")
