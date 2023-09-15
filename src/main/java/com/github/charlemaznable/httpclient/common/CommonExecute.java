@@ -18,6 +18,7 @@ import com.github.charlemaznable.httpclient.annotation.PathVar;
 import com.github.charlemaznable.httpclient.annotation.RequestBodyRaw;
 import com.github.charlemaznable.httpclient.annotation.RequestExtend;
 import com.github.charlemaznable.httpclient.annotation.ResponseParse;
+import com.github.charlemaznable.httpclient.resilience.common.ResilienceDecorators;
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.RateLimiter;
@@ -108,13 +109,13 @@ public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMet
         } else if (argument instanceof MappingBalance.MappingBalancer mappingBalancer) {
             base.mappingBalancer = mappingBalancer;
         } else if (isAssignable(parameterType, Bulkhead.class)) {
-            base.bulkhead = (Bulkhead) argument;
+            base.resilienceBase.bulkhead((Bulkhead) argument);
         } else if (isAssignable(parameterType, RateLimiter.class)) {
-            base.rateLimiter = (RateLimiter) argument;
+            base.resilienceBase.rateLimiter((RateLimiter) argument);
         } else if (isAssignable(parameterType, CircuitBreaker.class)) {
-            base.circuitBreaker = (CircuitBreaker) argument;
+            base.resilienceBase.circuitBreaker((CircuitBreaker) argument);
         } else if (isAssignable(parameterType, Retry.class)) {
-            base.retry = (Retry) argument;
+            base.resilienceBase.retry((Retry) argument);
         }else if (isAssignable(parameterType, CncRequest.class)) {
             this.responseClass = checkNull(argument,
                     () -> CncResponse.CncResponseImpl.class,
@@ -389,18 +390,11 @@ public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMet
 
     protected Object decorateSyncExecute(Supplier<Object> supplier) {
         return ResilienceDecorators.ofSupplier(supplier)
-                .withBulkhead(base.bulkhead, base.bulkheadRecover)
-                .withRateLimiter(base.rateLimiter, base.rateLimiterRecover)
-                .withCircuitBreaker(base.circuitBreaker, base.circuitBreakerRecover)
-                .withRetry(base.retry).withRecover(base.recover).get();
+                .withResilienceBase(base.resilienceBase).get();
     }
 
     protected CompletableFuture<Object> decorateAsyncExecute(Supplier<CompletionStage<Object>> stageSupplier) {
         return ResilienceDecorators.ofCompletionStage(stageSupplier)
-                .withBulkhead(base.bulkhead, base.bulkheadRecover)
-                .withRateLimiter(base.rateLimiter, base.rateLimiterRecover)
-                .withCircuitBreaker(base.circuitBreaker, base.circuitBreakerRecover)
-                .withRetry(base.retry, base.retryExecutor).withRecover(base.recover)
-                .get().toCompletableFuture();
+                .withResilienceBase(base.resilienceBase).get().toCompletableFuture();
     }
 }

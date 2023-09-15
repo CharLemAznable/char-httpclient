@@ -1,6 +1,7 @@
-package com.github.charlemaznable.httpclient.configurer;
+package com.github.charlemaznable.httpclient.resilience.configurer;
 
-import com.github.charlemaznable.httpclient.common.ResilienceRateLimiterRecover;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceRateLimiterRecover;
+import com.github.charlemaznable.httpclient.configurer.Configurer;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 
 public interface ResilienceRateLimiterConfigurer extends Configurer {

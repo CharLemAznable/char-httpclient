@@ -1,9 +1,9 @@
-package com.github.charlemaznable.httpclient.configurer.configservice;
+package com.github.charlemaznable.httpclient.resilience.configurer.configservice;
 
 import com.github.charlemaznable.configservice.Config;
 import com.github.charlemaznable.core.lang.Objectt;
-import com.github.charlemaznable.httpclient.common.ResilienceCircuitBreakerRecover;
-import com.github.charlemaznable.httpclient.configurer.ResilienceCircuitBreakerConfigurer;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceCircuitBreakerRecover;
+import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceCircuitBreakerConfigurer;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.apache.commons.lang3.BooleanUtils;
@@ -14,9 +14,9 @@ import static com.github.charlemaznable.configservice.impl.Functions.TO_BOOLEAN_
 import static com.github.charlemaznable.configservice.impl.Functions.TO_DURATION_FUNCTION;
 import static com.github.charlemaznable.configservice.impl.Functions.TO_FLOAT_FUNCTION;
 import static com.github.charlemaznable.configservice.impl.Functions.TO_INT_FUNCTION;
+import static com.github.charlemaznable.configservice.impl.Functions.parseStringToValue;
 import static com.github.charlemaznable.core.lang.Condition.checkNotBlank;
 import static com.github.charlemaznable.core.lang.Condition.nonBlank;
-import static com.github.charlemaznable.httpclient.configurer.configservice.ConfigurerElf.parseStringToValue;
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT_FAILURE_RATE_THRESHOLD;
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT_MINIMUM_NUMBER_OF_CALLS;
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT_PERMITTED_CALLS_IN_HALF_OPEN_STATE;

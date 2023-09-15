@@ -4,7 +4,7 @@ import com.github.charlemaznable.core.lang.Listt;
 import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
-import com.github.charlemaznable.httpclient.annotation.ResilienceCircuitBreaker;
+import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreaker;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonCircuitBreakerTest;
 import com.github.charlemaznable.httpclient.vxclient.VxClient;
 import com.github.charlemaznable.httpclient.vxclient.VxFactory;

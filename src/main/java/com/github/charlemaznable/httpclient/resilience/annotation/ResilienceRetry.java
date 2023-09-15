@@ -1,4 +1,4 @@
-package com.github.charlemaznable.httpclient.annotation;
+package com.github.charlemaznable.httpclient.resilience.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

@@ -3,7 +3,7 @@ package com.github.charlemaznable.httpclient.wfclient.resilience4j;
 import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
-import com.github.charlemaznable.httpclient.annotation.ResilienceBulkhead;
+import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceBulkhead;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonBulkheadTest;
 import com.github.charlemaznable.httpclient.wfclient.WfClient;
 import com.github.charlemaznable.httpclient.wfclient.WfFactory;

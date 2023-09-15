@@ -1,6 +1,6 @@
-package com.github.charlemaznable.httpclient.annotation;
+package com.github.charlemaznable.httpclient.resilience.annotation;
 
-import com.github.charlemaznable.httpclient.common.ResilienceBulkheadRecover;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceBulkheadRecover;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

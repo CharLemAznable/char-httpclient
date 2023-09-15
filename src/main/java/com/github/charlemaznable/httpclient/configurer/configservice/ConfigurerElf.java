@@ -9,9 +9,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
-import static com.github.charlemaznable.core.lang.Condition.checkBlank;
 import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -35,15 +33,5 @@ final class ConfigurerElf {
             }
         }
         return result;
-    }
-
-    static <T> T parseStringToValue(String str, T defaultValue, Function<String, T> parser) {
-        return checkBlank(str, () -> defaultValue, value -> {
-            try {
-                return parser.apply(value);
-            } catch (Exception e) {
-                return defaultValue;
-            }
-        });
     }
 }

@@ -1,6 +1,7 @@
-package com.github.charlemaznable.httpclient.configurer;
+package com.github.charlemaznable.httpclient.resilience.configurer;
 
-import com.github.charlemaznable.httpclient.common.ResilienceCircuitBreakerRecover;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceCircuitBreakerRecover;
+import com.github.charlemaznable.httpclient.configurer.Configurer;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 
 public interface ResilienceCircuitBreakerConfigurer extends Configurer {

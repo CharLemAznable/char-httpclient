@@ -1,6 +1,6 @@
-package com.github.charlemaznable.httpclient.annotation;
+package com.github.charlemaznable.httpclient.resilience.annotation;
 
-import com.github.charlemaznable.httpclient.common.ResilienceCircuitBreakerRecover;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceCircuitBreakerRecover;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 
 import java.lang.annotation.Documented;

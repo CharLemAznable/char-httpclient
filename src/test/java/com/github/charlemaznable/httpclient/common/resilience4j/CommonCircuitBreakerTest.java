@@ -1,9 +1,9 @@
 package com.github.charlemaznable.httpclient.common.resilience4j;
 
 import com.github.charlemaznable.httpclient.common.HttpStatus;
-import com.github.charlemaznable.httpclient.common.ResilienceCircuitBreakerRecover;
-import com.github.charlemaznable.httpclient.configurer.ResilienceCircuitBreakerConfigurer;
-import com.github.charlemaznable.httpclient.configurer.configservice.ResilienceCircuitBreakerConfig;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceCircuitBreakerRecover;
+import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceCircuitBreakerConfigurer;
+import com.github.charlemaznable.httpclient.resilience.configurer.configservice.ResilienceCircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import lombok.SneakyThrows;

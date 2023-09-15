@@ -1,9 +1,9 @@
-package com.github.charlemaznable.httpclient.configurer.configservice;
+package com.github.charlemaznable.httpclient.resilience.configurer.configservice;
 
 import com.github.charlemaznable.configservice.Config;
 import com.github.charlemaznable.core.lang.Objectt;
-import com.github.charlemaznable.httpclient.common.ResilienceBulkheadRecover;
-import com.github.charlemaznable.httpclient.configurer.ResilienceBulkheadConfigurer;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceBulkheadRecover;
+import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceBulkheadConfigurer;
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.bulkhead.BulkheadConfig;
 import org.apache.commons.lang3.BooleanUtils;
@@ -12,9 +12,9 @@ import java.time.Duration;
 
 import static com.github.charlemaznable.configservice.impl.Functions.TO_DURATION_FUNCTION;
 import static com.github.charlemaznable.configservice.impl.Functions.TO_INT_FUNCTION;
+import static com.github.charlemaznable.configservice.impl.Functions.parseStringToValue;
 import static com.github.charlemaznable.core.lang.Condition.checkNotBlank;
 import static com.github.charlemaznable.core.lang.Condition.nonBlank;
-import static com.github.charlemaznable.httpclient.configurer.configservice.ConfigurerElf.parseStringToValue;
 import static io.github.resilience4j.bulkhead.BulkheadConfig.DEFAULT_MAX_CONCURRENT_CALLS;
 import static io.github.resilience4j.bulkhead.BulkheadConfig.DEFAULT_MAX_WAIT_DURATION;
 

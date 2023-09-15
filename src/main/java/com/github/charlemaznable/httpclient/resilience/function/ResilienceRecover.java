@@ -1,4 +1,4 @@
-package com.github.charlemaznable.httpclient.common;
+package com.github.charlemaznable.httpclient.resilience.function;
 
 import java.util.function.Function;
 

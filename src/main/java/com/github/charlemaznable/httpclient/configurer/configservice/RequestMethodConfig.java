@@ -4,7 +4,7 @@ import com.github.charlemaznable.configservice.Config;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
 import com.github.charlemaznable.httpclient.configurer.RequestMethodConfigurer;
 
-import static com.github.charlemaznable.httpclient.configurer.configservice.ConfigurerElf.parseStringToValue;
+import static com.github.charlemaznable.configservice.impl.Functions.parseStringToValue;
 
 public interface RequestMethodConfig extends RequestMethodConfigurer {
 

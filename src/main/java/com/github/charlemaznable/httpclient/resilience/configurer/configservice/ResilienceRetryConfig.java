@@ -1,7 +1,7 @@
-package com.github.charlemaznable.httpclient.configurer.configservice;
+package com.github.charlemaznable.httpclient.resilience.configurer.configservice;
 
 import com.github.charlemaznable.configservice.Config;
-import com.github.charlemaznable.httpclient.configurer.ResilienceRetryConfigurer;
+import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceRetryConfigurer;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import org.apache.commons.lang3.BooleanUtils;
@@ -10,9 +10,9 @@ import java.time.Duration;
 
 import static com.github.charlemaznable.configservice.impl.Functions.TO_DURATION_FUNCTION;
 import static com.github.charlemaznable.configservice.impl.Functions.TO_INT_FUNCTION;
+import static com.github.charlemaznable.configservice.impl.Functions.parseStringToValue;
 import static com.github.charlemaznable.core.lang.Condition.checkNotBlank;
 import static com.github.charlemaznable.core.lang.Condition.nonBlank;
-import static com.github.charlemaznable.httpclient.configurer.configservice.ConfigurerElf.parseStringToValue;
 import static io.github.resilience4j.retry.RetryConfig.DEFAULT_MAX_ATTEMPTS;
 
 public interface ResilienceRetryConfig extends ResilienceRetryConfigurer {

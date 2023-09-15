@@ -5,7 +5,7 @@ import com.github.charlemaznable.httpclient.configurer.AcceptCharsetConfigurer;
 
 import java.nio.charset.Charset;
 
-import static com.github.charlemaznable.httpclient.configurer.configservice.ConfigurerElf.parseStringToValue;
+import static com.github.charlemaznable.configservice.impl.Functions.parseStringToValue;
 
 public interface AcceptCharsetConfig extends AcceptCharsetConfigurer {
 

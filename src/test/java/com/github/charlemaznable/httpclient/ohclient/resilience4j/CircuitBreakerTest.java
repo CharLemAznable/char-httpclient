@@ -3,7 +3,7 @@ package com.github.charlemaznable.httpclient.ohclient.resilience4j;
 import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
-import com.github.charlemaznable.httpclient.annotation.ResilienceCircuitBreaker;
+import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreaker;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonCircuitBreakerTest;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory;
