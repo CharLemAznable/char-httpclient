@@ -8,14 +8,15 @@ import io.github.resilience4j.core.CompletionStageUtils;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import io.github.resilience4j.retry.Retry;
-import lombok.Lombok;
+import io.github.resilience4j.timelimiter.TimeLimiter;
+import io.netty.channel.DefaultEventLoop;
 
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.github.charlemaznable.core.lang.Clz.isAssignable;
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static java.util.Objects.requireNonNull;
 
@@ -27,6 +28,8 @@ public interface ResilienceDecorators {
 
     class DecorateCompletionStage<T> {
 
+        private static final ScheduledExecutorService timeLimiterScheduler = new DefaultEventLoop();
+
         private Supplier<CompletionStage<T>> stageSupplier;
 
         public DecorateCompletionStage(Supplier<CompletionStage<T>> stageSupplier) {
@@ -35,6 +38,7 @@ public interface ResilienceDecorators {
 
         public DecorateCompletionStage<T> withResilienceBase(ResilienceBase base) {
             return this.withBulkhead(base.bulkhead, base.bulkheadRecover)
+                    .withTimeLimiter(base.timeLimiter, base.timeLimiterRecover)
                     .withRateLimiter(base.rateLimiter, base.rateLimiterRecover)
                     .withCircuitBreaker(base.circuitBreaker, base.circuitBreakerRecover)
                     .withRetry(base.retry, base.retryExecutor).withRecover(base.recover);
@@ -46,7 +50,18 @@ public interface ResilienceDecorators {
                 stageSupplier = Bulkhead.decorateCompletionStage(b, stageSupplier);
                 notNullThenRun(bulkheadRecover, br ->
                         stageSupplier = CompletionStageUtils.recover(stageSupplier,
-                                fallback(BulkheadFullException.class, cast(br))));
+                                BulkheadFullException.class, fallback(BulkheadFullException.class, cast(br))));
+            });
+            return this;
+        }
+
+        private DecorateCompletionStage<T> withTimeLimiter(TimeLimiter timeLimiter,
+                                                           Function<TimeoutException, ?> timeLimiterRecover) {
+            notNullThenRun(timeLimiter, t -> {
+                stageSupplier = TimeLimiter.decorateCompletionStage(t, timeLimiterScheduler, stageSupplier);
+                notNullThenRun(timeLimiterRecover, tr ->
+                        stageSupplier = CompletionStageUtils.recover(stageSupplier,
+                                TimeoutException.class, fallback(TimeoutException.class, cast(tr))));
             });
             return this;
         }
@@ -57,7 +72,7 @@ public interface ResilienceDecorators {
                 stageSupplier = RateLimiter.decorateCompletionStage(r, 1, stageSupplier);
                 notNullThenRun(rateLimiterRecover, rr ->
                         stageSupplier = CompletionStageUtils.recover(stageSupplier,
-                                fallback(RequestNotPermitted.class, cast(rr))));
+                                RequestNotPermitted.class, fallback(RequestNotPermitted.class, cast(rr))));
             });
             return this;
         }
@@ -68,7 +83,7 @@ public interface ResilienceDecorators {
                 stageSupplier = CircuitBreaker.decorateCompletionStage(c, stageSupplier);
                 notNullThenRun(circuitBreakerRecover, cr ->
                         stageSupplier = CompletionStageUtils.recover(stageSupplier,
-                                fallback(CallNotPermittedException.class, cast(cr))));
+                                CallNotPermittedException.class, fallback(CallNotPermittedException.class, cast(cr))));
             });
             return this;
         }
@@ -96,13 +111,7 @@ public interface ResilienceDecorators {
 
         private static <X extends Throwable, Y>
         Function<Throwable, Y> fallback(Class<X> exceptionType, Function<X, Y> function) {
-            return throwable -> {
-                if (isAssignable(throwable.getClass(), exceptionType)) {
-                    return function.apply(exceptionType.cast(throwable));
-                } else {
-                    throw Lombok.sneakyThrow(throwable);
-                }
-            };
+            return throwable -> function.apply(exceptionType.cast(throwable));
         }
     }
 }

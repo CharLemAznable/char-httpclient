@@ -4,14 +4,17 @@ import com.github.charlemaznable.httpclient.resilience.function.ResilienceBulkhe
 import com.github.charlemaznable.httpclient.resilience.function.ResilienceCircuitBreakerRecover;
 import com.github.charlemaznable.httpclient.resilience.function.ResilienceRateLimiterRecover;
 import com.github.charlemaznable.httpclient.resilience.function.ResilienceRecover;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceTimeLimiterRecover;
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.micrometer.tagged.TaggedBulkheadMetricsPublisher;
 import io.github.resilience4j.micrometer.tagged.TaggedCircuitBreakerMetricsPublisher;
 import io.github.resilience4j.micrometer.tagged.TaggedRateLimiterMetricsPublisher;
 import io.github.resilience4j.micrometer.tagged.TaggedRetryMetricsPublisher;
+import io.github.resilience4j.micrometer.tagged.TaggedTimeLimiterMetricsPublisher;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.timelimiter.TimeLimiter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.channel.DefaultEventLoop;
 import lombok.Getter;
@@ -34,6 +37,10 @@ public final class ResilienceBase {
     ResilienceBulkheadRecover<?> bulkheadRecover;
 
     @Setter
+    TimeLimiter timeLimiter;
+    ResilienceTimeLimiterRecover<?> timeLimiterRecover;
+
+    @Setter
     RateLimiter rateLimiter;
     ResilienceRateLimiterRecover<?> rateLimiterRecover;
 
@@ -52,6 +59,8 @@ public final class ResilienceBase {
     public ResilienceBase(ResilienceBase other) {
         this.bulkhead = other.bulkhead;
         this.bulkheadRecover = other.bulkheadRecover;
+        this.timeLimiter = other.timeLimiter;
+        this.timeLimiterRecover = other.timeLimiterRecover;
         this.rateLimiter = other.rateLimiter;
         this.rateLimiterRecover = other.rateLimiterRecover;
         this.circuitBreaker = other.circuitBreaker;
@@ -70,6 +79,16 @@ public final class ResilienceBase {
     void removeBulkheadMetrics() {
         notNullThenBiRun(meterRegistry, bulkhead, (m, b) ->
                 new TaggedBulkheadMetricsPublisher(m).removeMetrics(b));
+    }
+
+    void publishTimeLimiterMetrics() {
+        notNullThenBiRun(meterRegistry, timeLimiter, (m, t) ->
+                new TaggedTimeLimiterMetricsPublisher(m).publishMetrics(t));
+    }
+
+    void removeTimeLimiterMetrics() {
+        notNullThenBiRun(meterRegistry, timeLimiter, (m, t) ->
+                new TaggedTimeLimiterMetricsPublisher(m).removeMetrics(t));
     }
 
     void publishRateLimiterMetrics() {

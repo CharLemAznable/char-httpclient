@@ -23,6 +23,7 @@ import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.timelimiter.TimeLimiter;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -110,6 +111,8 @@ public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMet
             base.mappingBalancer = mappingBalancer;
         } else if (isAssignable(parameterType, Bulkhead.class)) {
             base.resilienceBase.bulkhead((Bulkhead) argument);
+        } else if (isAssignable(parameterType, TimeLimiter.class)) {
+            base.resilienceBase.timeLimiter((TimeLimiter) argument);
         } else if (isAssignable(parameterType, RateLimiter.class)) {
             base.resilienceBase.rateLimiter((RateLimiter) argument);
         } else if (isAssignable(parameterType, CircuitBreaker.class)) {

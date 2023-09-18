@@ -8,15 +8,18 @@ import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCirc
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceFallback;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceRateLimiter;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceRetry;
+import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceTimeLimiter;
 import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceBulkheadConfigurer;
 import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceCircuitBreakerConfigurer;
 import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceFallbackConfigurer;
 import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceRateLimiterConfigurer;
 import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceRetryConfigurer;
+import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceTimeLimiterConfigurer;
 import com.github.charlemaznable.httpclient.resilience.function.ResilienceBulkheadRecover;
 import com.github.charlemaznable.httpclient.resilience.function.ResilienceCircuitBreakerRecover;
 import com.github.charlemaznable.httpclient.resilience.function.ResilienceRateLimiterRecover;
 import com.github.charlemaznable.httpclient.resilience.function.ResilienceRecover;
+import com.github.charlemaznable.httpclient.resilience.function.ResilienceTimeLimiterRecover;
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.bulkhead.BulkheadConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
@@ -25,6 +28,8 @@ import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
+import io.github.resilience4j.timelimiter.TimeLimiter;
+import io.github.resilience4j.timelimiter.TimeLimiterConfig;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.netty.channel.DefaultEventLoop;
 import lombok.RequiredArgsConstructor;
@@ -48,12 +53,16 @@ public final class ResilienceElement {
 
     public void initialize(AnnotatedElement element, ResilienceBase superBase) {
         base.removeBulkheadMetrics();
+        base.removeTimeLimiterMetrics();
         base.removeRateLimiterMetrics();
         base.removeCircuitBreakerMetrics();
         base.removeRetryMetrics();
 
         base.bulkhead = buildBulkhead(element, superBase.bulkhead);
         base.bulkheadRecover = buildBulkheadRecover(element, superBase.bulkheadRecover);
+
+        base.timeLimiter = buildTimeLimiter(element, superBase.timeLimiter);
+        base.timeLimiterRecover = buildTimeLimiterRecover(element, superBase.timeLimiterRecover);
 
         base.rateLimiter = buildRateLimiter(element, superBase.rateLimiter);
         base.rateLimiterRecover = buildRateLimiterRecover(element, superBase.rateLimiterRecover);
@@ -68,18 +77,21 @@ public final class ResilienceElement {
         base.meterRegistry = superBase.meterRegistry;
 
         base.publishBulkheadMetrics();
-        base.publishCircuitBreakerMetrics();
+        base.publishTimeLimiterMetrics();
         base.publishRateLimiterMetrics();
+        base.publishCircuitBreakerMetrics();
         base.publishRetryMetrics();
     }
 
     public void bindTo(MeterRegistry registry) {
         base.removeBulkheadMetrics();
+        base.removeTimeLimiterMetrics();
         base.removeRateLimiterMetrics();
         base.removeCircuitBreakerMetrics();
         base.removeRetryMetrics();
         base.meterRegistry = registry;
         base.publishBulkheadMetrics();
+        base.publishTimeLimiterMetrics();
         base.publishRateLimiterMetrics();
         base.publishCircuitBreakerMetrics();
         base.publishRetryMetrics();
@@ -91,8 +103,8 @@ public final class ResilienceElement {
             return bulkheadConfigurer.bulkhead(defaultName);
         val bulkhead = getMergedAnnotation(element, ResilienceBulkhead.class);
         return checkNull(bulkhead, () -> defaultValue, anno -> Bulkhead.of(
-                blankThen(anno.name(), () -> defaultName),
-                BulkheadConfig.custom().maxConcurrentCalls(anno.maxConcurrentCalls())
+                blankThen(anno.name(), () -> defaultName), BulkheadConfig.custom()
+                        .maxConcurrentCalls(anno.maxConcurrentCalls())
                         .maxWaitDuration(Duration.ofMillis(anno.maxWaitDurationInMillis())).build()));
     }
 
@@ -104,14 +116,32 @@ public final class ResilienceElement {
         return checkNull(bulkhead, () -> defaultValue, anno -> FactoryContext.build(factory, anno.fallback()));
     }
 
+    private TimeLimiter buildTimeLimiter(AnnotatedElement element, TimeLimiter defaultValue) {
+        val defaultName = "TimeLimiter-" + defaultResilienceName(element);
+        if (configurer instanceof ResilienceTimeLimiterConfigurer timeLimiterConfigurer)
+            return timeLimiterConfigurer.timeLimiter(defaultName);
+        val timeLimiter = getMergedAnnotation(element, ResilienceTimeLimiter.class);
+        return checkNull(timeLimiter, () -> defaultValue, anno -> TimeLimiter.of(
+                blankThen(anno.name(), () -> defaultName), TimeLimiterConfig.custom()
+                        .timeoutDuration(Duration.ofMillis(anno.timeoutDurationInMillis())).build()));
+    }
+
+    private ResilienceTimeLimiterRecover<?> buildTimeLimiterRecover(AnnotatedElement element,
+                                                                    ResilienceTimeLimiterRecover<?> defaultValue) {
+        if (configurer instanceof ResilienceTimeLimiterConfigurer timeLimiterConfigurer)
+            return timeLimiterConfigurer.timeLimiterRecover();
+        val timeLimiter = getMergedAnnotation(element, ResilienceTimeLimiter.class);
+        return checkNull(timeLimiter, () -> defaultValue, anno -> FactoryContext.build(factory, anno.fallback()));
+    }
+
     private RateLimiter buildRateLimiter(AnnotatedElement element, RateLimiter defaultValue) {
         val defaultName = "RateLimiter-" + defaultResilienceName(element);
         if (configurer instanceof ResilienceRateLimiterConfigurer rateLimiterConfigurer)
             return rateLimiterConfigurer.rateLimiter(defaultName);
         val rateLimiter = getMergedAnnotation(element, ResilienceRateLimiter.class);
         return checkNull(rateLimiter, () -> defaultValue, anno -> RateLimiter.of(
-                blankThen(anno.name(), () -> defaultName),
-                RateLimiterConfig.custom().limitForPeriod(anno.limitForPeriod())
+                blankThen(anno.name(), () -> defaultName), RateLimiterConfig.custom()
+                        .limitForPeriod(anno.limitForPeriod())
                         .limitRefreshPeriod(Duration.ofNanos(anno.limitRefreshPeriodInNanos()))
                         .timeoutDuration(Duration.ofMillis(anno.timeoutDurationInMillis())).build()));
     }
@@ -130,9 +160,8 @@ public final class ResilienceElement {
             return circuitBreakerConfigurer.circuitBreaker(defaultName);
         val circuitBreaker = getMergedAnnotation(element, ResilienceCircuitBreaker.class);
         return checkNull(circuitBreaker, () -> defaultValue, anno -> CircuitBreaker.of(
-                blankThen(anno.name(), () -> defaultName),
-                CircuitBreakerConfig.custom().slidingWindow(anno.slidingWindowSize(),
-                                anno.minimumNumberOfCalls(), anno.slidingWindowType())
+                blankThen(anno.name(), () -> defaultName), CircuitBreakerConfig.custom()
+                        .slidingWindow(anno.slidingWindowSize(), anno.minimumNumberOfCalls(), anno.slidingWindowType())
                         .failureRateThreshold(anno.failureRateThreshold())
                         .slowCallRateThreshold(anno.slowCallRateThreshold())
                         .slowCallDurationThreshold(Duration.ofSeconds(anno.slowCallDurationThresholdInSeconds()))
@@ -156,8 +185,8 @@ public final class ResilienceElement {
             return retryConfigurer.retry(defaultName);
         val retry = getMergedAnnotation(element, ResilienceRetry.class);
         return checkNull(retry, () -> defaultValue, anno -> Retry.of(
-                blankThen(anno.name(), () -> defaultName),
-                RetryConfig.custom().maxAttempts(anno.maxAttempts())
+                blankThen(anno.name(), () -> defaultName), RetryConfig.custom()
+                        .maxAttempts(anno.maxAttempts())
                         .waitDuration(Duration.ofMillis(anno.waitDurationInMillis())).build()));
     }
 
