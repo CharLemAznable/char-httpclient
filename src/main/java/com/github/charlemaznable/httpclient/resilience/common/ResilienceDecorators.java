@@ -5,7 +5,6 @@ import io.github.resilience4j.bulkhead.BulkheadFullException;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.core.CompletionStageUtils;
-import io.github.resilience4j.core.SupplierUtils;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import io.github.resilience4j.retry.Retry;
@@ -22,77 +21,8 @@ import static java.util.Objects.requireNonNull;
 
 public interface ResilienceDecorators {
 
-    static <T> DecorateSupplier<T> ofSupplier(Supplier<T> supplier) {
-        return new DecorateSupplier<>(supplier);
-    }
-
     static <T> DecorateCompletionStage<T> ofCompletionStage(Supplier<CompletionStage<T>> stageSupplier) {
         return new DecorateCompletionStage<>(stageSupplier);
-    }
-
-    class DecorateSupplier<T> {
-
-        private Supplier<T> supplier;
-
-        private DecorateSupplier(Supplier<T> supplier) {
-            this.supplier = supplier;
-        }
-
-        public DecorateSupplier<T> withResilienceBase(ResilienceBase base) {
-            return this.withBulkhead(base.bulkhead, base.bulkheadRecover)
-                    .withRateLimiter(base.rateLimiter, base.rateLimiterRecover)
-                    .withCircuitBreaker(base.circuitBreaker, base.circuitBreakerRecover)
-                    .withRetry(base.retry).withRecover(base.recover);
-        }
-
-        private DecorateSupplier<T> withBulkhead(Bulkhead bulkhead,
-                                                 Function<BulkheadFullException, ?> bulkheadRecover) {
-            notNullThenRun(bulkhead, b -> {
-                supplier = Bulkhead.decorateSupplier(b, supplier);
-                notNullThenRun(bulkheadRecover, br ->
-                        supplier = SupplierUtils.recover(supplier,
-                                fallback(BulkheadFullException.class, cast(br))));
-            });
-            return this;
-        }
-
-        private DecorateSupplier<T> withRateLimiter(RateLimiter rateLimiter,
-                                                    Function<RequestNotPermitted, ?> rateLimiterRecover) {
-            notNullThenRun(rateLimiter, r -> {
-                supplier = RateLimiter.decorateSupplier(r, 1, supplier);
-                notNullThenRun(rateLimiterRecover, rr ->
-                        supplier = SupplierUtils.recover(supplier,
-                                fallback(RequestNotPermitted.class, cast(rr))));
-            });
-            return this;
-        }
-
-        private DecorateSupplier<T> withCircuitBreaker(CircuitBreaker circuitBreaker,
-                                                       Function<CallNotPermittedException, ?> circuitBreakerRecover) {
-            notNullThenRun(circuitBreaker, c -> {
-                supplier = CircuitBreaker.decorateSupplier(c, supplier);
-                notNullThenRun(circuitBreakerRecover, cr ->
-                        supplier = SupplierUtils.recover(supplier,
-                                fallback(CallNotPermittedException.class, cast(cr))));
-            });
-            return this;
-        }
-
-        private DecorateSupplier<T> withRetry(Retry retry) {
-            notNullThenRun(retry, r -> supplier =
-                    Retry.decorateSupplier(r, supplier));
-            return this;
-        }
-
-        private DecorateSupplier<T> withRecover(Function<Throwable, ?> recover) {
-            notNullThenRun(recover, r -> supplier =
-                    SupplierUtils.recover(supplier, cast(r)));
-            return this;
-        }
-
-        public T get() {
-            return supplier.get();
-        }
     }
 
     class DecorateCompletionStage<T> {

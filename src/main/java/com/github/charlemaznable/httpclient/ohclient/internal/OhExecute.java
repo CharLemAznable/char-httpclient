@@ -2,6 +2,7 @@ package com.github.charlemaznable.httpclient.ohclient.internal;
 
 import com.github.charlemaznable.httpclient.common.CommonExecute;
 import com.github.charlemaznable.httpclient.ohclient.elf.RequestBuilderConfigElf;
+import lombok.Lombok;
 import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.Headers;
@@ -16,6 +17,8 @@ import okio.BufferedSource;
 
 import java.io.InputStream;
 import java.io.Reader;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
@@ -27,8 +30,8 @@ import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT
 import static com.github.charlemaznable.httpclient.common.CommonConstant.DEFAULT_CONTENT_FORMATTER;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUERY_FORMATTER;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNullElse;
 import static org.jooq.lambda.Sneaky.function;
-import static org.jooq.lambda.Sneaky.supplier;
 
 final class OhExecute extends CommonExecute<OhBase, OhMethod, Response, ResponseBody> {
 
@@ -46,17 +49,18 @@ final class OhExecute extends CommonExecute<OhBase, OhMethod, Response, Response
         }
     }
 
+    @SneakyThrows
     @Override
     public Object execute() {
+        val completableFuture = decorateAsyncExecute(() -> {
+            val future = new OhCallbackFuture<>(this::processResponse);
+            base().client.newCall(buildRequest()).enqueue(future);
+            return future;
+        });
         if (executeMethod().returnFuture()) {
-            return adaptationFromFuture(decorateAsyncExecute(() -> {
-                val future = new OhCallbackFuture<>(this::processResponse);
-                base().client.newCall(buildRequest()).enqueue(future);
-                return future;
-            }));
+            return adaptationFromFuture(completableFuture);
         }
-        return decorateSyncExecute(supplier(() -> processResponse(
-                base().client.newCall(buildRequest()).execute())));
+        return getFromFuture(completableFuture);
     }
 
     private Request buildRequest() {
@@ -129,6 +133,17 @@ final class OhExecute extends CommonExecute<OhBase, OhMethod, Response, Response
             return notNullThen(responseBody, ResponseBody::charStream);
         } else {
             return super.customProcessReturnTypeValue(statusCode, responseBody, returnType);
+        }
+    }
+
+    private Object getFromFuture(Future<Object> future) {
+        try {
+            return future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw Lombok.sneakyThrow(e);
+        } catch (ExecutionException e) {
+            throw Lombok.sneakyThrow(requireNonNullElse(e.getCause(), e));
         }
     }
 }

@@ -388,11 +388,6 @@ public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMet
         }
     }
 
-    protected Object decorateSyncExecute(Supplier<Object> supplier) {
-        return ResilienceDecorators.ofSupplier(supplier)
-                .withResilienceBase(base.resilienceBase).get();
-    }
-
     protected CompletableFuture<Object> decorateAsyncExecute(Supplier<CompletionStage<Object>> stageSupplier) {
         return ResilienceDecorators.ofCompletionStage(stageSupplier)
                 .withResilienceBase(base.resilienceBase).get().toCompletableFuture();
