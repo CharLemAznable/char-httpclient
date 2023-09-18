@@ -16,7 +16,7 @@ import static com.github.charlemaznable.core.lang.Await.awaitForSeconds;
 import static com.github.charlemaznable.httpclient.common.Utils.dispatcher;
 import static java.util.Objects.requireNonNull;
 
-public class CommonTimeLimiterTest {
+public abstract class CommonTimeLimiterTest {
 
     protected MockWebServer mockWebServer;
 
