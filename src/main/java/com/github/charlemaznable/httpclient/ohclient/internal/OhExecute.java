@@ -49,7 +49,6 @@ final class OhExecute extends CommonExecute<OhBase, OhMethod, Response, Response
         }
     }
 
-    @SneakyThrows
     @Override
     public Object execute() {
         val completableFuture = decorateAsyncExecute(() -> {

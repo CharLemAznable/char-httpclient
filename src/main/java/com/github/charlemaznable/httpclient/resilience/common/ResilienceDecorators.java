@@ -88,21 +88,21 @@ public interface ResilienceDecorators {
         public CompletionStage<T> get() {
             return stageSupplier.get();
         }
-    }
 
-    @SuppressWarnings("unchecked")
-    private static <X, Y> Function<X, Y> cast(Function<X, ?> function) {
-        return x -> (Y) function.apply(x);
-    }
+        @SuppressWarnings("unchecked")
+        private static <X, Y> Function<X, Y> cast(Function<X, ?> function) {
+            return x -> (Y) function.apply(x);
+        }
 
-    private static <X extends Throwable, Y>
-    Function<Throwable, Y> fallback(Class<X> exceptionType, Function<X, Y> function) {
-        return throwable -> {
-            if (isAssignable(throwable.getClass(), exceptionType)) {
-                return function.apply(exceptionType.cast(throwable));
-            } else {
-                throw Lombok.sneakyThrow(throwable);
-            }
-        };
+        private static <X extends Throwable, Y>
+        Function<Throwable, Y> fallback(Class<X> exceptionType, Function<X, Y> function) {
+            return throwable -> {
+                if (isAssignable(throwable.getClass(), exceptionType)) {
+                    return function.apply(exceptionType.cast(throwable));
+                } else {
+                    throw Lombok.sneakyThrow(throwable);
+                }
+            };
+        }
     }
 }
