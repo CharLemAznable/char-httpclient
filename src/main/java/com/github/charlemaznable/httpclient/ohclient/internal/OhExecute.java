@@ -29,6 +29,7 @@ import static com.github.charlemaznable.httpclient.common.CommonConstant.ACCEPT_
 import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT_TYPE;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.DEFAULT_CONTENT_FORMATTER;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUERY_FORMATTER;
+import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNullElse;
 import static org.jooq.lambda.Sneaky.function;
@@ -137,10 +138,7 @@ final class OhExecute extends CommonExecute<OhBase, OhMethod, Response, Response
 
     private Object getFromFuture(Future<Object> future) {
         try {
-            return future.get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw Lombok.sneakyThrow(e);
+            return getUninterruptibly(future);
         } catch (ExecutionException e) {
             throw Lombok.sneakyThrow(requireNonNullElse(e.getCause(), e));
         }
