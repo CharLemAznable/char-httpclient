@@ -42,6 +42,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static com.github.charlemaznable.core.lang.Condition.blankThen;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
+import static com.github.charlemaznable.httpclient.resilience.common.ResilienceDefaults.checkRecordResultPredicate;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 
 @RequiredArgsConstructor
@@ -165,6 +166,7 @@ public final class ResilienceElement {
                         .failureRateThreshold(anno.failureRateThreshold())
                         .slowCallRateThreshold(anno.slowCallRateThreshold())
                         .slowCallDurationThreshold(Duration.ofSeconds(anno.slowCallDurationThresholdInSeconds()))
+                        .recordResult(checkRecordResultPredicate(FactoryContext.build(factory, anno.recordResultPredicate())))
                         .automaticTransitionFromOpenToHalfOpenEnabled(anno.automaticTransitionFromOpenToHalfOpenEnabled())
                         .waitDurationInOpenState(Duration.ofSeconds(anno.waitDurationInOpenStateInSeconds()))
                         .permittedNumberOfCallsInHalfOpenState(anno.permittedNumberOfCallsInHalfOpenState())

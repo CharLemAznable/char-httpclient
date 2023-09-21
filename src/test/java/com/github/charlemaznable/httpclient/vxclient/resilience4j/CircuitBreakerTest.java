@@ -147,8 +147,88 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
                                                     Future.all(getWithDisableConfigsNormal).onComplete(result4Normal -> {
                                                         test.verify(() -> assertEquals(15, countSample.get()));
 
-                                                        shutdownMockWebServer();
-                                                        test.<CompositeFuture>succeedingThenComplete().handle(result4Normal);
+                                                        val httpClient2 = vxLoader.getClient(CircuitBreakerClient2.class);
+
+                                                        errorState.set(true);
+                                                        countSample.set(0);
+                                                        val getWithConfigs2 = Listt.<Future<String>>newArrayList();
+                                                        for (int i = 0; i < 10; i++) {
+                                                            getWithConfigs2.add(runQuietly(httpClient2.getWithConfig(), test));
+                                                        }
+                                                        Future.all(getWithConfigs2).onComplete(result5 -> {
+                                                            test.verify(() -> assertEquals(10, countSample.get()));
+
+                                                            val getWithConfigs2NotPermitted = Listt.<Future<String>>newArrayList();
+                                                            for (int i = 0; i < 5; i++) {
+                                                                getWithConfigs2NotPermitted.add(httpClient2.getWithConfig()
+                                                                        .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
+                                                            }
+                                                            Future.all(getWithConfigs2NotPermitted).onComplete(result5NotPermitted -> {
+                                                                test.verify(() -> assertEquals(10, countSample.get()));
+
+                                                                errorState.set(false);
+                                                                awaitForSeconds(10);
+                                                                val getWithConfigs2HalfOpen = Listt.<Future<String>>newArrayList();
+                                                                for (int i = 0; i < 5; i++) {
+                                                                    getWithConfigs2HalfOpen.add(httpClient2.getWithConfig()
+                                                                            .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
+                                                                }
+                                                                Future.all(getWithConfigs2HalfOpen).onComplete(result5HalfOpen -> {
+                                                                    test.verify(() -> assertEquals(15, countSample.get()));
+
+                                                                    val getWithConfigs2Normal = Listt.<Future<String>>newArrayList();
+                                                                    for (int i = 0; i < 5; i++) {
+                                                                        getWithConfigs2Normal.add(httpClient2.getWithConfig()
+                                                                                .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
+                                                                    }
+                                                                    Future.all(getWithConfigs2Normal).onComplete(result5Normal -> {
+                                                                        test.verify(() -> assertEquals(20, countSample.get()));
+
+                                                                        errorState.set(true);
+                                                                        countSample.set(0);
+                                                                        val getWithAnnos2 = Listt.<Future<String>>newArrayList();
+                                                                        for (int i = 0; i < 10; i++) {
+                                                                            getWithAnnos2.add(runQuietly(httpClient2.getWithAnno(), test));
+                                                                        }
+                                                                        Future.all(getWithAnnos2).onComplete(result6 -> {
+                                                                            test.verify(() -> assertEquals(10, countSample.get()));
+
+                                                                            val getWithAnnos2NotPermitted = Listt.<Future<String>>newArrayList();
+                                                                            for (int i = 0; i < 5; i++) {
+                                                                                getWithAnnos2NotPermitted.add(httpClient2.getWithAnno()
+                                                                                        .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
+                                                                            }
+                                                                            Future.all(getWithAnnos2NotPermitted).onComplete(result6NotPermitted -> {
+                                                                                test.verify(() -> assertEquals(10, countSample.get()));
+
+                                                                                errorState.set(false);
+                                                                                awaitForSeconds(10);
+                                                                                val getWithAnnos2HalfOpen = Listt.<Future<String>>newArrayList();
+                                                                                for (int i = 0; i < 5; i++) {
+                                                                                    getWithAnnos2HalfOpen.add(httpClient2.getWithAnno()
+                                                                                            .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
+                                                                                }
+                                                                                Future.all(getWithAnnos2HalfOpen).onComplete(result6HalfOpen -> {
+                                                                                    test.verify(() -> assertEquals(15, countSample.get()));
+
+                                                                                    val getWithAnnos2Normal = Listt.<Future<String>>newArrayList();
+                                                                                    for (int i = 0; i < 5; i++) {
+                                                                                        getWithAnnos2Normal.add(httpClient2.getWithAnno()
+                                                                                                .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
+                                                                                    }
+                                                                                    Future.all(getWithAnnos2Normal).onComplete(result6Normal -> {
+                                                                                        test.verify(() -> assertEquals(20, countSample.get()));
+
+                                                                                        shutdownMockWebServer();
+                                                                                        test.<CompositeFuture>succeedingThenComplete().handle(result6Normal);
+                                                                                    });
+                                                                                });
+                                                                            });
+                                                                        });
+                                                                    });
+                                                                });
+                                                            });
+                                                        });
                                                     });
                                                 });
                                             });
@@ -188,5 +268,24 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
 
         @ConfigureWith(DisabledCircuitBreakerConfig.class)
         Future<String> getWithDisableConfig();
+    }
+
+    @Mapping("${root}:41430/sample2")
+    @MappingMethodNameDisabled
+    @VxClient
+    @ResilienceCircuitBreaker
+    public interface CircuitBreakerClient2 {
+
+        @ConfigureWith(CustomCircuitBreakerConfig.class)
+        Future<String> getWithConfig();
+
+        @ResilienceCircuitBreaker(
+                slidingWindowSize = 10,
+                minimumNumberOfCalls = 10,
+                recordResultPredicate = CustomResultPredicate.class,
+                waitDurationInOpenStateInSeconds = 10,
+                permittedNumberOfCallsInHalfOpenState = 5,
+                fallback = CustomResilienceCircuitBreakerRecover.class)
+        Future<String> getWithAnno();
     }
 }

@@ -14,6 +14,7 @@ import org.jooq.lambda.fi.lang.CheckedRunnable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
 import static com.github.charlemaznable.httpclient.common.Utils.dispatcher;
 import static java.util.Objects.requireNonNull;
@@ -35,6 +36,11 @@ public abstract class CommonCircuitBreakerTest {
                     return new MockResponse()
                             .setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
                             .setBody(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+                }
+                return new MockResponse().setBody("OK");
+            } else if (requestUrl.encodedPath().equals("/sample2")) {
+                if (countSample.incrementAndGet() % 2 == 0 && errorState.get()) {
+                    return new MockResponse().setBody("ERROR");
                 }
                 return new MockResponse().setBody("OK");
             }
@@ -112,6 +118,11 @@ public abstract class CommonCircuitBreakerTest {
         }
 
         @Override
+        public String recordResultPredicate() {
+            return "@" + CustomResultPredicate.class.getName();
+        }
+
+        @Override
         public String automaticTransitionFromOpenToHalfOpenEnabled() {
             return null;
         }
@@ -134,6 +145,14 @@ public abstract class CommonCircuitBreakerTest {
         @Override
         public String circuitBreakerRecoverString() {
             return "@" + CustomResilienceCircuitBreakerRecover.class.getName();
+        }
+    }
+
+    public static class CustomResultPredicate implements Predicate<String> {
+
+        @Override
+        public boolean test(String s) {
+            return !"OK".equals(s);
         }
     }
 
@@ -184,6 +203,11 @@ public abstract class CommonCircuitBreakerTest {
 
         @Override
         public String slowCallDurationThreshold() {
+            return null;
+        }
+
+        @Override
+        public String recordResultPredicate() {
             return null;
         }
 

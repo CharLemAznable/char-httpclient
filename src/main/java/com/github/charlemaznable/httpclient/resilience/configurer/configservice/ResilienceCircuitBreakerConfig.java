@@ -9,6 +9,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.apache.commons.lang3.BooleanUtils;
 
 import java.time.Duration;
+import java.util.function.Predicate;
 
 import static com.github.charlemaznable.configservice.impl.Functions.TO_BOOLEAN_FUNCTION;
 import static com.github.charlemaznable.configservice.impl.Functions.TO_DURATION_FUNCTION;
@@ -17,6 +18,7 @@ import static com.github.charlemaznable.configservice.impl.Functions.TO_INT_FUNC
 import static com.github.charlemaznable.configservice.impl.Functions.parseStringToValue;
 import static com.github.charlemaznable.core.lang.Condition.checkNotBlank;
 import static com.github.charlemaznable.core.lang.Condition.nonBlank;
+import static com.github.charlemaznable.httpclient.resilience.common.ResilienceDefaults.checkRecordResultPredicate;
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT_FAILURE_RATE_THRESHOLD;
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT_MINIMUM_NUMBER_OF_CALLS;
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT_PERMITTED_CALLS_IN_HALF_OPEN_STATE;
@@ -88,6 +90,13 @@ public interface ResilienceCircuitBreakerConfig extends ResilienceCircuitBreaker
                 TO_DURATION_FUNCTION.andThen(Duration::ofMillis));
     }
 
+    @Config("recordResultPredicate")
+    String recordResultPredicate();
+
+    default Predicate<Object> parseRecordResultPredicate() {
+        return checkRecordResultPredicate(Objectt.parseObject(recordResultPredicate(), Predicate.class));
+    }
+
     @Config("automaticTransitionFromOpenToHalfOpenEnabled")
     String automaticTransitionFromOpenToHalfOpenEnabled();
 
@@ -133,6 +142,7 @@ public interface ResilienceCircuitBreakerConfig extends ResilienceCircuitBreaker
                         .failureRateThreshold(parseFailureRateThreshold())
                         .slowCallRateThreshold(parseSlowCallRateThreshold())
                         .slowCallDurationThreshold(parseSlowCallDurationThreshold())
+                        .recordResult(parseRecordResultPredicate())
                         .automaticTransitionFromOpenToHalfOpenEnabled(parseAutomaticTransitionFromOpenToHalfOpenEnabled())
                         .waitDurationInOpenState(parseWaitDurationInOpenState())
                         .permittedNumberOfCallsInHalfOpenState(parsePermittedNumberOfCallsInHalfOpenState())

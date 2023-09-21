@@ -9,6 +9,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.function.Predicate;
 
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT_FAILURE_RATE_THRESHOLD;
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT_MINIMUM_NUMBER_OF_CALLS;
@@ -38,6 +39,8 @@ public @interface ResilienceCircuitBreaker {
     float slowCallRateThreshold() default DEFAULT_SLOW_CALL_RATE_THRESHOLD;
 
     int slowCallDurationThresholdInSeconds() default DEFAULT_SLOW_CALL_DURATION_THRESHOLD;
+
+    Class<? extends Predicate> recordResultPredicate() default Predicate.class;
 
     boolean automaticTransitionFromOpenToHalfOpenEnabled() default false;
 

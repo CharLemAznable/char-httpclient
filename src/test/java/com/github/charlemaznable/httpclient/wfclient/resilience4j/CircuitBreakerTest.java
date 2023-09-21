@@ -21,6 +21,7 @@ import java.util.concurrent.Future;
 import static com.github.charlemaznable.core.context.FactoryContext.ReflectFactory.reflectFactory;
 import static com.github.charlemaznable.core.lang.Await.awaitForSeconds;
 import static org.jooq.lambda.Sneaky.runnable;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CircuitBreakerTest extends CommonCircuitBreakerTest {
@@ -162,6 +163,90 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         }
         assertEquals(15, countSample.get());
 
+        val httpClient2 = wfLoader.getClient(CircuitBreakerClient2.class);
+
+        errorState.set(true);
+        countSample.set(0);
+        val service5 = new Thread[10];
+        for (int i = 0; i < 10; i++) {
+            service5[i] = new Thread(() -> assertDoesNotThrow(() -> httpClient2.getWithConfig().block()), "service5" + i);
+            service5[i].start();
+        }
+        for (int i = 0; i < 10; i++) {
+            service5[i].join();
+        }
+        assertEquals(10, countSample.get());
+        val service5NotPermitted = new Thread[5];
+        for (int i = 0; i < 5; i++) {
+            service5NotPermitted[i] = new Thread(() -> assertEquals("OK", httpClient2.getWithConfig().block()), "service5NotPermitted" + i);
+            service5NotPermitted[i].start();
+        }
+        for (int i = 0; i < 5; i++) {
+            service5NotPermitted[i].join();
+        }
+        assertEquals(10, countSample.get());
+        errorState.set(false);
+        awaitForSeconds(10);
+        val service5HalfOpen = new Thread[5];
+        for (int i = 0; i < 5; i++) {
+            service5HalfOpen[i] = new Thread(() -> assertEquals("OK", httpClient2.getWithConfig().block()), "service5HalfOpen" + i);
+            service5HalfOpen[i].start();
+        }
+        for (int i = 0; i < 5; i++) {
+            service5HalfOpen[i].join();
+        }
+        assertEquals(15, countSample.get());
+        val service5Normal = new Thread[5];
+        for (int i = 0; i < 5; i++) {
+            service5Normal[i] = new Thread(() -> assertEquals("OK", httpClient2.getWithConfig().block()), "service5Normal" + i);
+            service5Normal[i].start();
+        }
+        for (int i = 0; i < 5; i++) {
+            service5Normal[i].join();
+        }
+        assertEquals(20, countSample.get());
+
+        errorState.set(true);
+        countSample.set(0);
+        val service6 = new Thread[10];
+        for (int i = 0; i < 10; i++) {
+            service6[i] = new Thread(() -> assertDoesNotThrow(() -> httpClient2.getWithAnno().block()), "service6" + i);
+            service6[i].start();
+        }
+        for (int i = 0; i < 10; i++) {
+            service6[i].join();
+        }
+        assertEquals(10, countSample.get());
+        val service6NotPermitted = new Thread[5];
+        for (int i = 0; i < 5; i++) {
+            service6NotPermitted[i] = new Thread(() -> assertEquals("OK", httpClient2.getWithAnno().block()), "service6NotPermitted" + i);
+            service6NotPermitted[i].start();
+        }
+        for (int i = 0; i < 5; i++) {
+            service6NotPermitted[i].join();
+        }
+        assertEquals(10, countSample.get());
+        errorState.set(false);
+        awaitForSeconds(10);
+        val service6HalfOpen = new Thread[5];
+        for (int i = 0; i < 5; i++) {
+            service6HalfOpen[i] = new Thread(() -> assertEquals("OK", httpClient2.getWithAnno().block()), "service6HalfOpen" + i);
+            service6HalfOpen[i].start();
+        }
+        for (int i = 0; i < 5; i++) {
+            service6HalfOpen[i].join();
+        }
+        assertEquals(15, countSample.get());
+        val service6Normal = new Thread[5];
+        for (int i = 0; i < 5; i++) {
+            service6Normal[i] = new Thread(() -> assertEquals("OK", httpClient2.getWithAnno().block()), "service6Normal" + i);
+            service6Normal[i].start();
+        }
+        for (int i = 0; i < 5; i++) {
+            service6Normal[i].join();
+        }
+        assertEquals(20, countSample.get());
+
         shutdownMockWebServer();
     }
 
@@ -186,5 +271,24 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
 
         @ConfigureWith(DisabledCircuitBreakerConfig.class)
         CompletionStage<String> getWithDisableConfig();
+    }
+
+    @Mapping("${root}:41430/sample2")
+    @MappingMethodNameDisabled
+    @WfClient
+    @ResilienceCircuitBreaker
+    public interface CircuitBreakerClient2 {
+
+        @ConfigureWith(CustomCircuitBreakerConfig.class)
+        Mono<String> getWithConfig();
+
+        @ResilienceCircuitBreaker(
+                slidingWindowSize = 10,
+                minimumNumberOfCalls = 10,
+                recordResultPredicate = CustomResultPredicate.class,
+                waitDurationInOpenStateInSeconds = 10,
+                permittedNumberOfCallsInHalfOpenState = 5,
+                fallback = CustomResilienceCircuitBreakerRecover.class)
+        Mono<String> getWithAnno();
     }
 }
