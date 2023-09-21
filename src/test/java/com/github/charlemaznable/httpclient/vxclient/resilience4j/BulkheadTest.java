@@ -12,7 +12,6 @@ import com.github.charlemaznable.httpclient.vxclient.VxFactory;
 import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Timeout;
@@ -43,7 +42,7 @@ public class BulkheadTest extends CommonBulkheadTest {
             getWithConfigs.add(httpClient.getWithConfig()
                     .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
         }
-        Future.all(getWithConfigs).onComplete(result -> {
+        Future.all(getWithConfigs).compose(result -> {
             test.verify(() -> assertEquals(5, countSample.get()));
 
             val getWithParams = Listt.<Future<String>>newArrayList();
@@ -51,33 +50,33 @@ public class BulkheadTest extends CommonBulkheadTest {
                 getWithParams.add(httpClient.getWithParam(null)
                         .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
             }
-            Future.all(getWithParams).onComplete(result2 -> {
-                test.verify(() -> assertEquals(15, countSample.get()));
+            return Future.all(getWithParams);
+        }).compose(result -> {
+            test.verify(() -> assertEquals(15, countSample.get()));
 
-                httpClient.bindTo(null);
+            httpClient.bindTo(null);
 
-                val getWithAnno = Listt.<Future<String>>newArrayList();
-                for (int i = 0; i < 10; i++) {
-                    getWithAnno.add(httpClient.getWithAnno()
-                            .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
-                }
-                Future.all(getWithAnno).onComplete(result3 -> {
-                    test.verify(() -> assertEquals(20, countSample.get()));
+            val getWithAnno = Listt.<Future<String>>newArrayList();
+            for (int i = 0; i < 10; i++) {
+                getWithAnno.add(httpClient.getWithAnno()
+                        .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
+            }
+            return Future.all(getWithAnno);
+        }).compose(result -> {
+            test.verify(() -> assertEquals(20, countSample.get()));
 
-                    val getWithDisableConfigs = Listt.<Future<String>>newArrayList();
-                    for (int i = 0; i < 10; i++) {
-                        getWithDisableConfigs.add(httpClient.getWithDisableConfig()
-                                .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
-                    }
-                    Future.all(getWithDisableConfigs).onComplete(result4 -> {
-                        test.verify(() -> assertEquals(30, countSample.get()));
+            val getWithDisableConfigs = Listt.<Future<String>>newArrayList();
+            for (int i = 0; i < 10; i++) {
+                getWithDisableConfigs.add(httpClient.getWithDisableConfig()
+                        .onSuccess(response -> test.verify(() -> assertEquals("OK", response))));
+            }
+            return Future.all(getWithDisableConfigs);
+        }).compose(result -> {
+            test.verify(() -> assertEquals(30, countSample.get()));
 
-                        shutdownMockWebServer();
-                        test.<CompositeFuture>succeedingThenComplete().handle(result4);
-                    });
-                });
-            });
-        });
+            shutdownMockWebServer();
+            return Future.succeededFuture();
+        }).onComplete(test.succeedingThenComplete());
     }
 
     @Mapping("${root}:41410/sample")

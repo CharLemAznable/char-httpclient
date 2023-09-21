@@ -28,27 +28,27 @@ public class ReloaderTest extends CommonReloaderTest {
 
         val httpClient = vxLoader.getClient(ReloadableClient.class);
 
-        httpClient.sample().onSuccess(response1 -> {
-            assertEquals("mock server 1", response1);
+        httpClient.sample().compose(response -> {
+            assertEquals("mock server 1", response);
 
             UrlReloader.setBaseUrl("${root}:41280");
-            httpClient.sample().onSuccess(response2 -> {
-                assertEquals("mock server 2", response2);
+            return httpClient.sample();
+        }).compose(response -> {
+            assertEquals("mock server 2", response);
 
-                SampleReloader.setSamplePath("/sample2");
-                httpClient.sample().onSuccess(response3 -> {
-                    assertEquals("mock server 3", response3);
+            SampleReloader.setSamplePath("/sample2");
+            return httpClient.sample();
+        }).compose(response -> {
+            assertEquals("mock server 3", response);
 
-                    httpClient.reload();
-                    httpClient.sample().onSuccess(response4 -> {
-                        assertEquals("mock server 3", response4);
+            httpClient.reload();
+            return httpClient.sample();
+        }).compose(response -> {
+            assertEquals("mock server 3", response);
 
-                        shutdownMockWebServer();
-                        test.completeNow();
-                    });
-                });
-            });
-        });
+            shutdownMockWebServer();
+            return Future.succeededFuture();
+        }).onComplete(test.succeedingThenComplete());
     }
 
     @VxClient

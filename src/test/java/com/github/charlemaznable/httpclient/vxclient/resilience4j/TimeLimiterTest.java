@@ -32,26 +32,26 @@ public class TimeLimiterTest extends CommonTimeLimiterTest {
         val httpClient = vxLoader.getClient(TimeLimiterClient.class);
         httpClient.bindTo(new SimpleMeterRegistry());
 
-        httpClient.getWithConfig().onSuccess(response -> {
+        httpClient.getWithConfig().compose(response -> {
             test.verify(() -> assertEquals("Timeout", response));
 
-            httpClient.getWithParam(null).onSuccess(response1 -> {
-                test.verify(() -> assertEquals("OK", response1));
+            return httpClient.getWithParam(null);
+        }).compose(response -> {
+            test.verify(() -> assertEquals("OK", response));
 
-                httpClient.bindTo(null);
+            httpClient.bindTo(null);
 
-                httpClient.getWithAnno().onSuccess(response2 -> {
-                    test.verify(() -> assertEquals("Timeout", response2));
+            return httpClient.getWithAnno();
+        }).compose(response -> {
+            test.verify(() -> assertEquals("Timeout", response));
 
-                    httpClient.getWithDisableConfig().onSuccess(response3 -> {
-                        test.verify(() -> assertEquals("OK", response3));
+            return httpClient.getWithDisableConfig();
+        }).compose(response -> {
+            test.verify(() -> assertEquals("OK", response));
 
-                        shutdownMockWebServer();
-                        test.completeNow();
-                    });
-                });
-            });
-        });
+            shutdownMockWebServer();
+            return Future.succeededFuture();
+        }).onComplete(test.succeedingThenComplete());
     }
 
     @Mapping("${root}:41450/sample")

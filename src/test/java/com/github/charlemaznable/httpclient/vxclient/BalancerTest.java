@@ -26,64 +26,61 @@ public class BalancerTest extends CommonBalancerTest {
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));
 
         val httpClient = vxLoader.getClient(BalancerClient.class);
+        val httpClientNeo = vxLoader.getClient(BalancerClientNeo.class);
 
         Future.all(newArrayList(
                 httpClient.get(),
                 httpClient.get(),
                 httpClient.get(),
                 httpClient.get()
-        )).onComplete(result -> {
+        )).compose(result -> {
             assertEquals(2, countSample1.get());
             assertEquals(2, countSample2.get());
             assertEquals(0, countSample3.get());
 
-            Future.all(newArrayList(
+            return Future.all(newArrayList(
                     httpClient.get2(),
                     httpClient.get2(),
                     httpClient.get2(),
                     httpClient.get2()
-            )).onComplete(result2 -> {
-                assertEquals(4, countSample1.get());
-                assertEquals(2, countSample2.get());
-                assertEquals(2, countSample3.get());
+            ));
+        }).compose(result -> {
+            assertEquals(4, countSample1.get());
+            assertEquals(2, countSample2.get());
+            assertEquals(2, countSample3.get());
 
-                httpClient.cover(new MappingBalance.RandomBalancer())
-                        .onComplete(result3 -> {
-                            countSample1.set(0);
-                            countSample2.set(0);
-                            countSample3.set(0);
+            return httpClient.cover(new MappingBalance.RandomBalancer());
+        }).compose(result -> {
+            countSample1.set(0);
+            countSample2.set(0);
+            countSample3.set(0);
 
-                            val httpClientNeo = vxLoader.getClient(BalancerClientNeo.class);
+            return Future.all(newArrayList(
+                    httpClientNeo.get(),
+                    httpClientNeo.get(),
+                    httpClientNeo.get(),
+                    httpClientNeo.get()
+            ));
+        }).compose(result -> {
+            assertEquals(2, countSample1.get());
+            assertEquals(2, countSample2.get());
+            assertEquals(0, countSample3.get());
 
-                            Future.all(newArrayList(
-                                    httpClientNeo.get(),
-                                    httpClientNeo.get(),
-                                    httpClientNeo.get(),
-                                    httpClientNeo.get()
-                            )).onComplete(result4 -> {
-                                assertEquals(2, countSample1.get());
-                                assertEquals(2, countSample2.get());
-                                assertEquals(0, countSample3.get());
+            return Future.all(newArrayList(
+                    httpClientNeo.get2(),
+                    httpClientNeo.get2(),
+                    httpClientNeo.get2(),
+                    httpClientNeo.get2()
+            ));
+        }).compose(result -> {
+            assertEquals(4, countSample1.get());
+            assertEquals(2, countSample2.get());
+            assertEquals(2, countSample3.get());
 
-                                Future.all(newArrayList(
-                                        httpClientNeo.get2(),
-                                        httpClientNeo.get2(),
-                                        httpClientNeo.get2(),
-                                        httpClientNeo.get2()
-                                )).onComplete(result5 -> {
-                                    assertEquals(4, countSample1.get());
-                                    assertEquals(2, countSample2.get());
-                                    assertEquals(2, countSample3.get());
-
-                                    httpClientNeo.cover(new MappingBalance.RandomBalancer())
-                                            .onComplete(result6 -> {
-                                                shutdownMockWebServer();
-                                                test.<Void>succeedingThenComplete().handle(result6);
-                                            });
-                                });
-                            });
-                        });
-            });
+            return httpClientNeo.cover(new MappingBalance.RandomBalancer());
+        }).onComplete(result -> {
+            shutdownMockWebServer();
+            test.<Void>succeedingThenComplete().handle(result);
         });
     }
 

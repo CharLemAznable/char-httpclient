@@ -33,44 +33,44 @@ public class RetryTest extends CommonRetryTest {
 
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));
         val httpClient = vxLoader.getClient(RetryClient.class);
+        val httpClient2 = vxLoader.getClient(RetryClient2.class);
+
         httpClient.bindTo(new SimpleMeterRegistry());
 
         countSample.set(0);
-        httpClient.getWithConfig().onSuccess(response -> {
+        httpClient.getWithConfig().compose(response -> {
             test.verify(() -> assertEquals("OK", response));
 
             countSample.set(0);
-            httpClient.getWithParam(null).onSuccess(response1 -> {
-                test.verify(() -> assertEquals("NotOK", response1));
+            return httpClient.getWithParam(null);
+        }).compose(response -> {
+            test.verify(() -> assertEquals("NotOK", response));
 
-                httpClient.bindTo(null);
+            httpClient.bindTo(null);
 
-                countSample.set(0);
-                httpClient.getWithAnno().onSuccess(response2 -> {
-                    test.verify(() -> assertEquals("NotOK", response2));
+            countSample.set(0);
+            return httpClient.getWithAnno();
+        }).compose(response -> {
+            test.verify(() -> assertEquals("NotOK", response));
 
-                    countSample.set(0);
-                    httpClient.getWithDisableConfig().onFailure(exception3 -> {
-                        test.verify(() -> assertTrue(exception3 instanceof StatusError));
+            countSample.set(0);
+            return httpClient.getWithDisableConfig();
+        }).recover(exception -> {
+            test.verify(() -> assertTrue(exception instanceof StatusError));
 
-                        val httpClient2 = vxLoader.getClient(RetryClient2.class);
+            countSample.set(0);
+            return httpClient2.getWithConfig();
+        }).compose(response -> {
+            test.verify(() -> assertEquals("OK", response));
 
-                        countSample.set(0);
-                        httpClient2.getWithConfig().onSuccess(response3 -> {
-                            test.verify(() -> assertEquals("OK", response3));
+            countSample.set(0);
+            return httpClient2.getWithAnno();
+        }).compose(response -> {
+            test.verify(() -> assertEquals("NotOK2", response));
 
-                            countSample.set(0);
-                            httpClient2.getWithAnno().onSuccess(response4 -> {
-                                test.verify(() -> assertEquals("NotOK2", response4));
-
-                                shutdownMockWebServer();
-                                test.completeNow();
-                            });
-                        });
-                    });
-                });
-            });
-        });
+            shutdownMockWebServer();
+            return Future.succeededFuture();
+        }).onComplete(test.succeedingThenComplete());
     }
 
     @Mapping("${root}:41440/sample")
