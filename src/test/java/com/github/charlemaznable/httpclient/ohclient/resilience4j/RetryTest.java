@@ -54,6 +54,14 @@ public class RetryTest extends CommonRetryTest {
             assertTrue(e.getCause() instanceof StatusError);
         }
 
+        val httpClient2 = ohLoader.getClient(RetryClient2.class);
+
+        countSample.set(0);
+        assertEquals("OK", httpClient2.getWithConfig());
+
+        countSample.set(0);
+        assertEquals("NotOK2", httpClient2.getWithAnno());
+
         shutdownMockWebServer();
     }
 
@@ -76,5 +84,22 @@ public class RetryTest extends CommonRetryTest {
 
         @ConfigureWith(DisabledRetryConfig.class)
         CompletionStage<String> getWithDisableConfig();
+    }
+
+    @Mapping("${root}:41440/sample2")
+    @MappingMethodNameDisabled
+    @OhClient
+    @ResilienceRetry
+    public interface RetryClient2 {
+
+        @ConfigureWith(CustomRetryConfig.class)
+        String getWithConfig();
+
+        @ResilienceRetry(maxAttempts = 2,
+                retryOnResultPredicate = CustomResultPredicate.class,
+                failAfterMaxAttempts = true,
+                isolatedExecutor = true)
+        @ResilienceFallback(CustomResilienceRecover2.class)
+        String getWithAnno();
     }
 }

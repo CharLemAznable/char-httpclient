@@ -55,6 +55,14 @@ public class RetryTest extends CommonRetryTest {
             assertTrue(e.getCause() instanceof StatusError);
         }
 
+        val httpClient2 = wfLoader.getClient(RetryClient2.class);
+
+        countSample.set(0);
+        assertEquals("OK", httpClient2.getWithConfig().block());
+
+        countSample.set(0);
+        assertEquals("NotOK2", httpClient2.getWithAnno().block());
+
         shutdownMockWebServer();
     }
 
@@ -77,5 +85,22 @@ public class RetryTest extends CommonRetryTest {
 
         @ConfigureWith(DisabledRetryConfig.class)
         CompletionStage<String> getWithDisableConfig();
+    }
+
+    @Mapping("${root}:41440/sample2")
+    @MappingMethodNameDisabled
+    @WfClient
+    @ResilienceRetry
+    public interface RetryClient2 {
+
+        @ConfigureWith(CustomRetryConfig.class)
+        Mono<String> getWithConfig();
+
+        @ResilienceRetry(maxAttempts = 2,
+                retryOnResultPredicate = CustomResultPredicate.class,
+                failAfterMaxAttempts = true,
+                isolatedExecutor = true)
+        @ResilienceFallback(CustomResilienceRecover2.class)
+        Mono<String> getWithAnno();
     }
 }

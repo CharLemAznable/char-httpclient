@@ -18,7 +18,7 @@ import static com.github.charlemaznable.configservice.impl.Functions.TO_INT_FUNC
 import static com.github.charlemaznable.configservice.impl.Functions.parseStringToValue;
 import static com.github.charlemaznable.core.lang.Condition.checkNotBlank;
 import static com.github.charlemaznable.core.lang.Condition.nonBlank;
-import static com.github.charlemaznable.httpclient.resilience.common.ResilienceDefaults.checkRecordResultPredicate;
+import static com.github.charlemaznable.httpclient.resilience.common.ResilienceDefaults.checkResultPredicate;
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT_FAILURE_RATE_THRESHOLD;
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT_MINIMUM_NUMBER_OF_CALLS;
 import static io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.DEFAULT_PERMITTED_CALLS_IN_HALF_OPEN_STATE;
@@ -94,7 +94,7 @@ public interface ResilienceCircuitBreakerConfig extends ResilienceCircuitBreaker
     String recordResultPredicate();
 
     default Predicate<Object> parseRecordResultPredicate() {
-        return checkRecordResultPredicate(Objectt.parseObject(recordResultPredicate(), Predicate.class));
+        return checkResultPredicate(Objectt.parseObject(recordResultPredicate(), Predicate.class));
     }
 
     @Config("automaticTransitionFromOpenToHalfOpenEnabled")

@@ -42,7 +42,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static com.github.charlemaznable.core.lang.Condition.blankThen;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
-import static com.github.charlemaznable.httpclient.resilience.common.ResilienceDefaults.checkRecordResultPredicate;
+import static com.github.charlemaznable.httpclient.resilience.common.ResilienceDefaults.checkResultPredicate;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 
 @RequiredArgsConstructor
@@ -166,7 +166,7 @@ public final class ResilienceElement {
                         .failureRateThreshold(anno.failureRateThreshold())
                         .slowCallRateThreshold(anno.slowCallRateThreshold())
                         .slowCallDurationThreshold(Duration.ofSeconds(anno.slowCallDurationThresholdInSeconds()))
-                        .recordResult(checkRecordResultPredicate(FactoryContext.build(factory, anno.recordResultPredicate())))
+                        .recordResult(checkResultPredicate(FactoryContext.build(factory, anno.recordResultPredicate())))
                         .automaticTransitionFromOpenToHalfOpenEnabled(anno.automaticTransitionFromOpenToHalfOpenEnabled())
                         .waitDurationInOpenState(Duration.ofSeconds(anno.waitDurationInOpenStateInSeconds()))
                         .permittedNumberOfCallsInHalfOpenState(anno.permittedNumberOfCallsInHalfOpenState())
@@ -189,7 +189,9 @@ public final class ResilienceElement {
         return checkNull(retry, () -> defaultValue, anno -> Retry.of(
                 blankThen(anno.name(), () -> defaultName), RetryConfig.custom()
                         .maxAttempts(anno.maxAttempts())
-                        .waitDuration(Duration.ofMillis(anno.waitDurationInMillis())).build()));
+                        .waitDuration(Duration.ofMillis(anno.waitDurationInMillis()))
+                        .retryOnResult(checkResultPredicate(FactoryContext.build(factory, anno.retryOnResultPredicate())))
+                        .failAfterMaxAttempts(anno.failAfterMaxAttempts()).build()));
     }
 
     private ScheduledExecutorService buildRetryExecutor(AnnotatedElement element, ScheduledExecutorService defaultValue) {

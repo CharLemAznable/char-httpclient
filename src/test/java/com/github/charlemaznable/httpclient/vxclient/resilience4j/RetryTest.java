@@ -53,8 +53,20 @@ public class RetryTest extends CommonRetryTest {
                     httpClient.getWithDisableConfig().onFailure(exception3 -> {
                         test.verify(() -> assertTrue(exception3 instanceof StatusError));
 
-                        shutdownMockWebServer();
-                        test.completeNow();
+                        val httpClient2 = vxLoader.getClient(RetryClient2.class);
+
+                        countSample.set(0);
+                        httpClient2.getWithConfig().onSuccess(response3 -> {
+                            test.verify(() -> assertEquals("OK", response3));
+
+                            countSample.set(0);
+                            httpClient2.getWithAnno().onSuccess(response4 -> {
+                                test.verify(() -> assertEquals("NotOK2", response4));
+
+                                shutdownMockWebServer();
+                                test.completeNow();
+                            });
+                        });
                     });
                 });
             });
@@ -80,5 +92,22 @@ public class RetryTest extends CommonRetryTest {
 
         @ConfigureWith(DisabledRetryConfig.class)
         Future<String> getWithDisableConfig();
+    }
+
+    @Mapping("${root}:41440/sample2")
+    @MappingMethodNameDisabled
+    @VxClient
+    @ResilienceRetry
+    public interface RetryClient2 {
+
+        @ConfigureWith(CustomRetryConfig.class)
+        Future<String> getWithConfig();
+
+        @ResilienceRetry(maxAttempts = 2,
+                retryOnResultPredicate = CustomResultPredicate.class,
+                failAfterMaxAttempts = true,
+                isolatedExecutor = true)
+        @ResilienceFallback(CustomResilienceRecover2.class)
+        Future<String> getWithAnno();
     }
 }

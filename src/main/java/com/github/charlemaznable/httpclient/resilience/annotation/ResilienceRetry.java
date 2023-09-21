@@ -6,6 +6,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.function.Predicate;
 
 import static io.github.resilience4j.retry.RetryConfig.DEFAULT_MAX_ATTEMPTS;
 
@@ -20,6 +21,10 @@ public @interface ResilienceRetry {
     int maxAttempts() default DEFAULT_MAX_ATTEMPTS;
 
     long waitDurationInMillis() default 500L;
+
+    Class<? extends Predicate> retryOnResultPredicate() default Predicate.class;
+
+    boolean failAfterMaxAttempts() default false;
 
     boolean isolatedExecutor() default false;
 }

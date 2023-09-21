@@ -6,10 +6,10 @@ import static com.github.charlemaznable.core.lang.Condition.nullThen;
 
 public interface ResilienceDefaults {
 
-    Predicate<Object> DEFAULT_RECORD_RESULT_PREDICATE = (Object object) -> false;
+    Predicate<Object> DEFAULT_RESULT_PREDICATE = (Object object) -> false;
 
     @SuppressWarnings("unchecked")
-    static Predicate<Object> checkRecordResultPredicate(Predicate<?> recordResultPredicate) {
-        return nullThen((Predicate<Object>) recordResultPredicate, () -> DEFAULT_RECORD_RESULT_PREDICATE);
+    static Predicate<Object> checkResultPredicate(Predicate<?> resultPredicate) {
+        return nullThen((Predicate<Object>) resultPredicate, () -> DEFAULT_RESULT_PREDICATE);
     }
 }
