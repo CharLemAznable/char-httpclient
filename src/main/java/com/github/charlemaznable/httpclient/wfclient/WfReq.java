@@ -2,10 +2,8 @@ package com.github.charlemaznable.httpclient.wfclient;
 
 import com.github.charlemaznable.core.lang.Mapp;
 import com.github.charlemaznable.httpclient.common.CommonReq;
-import com.github.charlemaznable.httpclient.common.FallbackFunction;
-import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.wfclient.elf.GlobalClientElf;
-import lombok.SneakyThrows;
+import com.github.charlemaznable.httpclient.wfclient.internal.WfResponseAdapter;
 import lombok.experimental.Delegate;
 import lombok.val;
 import org.springframework.http.HttpMethod;
@@ -19,18 +17,15 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-import static com.github.charlemaznable.core.codec.Bytes.string;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
-import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT_TYPE;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.DEFAULT_CONTENT_FORMATTER;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUERY_FORMATTER;
-import static java.util.Objects.nonNull;
 
 public final class WfReq extends CommonReq<WfReq> {
 
@@ -104,7 +99,6 @@ public final class WfReq extends CommonReq<WfReq> {
             return this.post().toFuture();
         }
 
-        @SneakyThrows
         private Mono<String> execute(Supplier<WebClient.RequestBodyUriSpec> requestSpecSupplier) {
             return requestSpecSupplier.get().exchangeToMono(this::processResponse);
         }
@@ -153,39 +147,8 @@ public final class WfReq extends CommonReq<WfReq> {
         }
 
         private Mono<String> processResponse(ClientResponse clientResponse) {
-            val statusCode = clientResponse.statusCode().value();
-            val responseBody = clientResponse.bodyToMono(byte[].class);
-
-            val statusFallback = this.statusFallbackMapping()
-                    .get(HttpStatus.valueOf(statusCode));
-            if (nonNull(statusFallback)) {
-                return responseBody.map(bytes -> applyFallback(bytes,
-                        statusFallback, statusCode, responseBody));
-            }
-
-            val statusSeriesFallback = this.statusSeriesFallbackMapping()
-                    .get(HttpStatus.Series.valueOf(statusCode));
-            if (nonNull(statusSeriesFallback)) {
-                return responseBody.map(bytes -> applyFallback(bytes,
-                        statusSeriesFallback, statusCode, responseBody));
-            }
-
-            return responseBody.map(this::extractResponseString);
-        }
-
-        private String applyFallback(byte[] bytes, FallbackFunction<?> function,
-                                     int statusCode, Mono<byte[]> responseBody) {
-            return toStr(function.apply(
-                    new FallbackFunction.Response<>(statusCode, responseBody) {
-                        @Override
-                        public String responseBodyAsString() {
-                            return extractResponseString(bytes);
-                        }
-                    }));
-        }
-
-        private String extractResponseString(byte[] bytes) {
-            return string(bytes, acceptCharset());
+            return clientResponse.toEntity(byte[].class).map(response ->
+                    processResponse(new WfResponseAdapter(response, acceptCharset())));
         }
     }
 }

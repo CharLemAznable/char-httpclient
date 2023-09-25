@@ -70,7 +70,8 @@ import static org.springframework.core.annotation.AnnotationUtils.findAnnotation
 @RequiredArgsConstructor
 @Getter
 @Accessors(fluent = true)
-public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMethod<T>, R/* Response Type */, B/* Response Body Type */> {
+public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMethod<T>,
+        R/* Response Type */, A extends CommonResponseAdapter<R, ?, ?>> {
 
     final T base;
     final M executeMethod;
@@ -252,23 +253,22 @@ public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMet
     }
 
     public final Object processResponse(R response) {
-        val statusCode = getResponseCode(response);
-        val responseBody = getResponseBody(response);
+        val responseAdapter = responseAdapter(response);
+        val statusCode = responseAdapter.statusCode();
 
         val statusFallback = base.statusFallbackMapping
                 .get(HttpStatus.valueOf(statusCode));
         if (nonNull(statusFallback)) {
-            return applyFallback(statusFallback, statusCode, responseBody);
+            return applyFallback(statusFallback, responseAdapter);
         }
 
         val statusSeriesFallback = base.statusSeriesFallbackMapping
                 .get(HttpStatus.Series.valueOf(statusCode));
         if (nonNull(statusSeriesFallback)) {
-            return applyFallback(statusSeriesFallback, statusCode, responseBody);
+            return applyFallback(statusSeriesFallback, responseAdapter);
         }
 
-        val responseObjs = processResponseBody(
-                statusCode, responseBody, responseClass);
+        val responseObjs = processResponseBody(responseAdapter, responseClass);
         if (executeMethod.returnList) {
             val responseObj = responseObjs.get(0);
             if (responseObj instanceof Collection) {
@@ -294,64 +294,53 @@ public abstract class CommonExecute<T extends CommonBase<T>, M extends CommonMet
         }
     }
 
-    protected abstract int getResponseCode(R response);
+    protected abstract A responseAdapter(R response);
 
-    protected abstract B getResponseBody(R response);
-
-    protected abstract String getResponseBodyString(B responseBody);
-
-    private Object applyFallback(FallbackFunction<?> function, int statusCode, B responseBody) {
-        return function.apply(new FallbackFunction.Response<>(statusCode, responseBody) {
-            @Override
-            public String responseBodyAsString() {
-                return toStr(notNullThen(getResponseBody(),
-                        body -> getResponseBodyString(body)));
-            }
-        });
+    private Object applyFallback(FallbackFunction<?> function, A responseAdapter) {
+        return function.apply(responseAdapter.buildCommonResponse());
     }
 
-    private List<Object> processResponseBody(int statusCode,
-                                             B responseBody,
-                                             Class<?> responseClass) {
+    private List<Object> processResponseBody(A responseAdapter, Class<?> responseClass) {
         return executeMethod.returnTypes.stream().map(returnType ->
-                        processReturnTypeValue(statusCode, responseBody,
+                        processReturnTypeValue(responseAdapter,
                                 CncResponse.class == returnType ? responseClass : returnType))
                 .collect(Collectors.toList());
     }
 
-    private Object processReturnTypeValue(int statusCode,
-                                          B responseBody,
-                                          Class<?> returnType) {
+    private Object processReturnTypeValue(A responseAdapter, Class<?> returnType) {
         if (returnVoid(returnType)) {
             return null;
         } else if (returnInteger(returnType)) {
-            return statusCode;
+            return responseAdapter.statusCode();
         } else if (HttpStatus.class == returnType) {
-            return HttpStatus.valueOf(statusCode);
+            return HttpStatus.valueOf(responseAdapter.statusCode());
         } else if (HttpStatus.Series.class == returnType) {
-            return HttpStatus.Series.valueOf(statusCode);
+            return HttpStatus.Series.valueOf(responseAdapter.statusCode());
         } else if (returnBoolean(returnType)) {
-            return HttpStatus.valueOf(statusCode).is2xxSuccessful();
+            return HttpStatus.valueOf(responseAdapter.statusCode()).is2xxSuccessful();
+        } else if (HttpHeaders.class == returnType) {
+            return responseAdapter.buildHttpHeaders();
         } else if (returnUnCollectionString(returnType)) {
-            return notNullThen(responseBody, this::getResponseBodyString);
+            return responseAdapter.buildBodyString();
+        } else if (CommonResponse.class == returnType) {
+            return responseAdapter.buildCommonResponse();
         } else {
-            return customProcessReturnTypeValue(statusCode, responseBody, returnType);
+            return customProcessReturnTypeValue(responseAdapter, returnType);
         }
     }
 
-    protected Object customProcessReturnTypeValue(int statusCode,
-                                                  B responseBody,
-                                                  Class<?> returnType) {
-        return parseObject(responseBody, returnType);
+    protected Object customProcessReturnTypeValue(A responseAdapter, Class<?> returnType) {
+        return parseObject(responseAdapter, returnType);
     }
 
-    private Object parseObject(B responseBody, Class<?> returnType) {
-        val content = notNullThen(responseBody, this::getResponseBodyString);
-        if (isBlank(content)) return null;
+    private Object parseObject(A responseAdapter, Class<?> returnType) {
         if (nonNull(base.responseParser)) {
+            val commonResponse = responseAdapter.buildCommonResponse();
             val contextMap = base.contexts.stream().collect(toMap(Pair::getKey, Pair::getValue));
-            return base.responseParser.parse(content, returnType, contextMap);
+            return base.responseParser.parse(commonResponse, returnType, contextMap);
         }
+        val content = responseAdapter.buildBodyString();
+        if (isBlank(content)) return null;
         if (content.startsWith("<")) return spec(unXml(content), returnType);
         if (content.startsWith("[")) return unJsonArray(content, returnType);
         if (content.startsWith("{")) return unJson(content, returnType);

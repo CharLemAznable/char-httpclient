@@ -1,8 +1,7 @@
 package com.github.charlemaznable.httpclient.vxclient;
 
 import com.github.charlemaznable.httpclient.common.CommonReq;
-import com.github.charlemaznable.httpclient.common.FallbackFunction;
-import com.github.charlemaznable.httpclient.common.HttpStatus;
+import com.github.charlemaznable.httpclient.vxclient.internal.VxResponseAdapter;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -23,13 +22,11 @@ import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
-import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT_TYPE;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUERY_FORMATTER;
 import static com.google.common.collect.Iterators.forArray;
-import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 
 public class VxReq extends CommonReq<VxReq> {
@@ -169,24 +166,8 @@ public class VxReq extends CommonReq<VxReq> {
                 val promise = Promise.<String>promise();
                 if (arResponse.succeeded()) {
                     try {
-                        val response = arResponse.result();
-                        val statusCode = response.statusCode();
-                        val responseBody = response.bodyAsString(this.acceptCharset().name());
-
-                        val statusFallback = this.statusFallbackMapping()
-                                .get(HttpStatus.valueOf(statusCode));
-                        val statusSeriesFallback = this.statusSeriesFallbackMapping()
-                                .get(HttpStatus.Series.valueOf(statusCode));
-
-                        if (nonNull(statusFallback)) {
-                            promise.complete(applyFallback(statusFallback,
-                                    statusCode, responseBody));
-
-                        } else if (nonNull(statusSeriesFallback)) {
-                            promise.complete(applyFallback(statusSeriesFallback,
-                                    statusCode, responseBody));
-
-                        } else promise.complete(responseBody);
+                        promise.complete(processResponse(new VxResponseAdapter(
+                                arResponse.result(), acceptCharset())));
                     } catch (Exception e) {
                         promise.fail(e);
                     }
@@ -196,17 +177,6 @@ public class VxReq extends CommonReq<VxReq> {
 
                 iterateHandlers(promise, handlers);
             };
-        }
-
-        private String applyFallback(FallbackFunction<?> function,
-                                     int statusCode, String responseBody) {
-            return toStr(function.apply(
-                    new FallbackFunction.Response<>(statusCode, responseBody) {
-                        @Override
-                        public String responseBodyAsString() {
-                            return getResponseBody();
-                        }
-                    }));
         }
 
         @SafeVarargs

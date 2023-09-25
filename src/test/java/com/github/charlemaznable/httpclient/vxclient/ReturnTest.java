@@ -2,7 +2,9 @@ package com.github.charlemaznable.httpclient.vxclient;
 
 import com.github.charlemaznable.httpclient.annotation.DefaultFallbackDisabled;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
+import com.github.charlemaznable.httpclient.common.CommonResponse;
 import com.github.charlemaznable.httpclient.common.CommonReturnTest;
+import com.github.charlemaznable.httpclient.common.HttpHeaders;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
 import io.vertx.core.CompositeFuture;
@@ -82,7 +84,14 @@ public class ReturnTest extends CommonReturnTest {
                             assertEquals("John", array.getString(0));
                             assertEquals("Doe", array.getString(1));
                             f.complete();
-                        })))
+                        }))),
+                httpClient.sampleFutureHttpHeaders().onSuccess(headers ->
+                        test.verify(() -> assertEquals("OK", headers.get("Custom-Header").get(0)))),
+                httpClient.sampleFutureCommonResponse().onSuccess(commonResponse ->
+                        test.verify(() -> {
+                            assertEquals("OK", commonResponse.getHeaders().get("custom-header").get(0));
+                            assertEquals("OK", commonResponse.getBody());
+                        }))
         )).onComplete(result -> {
             shutdownMockWebServer2();
             test.<CompositeFuture>succeedingThenComplete().handle(result);
@@ -122,5 +131,11 @@ public class ReturnTest extends CommonReturnTest {
 
         @Mapping("${root}:41191/sampleArray")
         io.reactivex.rxjava3.core.Single<JsonArray> sampleFutureArray();
+
+        @TestMapping
+        Future<HttpHeaders> sampleFutureHttpHeaders();
+
+        @TestMapping
+        Future<CommonResponse> sampleFutureCommonResponse();
     }
 }

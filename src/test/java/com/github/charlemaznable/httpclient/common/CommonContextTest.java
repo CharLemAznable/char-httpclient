@@ -121,13 +121,13 @@ public abstract class CommonContextTest {
     public static class TestResponseParser implements ResponseParse.ResponseParser {
 
         @Override
-        public Object parse(@Nonnull String responseContent,
+        public Object parse(@Nonnull CommonResponse response,
                             @Nonnull Class<?> returnType,
                             @Nonnull Map<String, Object> contextMap) {
-            assertEquals("OK", responseContent);
+            assertEquals("OK", response.getBody());
             assertEquals(TestResponse.class, returnType);
             val testResponse = new TestResponse();
-            testResponse.setResponse(responseContent);
+            testResponse.setResponse(response.getBody());
             return testResponse;
         }
     }

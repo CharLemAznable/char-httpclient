@@ -1,12 +1,10 @@
 package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.httpclient.common.CommonReq;
-import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpMethod;
-import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.ohclient.elf.GlobalClientElf;
 import com.github.charlemaznable.httpclient.ohclient.internal.OhCallbackFuture;
-import com.github.charlemaznable.httpclient.ohclient.internal.OhResponseBody;
+import com.github.charlemaznable.httpclient.ohclient.internal.OhResponseAdapter;
 import lombok.SneakyThrows;
 import lombok.experimental.Delegate;
 import lombok.val;
@@ -16,7 +14,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -25,14 +22,11 @@ import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThen;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.core.lang.Mapp.newHashMap;
-import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.ACCEPT_CHARSET;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT_TYPE;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.DEFAULT_CONTENT_FORMATTER;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUERY_FORMATTER;
-import static java.util.Objects.nonNull;
-import static org.jooq.lambda.Sneaky.function;
 
 public final class OhReq extends CommonReq<OhReq> {
 
@@ -162,37 +156,7 @@ public final class OhReq extends CommonReq<OhReq> {
         }
 
         private String processResponse(Response response) {
-            val statusCode = response.code();
-            val responseBody = notNullThen(response.body(), OhResponseBody::new);
-            if (nonNull(response.body())) response.close();
-
-            val statusFallback = this.statusFallbackMapping()
-                    .get(HttpStatus.valueOf(statusCode));
-            if (nonNull(statusFallback)) {
-                return applyFallback(statusFallback,
-                        statusCode, responseBody);
-            }
-
-            val statusSeriesFallback = this.statusSeriesFallbackMapping()
-                    .get(HttpStatus.Series.valueOf(statusCode));
-            if (nonNull(statusSeriesFallback)) {
-                return applyFallback(statusSeriesFallback,
-                        statusCode, responseBody);
-            }
-
-            return notNullThen(responseBody, function(ResponseBody::string));
-        }
-
-        private String applyFallback(FallbackFunction<?> function,
-                                     int statusCode, ResponseBody responseBody) {
-            return toStr(function.apply(
-                    new FallbackFunction.Response<>(statusCode, responseBody) {
-                        @Override
-                        public String responseBodyAsString() {
-                            return toStr(notNullThen(getResponseBody(),
-                                    function(ResponseBody::string)));
-                        }
-                    }));
+            return processResponse(new OhResponseAdapter(response, acceptCharset()));
         }
     }
 }

@@ -2,6 +2,7 @@ package com.github.charlemaznable.httpclient.vxclient;
 
 import com.github.charlemaznable.httpclient.annotation.ContentFormat;
 import com.github.charlemaznable.httpclient.common.CommonReqTest;
+import com.github.charlemaznable.httpclient.common.CommonResponse;
 import com.github.charlemaznable.httpclient.common.FallbackFunction;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import com.github.charlemaznable.httpclient.common.StatusError;
@@ -202,16 +203,16 @@ public abstract class VxReqCommonTest extends CommonReqTest {
     public static class NotFound implements FallbackFunction<String> {
 
         @Override
-        public String apply(Response response) {
-            return response.responseBodyAsString();
+        public String apply(CommonResponse response) {
+            return response.getBody();
         }
     }
 
     public static class ClientError implements FallbackFunction<String> {
 
         @Override
-        public String apply(Response response) {
-            return response.responseBodyAsString();
+        public String apply(CommonResponse response) {
+            return response.getBody();
         }
     }
 }

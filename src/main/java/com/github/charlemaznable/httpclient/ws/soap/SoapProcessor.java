@@ -2,6 +2,7 @@ package com.github.charlemaznable.httpclient.ws.soap;
 
 import com.github.charlemaznable.httpclient.annotation.ContentFormat;
 import com.github.charlemaznable.httpclient.annotation.ResponseParse;
+import com.github.charlemaznable.httpclient.common.CommonResponse;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
@@ -23,9 +24,9 @@ public final class SoapProcessor implements ContentFormat.ContentFormatter, Resp
     }
 
     @Override
-    public Object parse(@Nonnull String responseContent,
+    public Object parse(@Nonnull CommonResponse response,
                         @Nonnull Class<?> returnType,
                         @Nonnull Map<String, Object> contextMap) {
-        return new ResponseEntity().fromXml(responseContent, returnType).content();
+        return new ResponseEntity().fromXml(response.getBody(), returnType).content();
     }
 }

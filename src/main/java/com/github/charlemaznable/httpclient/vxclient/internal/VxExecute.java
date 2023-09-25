@@ -28,7 +28,7 @@ import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUE
 import static com.github.charlemaznable.httpclient.common.CommonReq.parseCharset;
 import static com.github.charlemaznable.httpclient.common.CommonReq.permitsRequestBody;
 
-final class VxExecute extends CommonExecute<VxBase, VxMethod, HttpResponse<Buffer>, Buffer> {
+final class VxExecute extends CommonExecute<VxBase, VxMethod, HttpResponse<Buffer>, VxResponseAdapter> {
 
     public VxExecute(VxMethod vxMethod) {
         super(new VxBase(vxMethod.element().base()), vxMethod);
@@ -98,32 +98,22 @@ final class VxExecute extends CommonExecute<VxBase, VxMethod, HttpResponse<Buffe
     }
 
     @Override
-    protected int getResponseCode(HttpResponse<Buffer> response) {
-        return response.statusCode();
+    protected VxResponseAdapter responseAdapter(HttpResponse<Buffer> response) {
+        return new VxResponseAdapter(response, base().acceptCharset());
     }
 
     @Override
-    protected Buffer getResponseBody(HttpResponse<Buffer> response) {
-        return nullThen(response.body(), Buffer::buffer);
-    }
-
-    @Override
-    protected String getResponseBodyString(Buffer responseBody) {
-        return responseBody.toString(base().acceptCharset());
-    }
-
-    @Override
-    protected Object customProcessReturnTypeValue(int statusCode, Buffer responseBody, Class<?> returnType) {
+    protected Object customProcessReturnTypeValue(VxResponseAdapter responseAdapter, Class<?> returnType) {
         if (Buffer.class == returnType) {
-            return responseBody;
+            return responseAdapter.body();
         } else if (byte[].class == returnType) {
-            return notNullThen(responseBody, Buffer::getBytes);
+            return notNullThen(responseAdapter.body(), Buffer::getBytes);
         } else if (JsonObject.class == returnType) {
-            return notNullThen(responseBody, BodyCodecImpl.JSON_OBJECT_DECODER);
+            return notNullThen(responseAdapter.body(), BodyCodecImpl.JSON_OBJECT_DECODER);
         } else if (JsonArray.class == returnType) {
-            return notNullThen(responseBody, BodyCodecImpl.JSON_ARRAY_DECODER);
+            return notNullThen(responseAdapter.body(), BodyCodecImpl.JSON_ARRAY_DECODER);
         } else {
-            return super.customProcessReturnTypeValue(statusCode, responseBody, returnType);
+            return super.customProcessReturnTypeValue(responseAdapter, returnType);
         }
     }
 

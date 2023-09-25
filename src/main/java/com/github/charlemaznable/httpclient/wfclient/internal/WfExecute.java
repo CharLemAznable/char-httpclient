@@ -12,7 +12,6 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import static com.github.charlemaznable.core.codec.Bytes.string;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
 import static com.github.charlemaznable.core.lang.Condition.notNullThenRun;
 import static com.github.charlemaznable.core.lang.Condition.nullThen;
@@ -24,7 +23,7 @@ import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUE
 import static com.github.charlemaznable.httpclient.common.CommonReq.permitsRequestBody;
 import static com.github.charlemaznable.httpclient.wfclient.elf.RequestSpecConfigElf.REQUEST_BODY_AS_STRING;
 
-final class WfExecute extends CommonExecute<WfBase, WfMethod, ResponseEntity<byte[]>, byte[]> {
+final class WfExecute extends CommonExecute<WfBase, WfMethod, ResponseEntity<byte[]>, WfResponseAdapter> {
 
     public WfExecute(WfMethod wfMethod) {
         super(new WfBase(wfMethod.element().base()), wfMethod);
@@ -90,26 +89,16 @@ final class WfExecute extends CommonExecute<WfBase, WfMethod, ResponseEntity<byt
     }
 
     @Override
-    protected int getResponseCode(ResponseEntity<byte[]> response) {
-        return response.getStatusCode().value();
+    protected WfResponseAdapter responseAdapter(ResponseEntity<byte[]> response) {
+        return new WfResponseAdapter(response, base().acceptCharset());
     }
 
     @Override
-    protected byte[] getResponseBody(ResponseEntity<byte[]> response) {
-        return nullThen(response.getBody(), () -> new byte[0]);
-    }
-
-    @Override
-    protected String getResponseBodyString(byte[] responseBody) {
-        return string(responseBody, base().acceptCharset());
-    }
-
-    @Override
-    protected Object customProcessReturnTypeValue(int statusCode, byte[] responseBody, Class<?> returnType) {
+    protected Object customProcessReturnTypeValue(WfResponseAdapter responseAdapter, Class<?> returnType) {
         if (byte[].class == returnType) {
-            return responseBody;
+            return responseAdapter.body();
         } else {
-            return super.customProcessReturnTypeValue(statusCode, responseBody, returnType);
+            return super.customProcessReturnTypeValue(responseAdapter, returnType);
         }
     }
 }

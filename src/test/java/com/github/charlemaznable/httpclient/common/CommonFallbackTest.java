@@ -43,32 +43,32 @@ public abstract class CommonFallbackTest {
     public static class NotFound implements FallbackFunction<String> {
 
         @Override
-        public String apply(Response response) {
-            return response.responseBodyAsString();
+        public String apply(CommonResponse response) {
+            return response.getBody();
         }
     }
 
     public static class ClientError implements FallbackFunction<String> {
 
         @Override
-        public String apply(Response response) {
-            return response.responseBodyAsString();
+        public String apply(CommonResponse response) {
+            return response.getBody();
         }
     }
 
     public static class NotFound2 implements FallbackFunction<String> {
 
         @Override
-        public String apply(Response response) {
-            return "\"" + response.responseBodyAsString() + "\"";
+        public String apply(CommonResponse response) {
+            return "\"" + response.getBody() + "\"";
         }
     }
 
     public static class ClientError2 implements FallbackFunction<String> {
 
         @Override
-        public String apply(Response response) {
-            return "\"" + response.responseBodyAsString() + "\"";
+        public String apply(CommonResponse response) {
+            return "\"" + response.getBody() + "\"";
         }
     }
 

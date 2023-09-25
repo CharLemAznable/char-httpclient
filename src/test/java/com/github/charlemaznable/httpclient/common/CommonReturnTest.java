@@ -54,6 +54,7 @@ public abstract class CommonReturnTest {
             if ("/sample".equals(request.getPath())) {
                 return new MockResponse()
                         .setResponseCode(HttpStatus.OK.value())
+                        .setHeader("Custom-Header", "OK")
                         .setBody(HttpStatus.OK.getReasonPhrase());
             } else if ("/sampleObject".equals(request.getPath())) {
                 return new MockResponse()

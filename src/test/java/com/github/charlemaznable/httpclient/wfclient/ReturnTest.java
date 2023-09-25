@@ -2,7 +2,9 @@ package com.github.charlemaznable.httpclient.wfclient;
 
 import com.github.charlemaznable.httpclient.annotation.DefaultFallbackDisabled;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
+import com.github.charlemaznable.httpclient.common.CommonResponse;
 import com.github.charlemaznable.httpclient.common.CommonReturnTest;
+import com.github.charlemaznable.httpclient.common.HttpHeaders;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import io.smallrye.mutiny.Uni;
 import lombok.SneakyThrows;
@@ -19,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReturnTest extends CommonReturnTest {
@@ -62,6 +65,15 @@ public class ReturnTest extends CommonReturnTest {
         await().forever().pollDelay(Duration.ofMillis(100)).until(futureString::isDone);
         assertEquals("OK", futureString.get());
 
+        val httpHeaders = httpClient.sampleFutureHttpHeaders().block();
+        assertNotNull(httpHeaders);
+        assertEquals("OK", httpHeaders.get("Custom-Header").get(0));
+
+        val commonResponse = httpClient.sampleFutureCommonResponse().block();
+        assertNotNull(commonResponse);
+        assertEquals("OK", commonResponse.getHeaders().get("custom-header").get(0));
+        assertEquals("OK", commonResponse.getBody());
+
         shutdownMockWebServer2();
     }
 
@@ -92,5 +104,11 @@ public class ReturnTest extends CommonReturnTest {
 
         @TestMapping
         Uni<String> sampleString();
+
+        @TestMapping
+        Mono<HttpHeaders> sampleFutureHttpHeaders();
+
+        @TestMapping
+        Mono<CommonResponse> sampleFutureCommonResponse();
     }
 }

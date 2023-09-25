@@ -2,7 +2,9 @@ package com.github.charlemaznable.httpclient.ohclient;
 
 import com.github.charlemaznable.httpclient.annotation.DefaultFallbackDisabled;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
+import com.github.charlemaznable.httpclient.common.CommonResponse;
 import com.github.charlemaznable.httpclient.common.CommonReturnTest;
+import com.github.charlemaznable.httpclient.common.HttpHeaders;
 import com.github.charlemaznable.httpclient.common.HttpStatus;
 import lombok.Cleanup;
 import lombok.SneakyThrows;
@@ -117,6 +119,20 @@ public class ReturnTest extends CommonReturnTest {
         await().forever().pollDelay(Duration.ofMillis(100)).until(futureString::isDone);
         assertEquals("OK", futureString.get());
 
+        assertEquals("OK", httpClient.sampleHttpHeaders().get("Custom-Header").get(0));
+        val futureHttpHeaders = httpClient.sampleFutureHttpHeaders();
+        await().forever().pollDelay(Duration.ofMillis(100)).until(futureHttpHeaders::isDone);
+        assertEquals("OK", futureHttpHeaders.get().get("Custom-Header").get(0));
+
+        val commonResponse = httpClient.sampleCommonResponse();
+        assertEquals("OK", commonResponse.getHeaders().get("custom-header").get(0));
+        assertEquals("OK", commonResponse.getBody());
+        val futureCommonResponse = httpClient.sampleFutureCommonResponse();
+        await().forever().pollDelay(Duration.ofMillis(100)).until(futureCommonResponse::isDone);
+        val commonResponse2 = futureCommonResponse.get();
+        assertEquals("OK", commonResponse2.getHeaders().get("custom-header").get(0));
+        assertEquals("OK", commonResponse2.getBody());
+
         shutdownMockWebServer2();
     }
 
@@ -190,5 +206,17 @@ public class ReturnTest extends CommonReturnTest {
 
         @TestMapping
         Future<String> sampleFutureString();
+
+        @TestMapping
+        HttpHeaders sampleHttpHeaders();
+
+        @TestMapping
+        Future<HttpHeaders> sampleFutureHttpHeaders();
+
+        @TestMapping
+        CommonResponse sampleCommonResponse();
+
+        @TestMapping
+        Future<CommonResponse> sampleFutureCommonResponse();
     }
 }

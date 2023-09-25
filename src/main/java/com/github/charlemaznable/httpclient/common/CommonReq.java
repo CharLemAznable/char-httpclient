@@ -16,6 +16,7 @@ import static com.github.charlemaznable.core.lang.Mapp.toMap;
 import static com.github.charlemaznable.core.lang.Str.toStr;
 import static com.github.charlemaznable.core.net.Url.concatUrlQuery;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.nonNull;
 
 @SuppressWarnings("unchecked")
 @NoArgsConstructor
@@ -197,6 +198,29 @@ public abstract class CommonReq<T extends CommonReq<T>> extends CommonBase<Commo
             val copy = copy();
             copy.extraUrlQueryBuilder = extraUrlQueryBuilder;
             return copy;
+        }
+
+        protected String processResponse(CommonResponseAdapter<?, ?, ?> responseAdapter) {
+            val statusCode = responseAdapter.statusCode();
+
+            val statusFallback = this.statusFallbackMapping()
+                    .get(HttpStatus.valueOf(statusCode));
+            if (nonNull(statusFallback)) {
+                return applyFallback(statusFallback, responseAdapter);
+            }
+
+            val statusSeriesFallback = this.statusSeriesFallbackMapping()
+                    .get(HttpStatus.Series.valueOf(statusCode));
+            if (nonNull(statusSeriesFallback)) {
+                return applyFallback(statusSeriesFallback, responseAdapter);
+            }
+
+            return responseAdapter.buildBodyString();
+        }
+
+        private String applyFallback(FallbackFunction<?> function,
+                                     CommonResponseAdapter<?, ?, ?> responseAdapter) {
+            return toStr(function.apply(responseAdapter.buildCommonResponse()));
         }
     }
 }

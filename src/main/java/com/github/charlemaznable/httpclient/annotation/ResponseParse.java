@@ -1,5 +1,7 @@
 package com.github.charlemaznable.httpclient.annotation;
 
+import com.github.charlemaznable.httpclient.common.CommonResponse;
+
 import javax.annotation.Nonnull;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -19,7 +21,7 @@ public @interface ResponseParse {
 
     interface ResponseParser {
 
-        Object parse(@Nonnull final String responseContent,
+        Object parse(@Nonnull final CommonResponse response,
                      @Nonnull final Class<?> returnType,
                      @Nonnull final Map<String, Object> contextMap);
     }

@@ -3,7 +3,6 @@ package com.github.charlemaznable.httpclient.ohclient.internal;
 import com.github.charlemaznable.httpclient.common.CommonExecute;
 import com.github.charlemaznable.httpclient.ohclient.elf.RequestBuilderConfigElf;
 import lombok.Lombok;
-import lombok.SneakyThrows;
 import lombok.val;
 import okhttp3.Headers;
 import okhttp3.MediaType;
@@ -30,11 +29,10 @@ import static com.github.charlemaznable.httpclient.common.CommonConstant.CONTENT
 import static com.github.charlemaznable.httpclient.common.CommonConstant.DEFAULT_CONTENT_FORMATTER;
 import static com.github.charlemaznable.httpclient.common.CommonConstant.URL_QUERY_FORMATTER;
 import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
-import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNullElse;
 import static org.jooq.lambda.Sneaky.function;
 
-final class OhExecute extends CommonExecute<OhBase, OhMethod, Response, ResponseBody> {
+final class OhExecute extends CommonExecute<OhBase, OhMethod, Response, OhResponseAdapter> {
 
     public OhExecute(OhMethod ohMethod) {
         super(new OhBase(ohMethod.element().base()), ohMethod);
@@ -102,37 +100,24 @@ final class OhExecute extends CommonExecute<OhBase, OhMethod, Response, Response
     }
 
     @Override
-    protected int getResponseCode(Response response) {
-        return response.code();
+    protected OhResponseAdapter responseAdapter(Response response) {
+        return new OhResponseAdapter(response, base().acceptCharset());
     }
 
     @Override
-    protected ResponseBody getResponseBody(Response response) {
-        val responseBody = notNullThen(response.body(), OhResponseBody::new);
-        if (nonNull(response.body())) response.close();
-        return responseBody;
-    }
-
-    @SneakyThrows
-    @Override
-    protected String getResponseBodyString(ResponseBody responseBody) {
-        return responseBody.string();
-    }
-
-    @Override
-    protected Object customProcessReturnTypeValue(int statusCode, ResponseBody responseBody, Class<?> returnType) {
+    protected Object customProcessReturnTypeValue(OhResponseAdapter responseAdapter, Class<?> returnType) {
         if (ResponseBody.class == returnType) {
-            return responseBody;
+            return responseAdapter.body();
         } else if (InputStream.class == returnType) {
-            return notNullThen(responseBody, ResponseBody::byteStream);
+            return notNullThen(responseAdapter.body(), ResponseBody::byteStream);
         } else if (BufferedSource.class == returnType) {
-            return (notNullThen(responseBody, ResponseBody::source));
+            return (notNullThen(responseAdapter.body(), ResponseBody::source));
         } else if (byte[].class == returnType) {
-            return notNullThen(responseBody, function(ResponseBody::bytes));
+            return notNullThen(responseAdapter.body(), function(ResponseBody::bytes));
         } else if (Reader.class == returnType) {
-            return notNullThen(responseBody, ResponseBody::charStream);
+            return notNullThen(responseAdapter.body(), ResponseBody::charStream);
         } else {
-            return super.customProcessReturnTypeValue(statusCode, responseBody, returnType);
+            return super.customProcessReturnTypeValue(responseAdapter, returnType);
         }
     }
 
