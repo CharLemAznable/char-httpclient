@@ -5,6 +5,7 @@ import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.httpclient.configurer.Configurer;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceBulkhead;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreaker;
+import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreakerState;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceFallback;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceRateLimiter;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceRetry;
@@ -42,6 +43,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static com.github.charlemaznable.core.lang.Condition.blankThen;
 import static com.github.charlemaznable.core.lang.Condition.checkNull;
+import static com.github.charlemaznable.core.lang.Condition.nullThen;
 import static com.github.charlemaznable.httpclient.resilience.common.ResilienceDefaults.checkResultPredicate;
 import static org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation;
 
@@ -160,17 +162,20 @@ public final class ResilienceElement {
         if (configurer instanceof ResilienceCircuitBreakerConfigurer circuitBreakerConfigurer)
             return circuitBreakerConfigurer.circuitBreaker(defaultName);
         val circuitBreaker = getMergedAnnotation(element, ResilienceCircuitBreaker.class);
-        return checkNull(circuitBreaker, () -> defaultValue, anno -> CircuitBreaker.of(
-                blankThen(anno.name(), () -> defaultName), CircuitBreakerConfig.custom()
-                        .slidingWindow(anno.slidingWindowSize(), anno.minimumNumberOfCalls(), anno.slidingWindowType())
-                        .failureRateThreshold(anno.failureRateThreshold())
-                        .slowCallRateThreshold(anno.slowCallRateThreshold())
-                        .slowCallDurationThreshold(Duration.ofSeconds(anno.slowCallDurationThresholdInSeconds()))
-                        .recordResult(checkResultPredicate(FactoryContext.build(factory, anno.recordResultPredicate())))
-                        .automaticTransitionFromOpenToHalfOpenEnabled(anno.automaticTransitionFromOpenToHalfOpenEnabled())
-                        .waitDurationInOpenState(Duration.ofSeconds(anno.waitDurationInOpenStateInSeconds()))
-                        .permittedNumberOfCallsInHalfOpenState(anno.permittedNumberOfCallsInHalfOpenState())
-                        .maxWaitDurationInHalfOpenState(Duration.ofSeconds(anno.maxWaitDurationInHalfOpenStateInSeconds())).build()));
+        return checkNull(circuitBreaker, () -> defaultValue, anno -> {
+            val state = nullThen(anno.state(), () -> ResilienceCircuitBreakerState.ENABLED);
+            return state.transitionState(CircuitBreaker.of(
+                    blankThen(anno.name(), () -> defaultName), CircuitBreakerConfig.custom()
+                            .slidingWindow(anno.slidingWindowSize(), anno.minimumNumberOfCalls(), anno.slidingWindowType())
+                            .failureRateThreshold(anno.failureRateThreshold())
+                            .slowCallRateThreshold(anno.slowCallRateThreshold())
+                            .slowCallDurationThreshold(Duration.ofSeconds(anno.slowCallDurationThresholdInSeconds()))
+                            .recordResult(checkResultPredicate(FactoryContext.build(factory, anno.recordResultPredicate())))
+                            .automaticTransitionFromOpenToHalfOpenEnabled(anno.automaticTransitionFromOpenToHalfOpenEnabled())
+                            .waitDurationInOpenState(Duration.ofSeconds(anno.waitDurationInOpenStateInSeconds()))
+                            .permittedNumberOfCallsInHalfOpenState(anno.permittedNumberOfCallsInHalfOpenState())
+                            .maxWaitDurationInHalfOpenState(Duration.ofSeconds(anno.maxWaitDurationInHalfOpenStateInSeconds())).build()));
+        });
     }
 
     private ResilienceCircuitBreakerRecover<?> buildCircuitBreakerRecover(AnnotatedElement element,

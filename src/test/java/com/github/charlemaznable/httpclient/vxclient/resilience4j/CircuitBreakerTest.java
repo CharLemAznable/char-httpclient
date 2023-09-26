@@ -1,15 +1,19 @@
 package com.github.charlemaznable.httpclient.vxclient.resilience4j;
 
 import com.github.charlemaznable.core.lang.Listt;
+import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
+import com.github.charlemaznable.httpclient.common.StatusError;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonCircuitBreakerTest;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreaker;
+import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreakerState;
 import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
 import com.github.charlemaznable.httpclient.vxclient.VxClient;
 import com.github.charlemaznable.httpclient.vxclient.VxFactory;
 import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.vertx.core.Future;
@@ -25,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.github.charlemaznable.core.lang.Await.awaitForSeconds;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
 public class CircuitBreakerTest extends CommonCircuitBreakerTest {
@@ -37,6 +42,8 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));
         val httpClient = vxLoader.getClient(CircuitBreakerClient.class);
         val httpClient2 = vxLoader.getClient(CircuitBreakerClient2.class);
+        val httpClient3 = vxLoader.getClient(CircuitBreakerClient3.class);
+        val httpClient4 = vxLoader.getClient(CircuitBreakerClient4.class);
 
         httpClient.bindTo(new SimpleMeterRegistry());
 
@@ -237,6 +244,37 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         }).compose(result -> {
             test.verify(() -> assertEquals(20, countSample.get()));
 
+            AllpassCircuitBreakerConfig.state = ResilienceCircuitBreakerState.DISABLED.name();
+            httpClient3.reload();
+            val gets = Listt.<Future<String>>newArrayList();
+            for (int i = 0; i < 10; i++) {
+                gets.add(httpClient3.get().otherwise(exception -> {
+                    assertTrue(exception instanceof StatusError);
+                    return null;
+                }));
+            }
+            return Future.all(gets);
+        }).compose(result -> {
+            AllpassCircuitBreakerConfig.state = ResilienceCircuitBreakerState.METRICS_ONLY.name();
+            httpClient3.reload();
+            val gets = Listt.<Future<String>>newArrayList();
+            for (int i = 0; i < 10; i++) {
+                gets.add(httpClient3.get().otherwise(exception -> {
+                    assertTrue(exception instanceof StatusError);
+                    return null;
+                }));
+            }
+            return Future.all(gets);
+        }).compose(result -> {
+            val gets = Listt.<Future<String>>newArrayList();
+            for (int i = 0; i < 10; i++) {
+                gets.add(httpClient4.get().otherwise(exception -> {
+                    assertTrue(exception instanceof CallNotPermittedException);
+                    return null;
+                }));
+            }
+            return Future.all(gets);
+        }).compose(result -> {
             shutdownMockWebServer();
             return Future.succeededFuture();
         }).onComplete(test.succeedingThenComplete());
@@ -286,5 +324,26 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
                 permittedNumberOfCallsInHalfOpenState = 5,
                 fallback = CustomResilienceCircuitBreakerRecover.class)
         Future<String> getWithAnno();
+    }
+
+    @Mapping("${root}:41430/sample3")
+    @MappingMethodNameDisabled
+    @VxClient
+    @ConfigureWith(AllpassCircuitBreakerConfig.class)
+    public interface CircuitBreakerClient3 extends Reloadable {
+
+        Future<String> get();
+    }
+
+    @Mapping("${root}:41430/sample4")
+    @MappingMethodNameDisabled
+    @VxClient
+    @ResilienceCircuitBreaker(
+            slidingWindowSize = 5,
+            minimumNumberOfCalls = 5,
+            state = ResilienceCircuitBreakerState.FORCED_OPEN)
+    public interface CircuitBreakerClient4 extends Reloadable {
+
+        Future<String> get();
     }
 }

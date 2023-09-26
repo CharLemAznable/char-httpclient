@@ -1,13 +1,17 @@
 package com.github.charlemaznable.httpclient.wfclient.resilience4j;
 
+import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
+import com.github.charlemaznable.httpclient.common.StatusError;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonCircuitBreakerTest;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreaker;
+import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreakerState;
 import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
 import com.github.charlemaznable.httpclient.wfclient.WfClient;
 import com.github.charlemaznable.httpclient.wfclient.WfFactory;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.SneakyThrows;
@@ -23,6 +27,7 @@ import static com.github.charlemaznable.core.lang.Await.awaitForSeconds;
 import static org.jooq.lambda.Sneaky.runnable;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CircuitBreakerTest extends CommonCircuitBreakerTest {
 
@@ -33,6 +38,10 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
 
         val wfLoader = WfFactory.wfLoader(reflectFactory());
         val httpClient = wfLoader.getClient(CircuitBreakerClient.class);
+        val httpClient2 = wfLoader.getClient(CircuitBreakerClient2.class);
+        val httpClient3 = wfLoader.getClient(CircuitBreakerClient3.class);
+        val httpClient4 = wfLoader.getClient(CircuitBreakerClient4.class);
+
         httpClient.bindTo(new SimpleMeterRegistry());
 
         errorState.set(true);
@@ -163,8 +172,6 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         }
         assertEquals(15, countSample.get());
 
-        val httpClient2 = wfLoader.getClient(CircuitBreakerClient2.class);
-
         errorState.set(true);
         countSample.set(0);
         val service5 = new Thread[10];
@@ -247,6 +254,37 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         }
         assertEquals(20, countSample.get());
 
+        AllpassCircuitBreakerConfig.state = ResilienceCircuitBreakerState.DISABLED.name();
+        httpClient3.reload();
+        val service7 = new Thread[10];
+        for (int i = 0; i < 10; i++) {
+            service7[i] = new Thread(() -> assertThrows(StatusError.class, () -> httpClient3.get().block()), "service7" + i);
+            service7[i].start();
+        }
+        for (int i = 0; i < 10; i++) {
+            service7[i].join();
+        }
+
+        AllpassCircuitBreakerConfig.state = ResilienceCircuitBreakerState.METRICS_ONLY.name();
+        httpClient3.reload();
+        val service8 = new Thread[10];
+        for (int i = 0; i < 10; i++) {
+            service8[i] = new Thread(() -> assertThrows(StatusError.class, () -> httpClient3.get().block()), "service8" + i);
+            service8[i].start();
+        }
+        for (int i = 0; i < 10; i++) {
+            service8[i].join();
+        }
+
+        val service9 = new Thread[10];
+        for (int i = 0; i < 10; i++) {
+            service9[i] = new Thread(() -> assertThrows(CallNotPermittedException.class, () -> httpClient4.get().block()), "service9" + i);
+            service9[i].start();
+        }
+        for (int i = 0; i < 10; i++) {
+            service9[i].join();
+        }
+
         shutdownMockWebServer();
     }
 
@@ -290,5 +328,26 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
                 permittedNumberOfCallsInHalfOpenState = 5,
                 fallback = CustomResilienceCircuitBreakerRecover.class)
         Mono<String> getWithAnno();
+    }
+
+    @Mapping("${root}:41430/sample3")
+    @MappingMethodNameDisabled
+    @WfClient
+    @ConfigureWith(AllpassCircuitBreakerConfig.class)
+    public interface CircuitBreakerClient3 extends Reloadable {
+
+        Mono<String> get();
+    }
+
+    @Mapping("${root}:41430/sample4")
+    @MappingMethodNameDisabled
+    @WfClient
+    @ResilienceCircuitBreaker(
+            slidingWindowSize = 5,
+            minimumNumberOfCalls = 5,
+            state = ResilienceCircuitBreakerState.FORCED_OPEN)
+    public interface CircuitBreakerClient4 extends Reloadable {
+
+        Mono<String> get();
     }
 }

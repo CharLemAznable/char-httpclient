@@ -2,6 +2,7 @@ package com.github.charlemaznable.httpclient.resilience.configurer.configservice
 
 import com.github.charlemaznable.configservice.Config;
 import com.github.charlemaznable.core.lang.Objectt;
+import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreakerState;
 import com.github.charlemaznable.httpclient.resilience.configurer.ResilienceCircuitBreakerConfigurer;
 import com.github.charlemaznable.httpclient.resilience.function.ResilienceCircuitBreakerRecover;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
@@ -131,10 +132,19 @@ public interface ResilienceCircuitBreakerConfig extends ResilienceCircuitBreaker
                 TO_DURATION_FUNCTION.andThen(Duration::ofMillis));
     }
 
+    @Config("circuitBreakerState")
+    String circuitBreakerState();
+
+    default ResilienceCircuitBreakerState parseCircuitBreakerState() {
+        return parseStringToValue(circuitBreakerState(),
+                ResilienceCircuitBreakerState.ENABLED,
+                ResilienceCircuitBreakerState::valueOf);
+    }
+
     @Override
     default CircuitBreaker circuitBreaker(String defaultName) {
         if (!enabledCircuitBreaker()) return null;
-        return CircuitBreaker.of(
+        return parseCircuitBreakerState().transitionState(CircuitBreaker.of(
                 checkNotBlank(nonBlank(circuitBreakerName(), defaultName)),
                 CircuitBreakerConfig.custom()
                         .slidingWindow(parseSlidingWindowSize(),
@@ -146,7 +156,7 @@ public interface ResilienceCircuitBreakerConfig extends ResilienceCircuitBreaker
                         .automaticTransitionFromOpenToHalfOpenEnabled(parseAutomaticTransitionFromOpenToHalfOpenEnabled())
                         .waitDurationInOpenState(parseWaitDurationInOpenState())
                         .permittedNumberOfCallsInHalfOpenState(parsePermittedNumberOfCallsInHalfOpenState())
-                        .maxWaitDurationInHalfOpenState(parseMaxWaitDurationInHalfOpenState()).build());
+                        .maxWaitDurationInHalfOpenState(parseMaxWaitDurationInHalfOpenState()).build()));
     }
 
     @Config("circuitBreakerRecover")

@@ -50,5 +50,7 @@ public @interface ResilienceCircuitBreaker {
 
     int maxWaitDurationInHalfOpenStateInSeconds() default DEFAULT_WAIT_DURATION_IN_HALF_OPEN_STATE;
 
+    ResilienceCircuitBreakerState state() default ResilienceCircuitBreakerState.ENABLED;
+
     Class<? extends ResilienceCircuitBreakerRecover> fallback() default ResilienceCircuitBreakerRecover.class;
 }

@@ -1,13 +1,17 @@
 package com.github.charlemaznable.httpclient.ohclient.resilience4j;
 
+import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
+import com.github.charlemaznable.httpclient.common.StatusError;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonCircuitBreakerTest;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreaker;
+import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreakerState;
 import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.SneakyThrows;
@@ -22,6 +26,7 @@ import static com.github.charlemaznable.core.lang.Await.awaitForSeconds;
 import static org.jooq.lambda.Sneaky.runnable;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CircuitBreakerTest extends CommonCircuitBreakerTest {
 
@@ -32,6 +37,10 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());
         val httpClient = ohLoader.getClient(CircuitBreakerClient.class);
+        val httpClient2 = ohLoader.getClient(CircuitBreakerClient2.class);
+        val httpClient3 = ohLoader.getClient(CircuitBreakerClient3.class);
+        val httpClient4 = ohLoader.getClient(CircuitBreakerClient4.class);
+
         httpClient.bindTo(new SimpleMeterRegistry());
 
         errorState.set(true);
@@ -162,8 +171,6 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         }
         assertEquals(15, countSample.get());
 
-        val httpClient2 = ohLoader.getClient(CircuitBreakerClient2.class);
-
         errorState.set(true);
         countSample.set(0);
         val service5 = new Thread[10];
@@ -246,6 +253,37 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         }
         assertEquals(20, countSample.get());
 
+        AllpassCircuitBreakerConfig.state = ResilienceCircuitBreakerState.DISABLED.name();
+        httpClient3.reload();
+        val service7 = new Thread[10];
+        for (int i = 0; i < 10; i++) {
+            service7[i] = new Thread(() -> assertThrows(StatusError.class, httpClient3::get), "service7" + i);
+            service7[i].start();
+        }
+        for (int i = 0; i < 10; i++) {
+            service7[i].join();
+        }
+
+        AllpassCircuitBreakerConfig.state = ResilienceCircuitBreakerState.METRICS_ONLY.name();
+        httpClient3.reload();
+        val service8 = new Thread[10];
+        for (int i = 0; i < 10; i++) {
+            service8[i] = new Thread(() -> assertThrows(StatusError.class, httpClient3::get), "service8" + i);
+            service8[i].start();
+        }
+        for (int i = 0; i < 10; i++) {
+            service8[i].join();
+        }
+
+        val service9 = new Thread[10];
+        for (int i = 0; i < 10; i++) {
+            service9[i] = new Thread(() -> assertThrows(CallNotPermittedException.class, httpClient4::get), "service9" + i);
+            service9[i].start();
+        }
+        for (int i = 0; i < 10; i++) {
+            service9[i].join();
+        }
+
         shutdownMockWebServer();
     }
 
@@ -289,5 +327,26 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
                 permittedNumberOfCallsInHalfOpenState = 5,
                 fallback = CustomResilienceCircuitBreakerRecover.class)
         String getWithAnno();
+    }
+
+    @Mapping("${root}:41430/sample3")
+    @MappingMethodNameDisabled
+    @OhClient
+    @ConfigureWith(AllpassCircuitBreakerConfig.class)
+    public interface CircuitBreakerClient3 extends Reloadable {
+
+        String get();
+    }
+
+    @Mapping("${root}:41430/sample4")
+    @MappingMethodNameDisabled
+    @OhClient
+    @ResilienceCircuitBreaker(
+            slidingWindowSize = 5,
+            minimumNumberOfCalls = 5,
+            state = ResilienceCircuitBreakerState.FORCED_OPEN)
+    public interface CircuitBreakerClient4 extends Reloadable {
+
+        String get();
     }
 }

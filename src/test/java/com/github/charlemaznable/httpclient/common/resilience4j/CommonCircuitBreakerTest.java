@@ -43,6 +43,12 @@ public abstract class CommonCircuitBreakerTest {
                     return new MockResponse().setBody("ERROR");
                 }
                 return new MockResponse().setBody("OK");
+            } else if (requestUrl.encodedPath().equals("/sample3")) {
+                return new MockResponse()
+                        .setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                        .setBody(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+            } else if (requestUrl.encodedPath().equals("/sample4")) {
+                return new MockResponse().setBody("OK");
             }
             return new MockResponse()
                     .setResponseCode(HttpStatus.NOT_FOUND.value())
@@ -143,6 +149,11 @@ public abstract class CommonCircuitBreakerTest {
         }
 
         @Override
+        public String circuitBreakerState() {
+            return null;
+        }
+
+        @Override
         public String circuitBreakerRecoverString() {
             return "@" + CustomResilienceCircuitBreakerRecover.class.getName();
         }
@@ -229,6 +240,91 @@ public abstract class CommonCircuitBreakerTest {
         @Override
         public String maxWaitDurationInHalfOpenState() {
             return null;
+        }
+
+        @Override
+        public String circuitBreakerState() {
+            return null;
+        }
+
+        @Override
+        public String circuitBreakerRecoverString() {
+            return null;
+        }
+    }
+
+    public static class AllpassCircuitBreakerConfig implements ResilienceCircuitBreakerConfig {
+
+        public static String state;
+
+        @Override
+        public String enabledCircuitBreakerString() {
+            return "true";
+        }
+
+        @Override
+        public String circuitBreakerName() {
+            return null;
+        }
+
+        @Override
+        public String slidingWindowType() {
+            return null;
+        }
+
+        @Override
+        public String slidingWindowSize() {
+            return "5";
+        }
+
+        @Override
+        public String minimumNumberOfCalls() {
+            return "5";
+        }
+
+        @Override
+        public String failureRateThreshold() {
+            return null;
+        }
+
+        @Override
+        public String slowCallRateThreshold() {
+            return null;
+        }
+
+        @Override
+        public String slowCallDurationThreshold() {
+            return null;
+        }
+
+        @Override
+        public String recordResultPredicate() {
+            return null;
+        }
+
+        @Override
+        public String automaticTransitionFromOpenToHalfOpenEnabled() {
+            return null;
+        }
+
+        @Override
+        public String waitDurationInOpenState() {
+            return null;
+        }
+
+        @Override
+        public String permittedNumberOfCallsInHalfOpenState() {
+            return null;
+        }
+
+        @Override
+        public String maxWaitDurationInHalfOpenState() {
+            return null;
+        }
+
+        @Override
+        public String circuitBreakerState() {
+            return state;
         }
 
         @Override
