@@ -1,5 +1,6 @@
 package com.github.charlemaznable.httpclient.wfclient.westcache;
 
+import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.wfclient.WfClient;
 import io.smallrye.mutiny.Uni;
@@ -9,6 +10,7 @@ import java.util.concurrent.Future;
 
 @Mapping("${root}:41260")
 @WfClient
+@ConfigureWith(WestCacheConfiguration.LoggingMetricsClientConfigurer.class)
 public interface NoWestCacheClient {
 
     Future<String> sampleFuture();
