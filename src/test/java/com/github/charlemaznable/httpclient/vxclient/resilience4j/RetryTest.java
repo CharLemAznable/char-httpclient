@@ -35,7 +35,7 @@ public class RetryTest extends CommonRetryTest {
         val httpClient = vxLoader.getClient(RetryClient.class);
         val httpClient2 = vxLoader.getClient(RetryClient2.class);
 
-        httpClient.bindTo(new SimpleMeterRegistry());
+        httpClient.resilienceBindTo(new SimpleMeterRegistry());
 
         countSample.set(0);
         httpClient.getWithConfig().compose(response -> {
@@ -46,7 +46,7 @@ public class RetryTest extends CommonRetryTest {
         }).compose(response -> {
             test.verify(() -> assertEquals("NotOK", response));
 
-            httpClient.bindTo(null);
+            httpClient.resilienceBindTo(null);
 
             countSample.set(0);
             return httpClient.getWithAnno();

@@ -131,7 +131,10 @@ public abstract class CommonElement<T extends CommonBase<T>> {
         base.responseParser = buildResponseParser(element, superBase.responseParser);
         base.extraUrlQueryBuilder = buildExtraUrlQueryBuilder(element, superBase.extraUrlQueryBuilder);
         base.mappingBalancer = buildMappingBalancer(element, superBase.mappingBalancer);
+
+        resilienceElement.removeMetrics();
         resilienceElement.initialize(element, superBase.resilienceBase);
+        resilienceElement.publishMetrics();
     }
 
     public void tearDownAfterInitialization(Class<?> clazz, Method method, CommonElement<T> superElement) {
@@ -144,8 +147,10 @@ public abstract class CommonElement<T extends CommonBase<T>> {
         }
     }
 
-    public void bindTo(MeterRegistry registry) {
-        resilienceElement.bindTo(registry);
+    public void setResilienceMeterRegistry(MeterRegistry registry) {
+        resilienceElement.removeMetrics();
+        resilienceElement.setMeterRegistry(registry);
+        resilienceElement.publishMetrics();
     }
 
     public List<String> buildMappingUrls(AnnotatedElement element) {

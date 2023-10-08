@@ -30,7 +30,7 @@ public class TimeLimiterTest extends CommonTimeLimiterTest {
 
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));
         val httpClient = vxLoader.getClient(TimeLimiterClient.class);
-        httpClient.bindTo(new SimpleMeterRegistry());
+        httpClient.resilienceBindTo(new SimpleMeterRegistry());
 
         httpClient.getWithConfig().compose(response -> {
             test.verify(() -> assertEquals("Timeout", response));
@@ -39,7 +39,7 @@ public class TimeLimiterTest extends CommonTimeLimiterTest {
         }).compose(response -> {
             test.verify(() -> assertEquals("OK", response));
 
-            httpClient.bindTo(null);
+            httpClient.resilienceBindTo(null);
 
             return httpClient.getWithAnno();
         }).compose(response -> {

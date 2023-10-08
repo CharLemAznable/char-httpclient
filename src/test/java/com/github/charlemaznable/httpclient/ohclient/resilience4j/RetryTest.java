@@ -33,7 +33,7 @@ public class RetryTest extends CommonRetryTest {
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());
         val httpClient = ohLoader.getClient(RetryClient.class);
-        httpClient.bindTo(new SimpleMeterRegistry());
+        httpClient.resilienceBindTo(new SimpleMeterRegistry());
 
         countSample.set(0);
         assertEquals("OK", httpClient.getWithConfig());
@@ -41,7 +41,7 @@ public class RetryTest extends CommonRetryTest {
         countSample.set(0);
         assertEquals("NotOK", httpClient.getWithParam(null));
 
-        httpClient.bindTo(null);
+        httpClient.resilienceBindTo(null);
 
         countSample.set(0);
         assertEquals("NotOK", httpClient.getWithAnno().get());

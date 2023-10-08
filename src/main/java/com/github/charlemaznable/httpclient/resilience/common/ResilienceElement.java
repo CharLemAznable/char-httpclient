@@ -55,12 +55,6 @@ public final class ResilienceElement {
     final Configurer configurer;
 
     public void initialize(AnnotatedElement element, ResilienceBase superBase) {
-        base.removeBulkheadMetrics();
-        base.removeTimeLimiterMetrics();
-        base.removeRateLimiterMetrics();
-        base.removeCircuitBreakerMetrics();
-        base.removeRetryMetrics();
-
         base.bulkhead = buildBulkhead(element, superBase.bulkhead);
         base.bulkheadRecover = buildBulkheadRecover(element, superBase.bulkheadRecover);
 
@@ -78,21 +72,21 @@ public final class ResilienceElement {
         base.recover = buildRecover(element, superBase.recover);
 
         base.meterRegistry = superBase.meterRegistry;
-
-        base.publishBulkheadMetrics();
-        base.publishTimeLimiterMetrics();
-        base.publishRateLimiterMetrics();
-        base.publishCircuitBreakerMetrics();
-        base.publishRetryMetrics();
     }
 
-    public void bindTo(MeterRegistry registry) {
+    public void setMeterRegistry(MeterRegistry registry) {
+        base.meterRegistry = registry;
+    }
+
+    public void removeMetrics() {
         base.removeBulkheadMetrics();
         base.removeTimeLimiterMetrics();
         base.removeRateLimiterMetrics();
         base.removeCircuitBreakerMetrics();
         base.removeRetryMetrics();
-        base.meterRegistry = registry;
+    }
+
+    public void publishMetrics() {
         base.publishBulkheadMetrics();
         base.publishTimeLimiterMetrics();
         base.publishRateLimiterMetrics();

@@ -41,7 +41,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         val httpClient3 = ohLoader.getClient(CircuitBreakerClient3.class);
         val httpClient4 = ohLoader.getClient(CircuitBreakerClient4.class);
 
-        httpClient.bindTo(new SimpleMeterRegistry());
+        httpClient.resilienceBindTo(new SimpleMeterRegistry());
 
         errorState.set(true);
         countSample.set(0);
@@ -106,7 +106,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         }
         assertEquals(15, countSample.get());
 
-        httpClient.bindTo(null);
+        httpClient.resilienceBindTo(null);
 
         errorState.set(true);
         countSample.set(0);

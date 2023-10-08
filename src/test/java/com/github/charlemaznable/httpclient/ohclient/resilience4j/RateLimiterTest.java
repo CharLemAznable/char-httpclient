@@ -30,7 +30,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());
         val httpClient = ohLoader.getClient(RateLimiterClient.class);
-        httpClient.bindTo(new SimpleMeterRegistry());
+        httpClient.resilienceBindTo(new SimpleMeterRegistry());
 
         val service = new Thread[4];
         for (int i = 0; i < 4; i++) {
@@ -54,7 +54,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
         }
         assertEquals(6, countSample.get());
 
-        httpClient.bindTo(null);
+        httpClient.resilienceBindTo(null);
 
         val service3 = new Thread[4];
         for (int i = 0; i < 4; i++) {

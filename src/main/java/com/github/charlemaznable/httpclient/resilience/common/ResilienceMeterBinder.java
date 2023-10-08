@@ -4,5 +4,5 @@ import io.micrometer.core.instrument.MeterRegistry;
 
 public interface ResilienceMeterBinder {
 
-    void bindTo(MeterRegistry registry);
+    void resilienceBindTo(MeterRegistry registry);
 }

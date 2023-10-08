@@ -72,11 +72,11 @@ public abstract class CommonClass<T extends CommonBase<T>>
     }
 
     @Override
-    public void bindTo(MeterRegistry registry) {
+    public void resilienceBindTo(MeterRegistry registry) {
         synchronized (element.configLock) {
-            element.bindTo(registry);
-            commonMethodCache.asMap().values().forEach(
-                    method -> method.element.bindTo(registry));
+            element.setResilienceMeterRegistry(registry);
+            commonMethodCache.asMap().values().forEach(method ->
+                    method.element.setResilienceMeterRegistry(registry));
         }
     }
 

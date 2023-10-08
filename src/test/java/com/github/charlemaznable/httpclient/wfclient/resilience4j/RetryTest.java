@@ -34,7 +34,7 @@ public class RetryTest extends CommonRetryTest {
 
         val wfLoader = WfFactory.wfLoader(reflectFactory());
         val httpClient = wfLoader.getClient(RetryClient.class);
-        httpClient.bindTo(new SimpleMeterRegistry());
+        httpClient.resilienceBindTo(new SimpleMeterRegistry());
 
         countSample.set(0);
         assertEquals("OK", httpClient.getWithConfig().block());
@@ -42,7 +42,7 @@ public class RetryTest extends CommonRetryTest {
         countSample.set(0);
         assertEquals("NotOK", httpClient.getWithParam(null).block());
 
-        httpClient.bindTo(null);
+        httpClient.resilienceBindTo(null);
 
         countSample.set(0);
         assertEquals("NotOK", httpClient.getWithAnno().get());

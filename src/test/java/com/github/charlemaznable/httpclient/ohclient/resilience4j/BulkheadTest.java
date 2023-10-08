@@ -30,7 +30,7 @@ public class BulkheadTest extends CommonBulkheadTest {
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());
         val httpClient = ohLoader.getClient(BulkheadClient.class);
-        httpClient.bindTo(new SimpleMeterRegistry());
+        httpClient.resilienceBindTo(new SimpleMeterRegistry());
 
         val service = new Thread[10];
         for (int i = 0; i < 10; i++) {
@@ -54,7 +54,7 @@ public class BulkheadTest extends CommonBulkheadTest {
         }
         assertEquals(15, countSample.get());
 
-        httpClient.bindTo(null);
+        httpClient.resilienceBindTo(null);
 
         val service3 = new Thread[10];
         for (int i = 0; i < 10; i++) {

@@ -35,7 +35,7 @@ public class BulkheadTest extends CommonBulkheadTest {
 
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));
         val httpClient = vxLoader.getClient(BulkheadClient.class);
-        httpClient.bindTo(new SimpleMeterRegistry());
+        httpClient.resilienceBindTo(new SimpleMeterRegistry());
 
         val getWithConfigs = Listt.<Future<String>>newArrayList();
         for (int i = 0; i < 10; i++) {
@@ -54,7 +54,7 @@ public class BulkheadTest extends CommonBulkheadTest {
         }).compose(result -> {
             test.verify(() -> assertEquals(15, countSample.get()));
 
-            httpClient.bindTo(null);
+            httpClient.resilienceBindTo(null);
 
             val getWithAnno = Listt.<Future<String>>newArrayList();
             for (int i = 0; i < 10; i++) {

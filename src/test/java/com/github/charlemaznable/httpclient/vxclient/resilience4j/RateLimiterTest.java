@@ -31,7 +31,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
 
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));
         val httpClient = vxLoader.getClient(RateLimiterClient.class);
-        httpClient.bindTo(new SimpleMeterRegistry());
+        httpClient.resilienceBindTo(new SimpleMeterRegistry());
 
         val getWithConfigs = Listt.<Future<String>>newArrayList();
         for (int i = 0; i < 4; i++) {
@@ -50,7 +50,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
         }).compose(result -> {
             test.verify(() -> assertEquals(6, countSample.get()));
 
-            httpClient.bindTo(null);
+            httpClient.resilienceBindTo(null);
 
             val getWithAnno = Listt.<Future<String>>newArrayList();
             for (int i = 0; i < 4; i++) {

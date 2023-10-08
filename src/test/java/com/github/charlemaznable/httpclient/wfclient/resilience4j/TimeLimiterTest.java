@@ -30,13 +30,13 @@ public class TimeLimiterTest extends CommonTimeLimiterTest {
 
         val wfLoader = WfFactory.wfLoader(reflectFactory());
         val httpClient = wfLoader.getClient(TimeLimiterClient.class);
-        httpClient.bindTo(new SimpleMeterRegistry());
+        httpClient.resilienceBindTo(new SimpleMeterRegistry());
 
         assertEquals("Timeout", httpClient.getWithConfig().block());
 
         assertEquals("OK", httpClient.getWithParam(null).block());
 
-        httpClient.bindTo(null);
+        httpClient.resilienceBindTo(null);
 
         assertEquals("Timeout", httpClient.getWithAnno().get());
 

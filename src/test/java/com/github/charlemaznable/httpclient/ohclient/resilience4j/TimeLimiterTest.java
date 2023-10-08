@@ -29,13 +29,13 @@ public class TimeLimiterTest extends CommonTimeLimiterTest {
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());
         val httpClient = ohLoader.getClient(TimeLimiterClient.class);
-        httpClient.bindTo(new SimpleMeterRegistry());
+        httpClient.resilienceBindTo(new SimpleMeterRegistry());
 
         assertEquals("Timeout", httpClient.getWithConfig());
 
         assertEquals("OK", httpClient.getWithParam(null));
 
-        httpClient.bindTo(null);
+        httpClient.resilienceBindTo(null);
 
         assertEquals("Timeout", httpClient.getWithAnno().get());
 
