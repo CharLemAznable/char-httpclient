@@ -7,7 +7,7 @@ import okhttp3.Request;
 import org.slf4j.Logger;
 
 @AutoService(RequestBuilderConfigurer.class)
-public final class LoggingVxClientRequestBuilderConfigurer implements RequestBuilderConfigurer {
+public final class LoggingOhClientRequestBuilderConfigurer implements RequestBuilderConfigurer {
 
     @Override
     public void configRequestBuilder(Request.Builder requestBuilder, CommonExecute<?, ?, ?, ?> execute) {

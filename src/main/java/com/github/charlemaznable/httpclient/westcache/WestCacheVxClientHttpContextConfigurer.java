@@ -11,7 +11,7 @@ import static com.github.charlemaznable.httpclient.westcache.WestCacheConstant.H
 import static java.util.Objects.nonNull;
 
 @AutoService(HttpContextConfigurer.class)
-public final class WestCacheOhClientHttpContextConfigurer implements HttpContextConfigurer {
+public final class WestCacheVxClientHttpContextConfigurer implements HttpContextConfigurer {
 
     @Override
     public void configHttpContext(HttpContext<?> httpContext,

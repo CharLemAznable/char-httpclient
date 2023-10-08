@@ -11,7 +11,7 @@ import static com.github.charlemaznable.httpclient.westcache.WestCacheConstant.H
 import static java.util.Objects.nonNull;
 
 @AutoService(RequestBuilderConfigurer.class)
-public final class WestCacheVxClientRequestBuilderConfigurer implements RequestBuilderConfigurer {
+public final class WestCacheOhClientRequestBuilderConfigurer implements RequestBuilderConfigurer {
 
     @Override
     public void configRequestBuilder(Request.Builder requestBuilder,
