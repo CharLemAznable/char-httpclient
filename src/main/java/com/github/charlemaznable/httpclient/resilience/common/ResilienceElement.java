@@ -70,28 +70,22 @@ public final class ResilienceElement {
         base.retry = buildRetry(element, superBase.retry);
         base.retryExecutor = buildRetryExecutor(element, superBase.retryExecutor);
         base.recover = buildRecover(element, superBase.recover);
-
-        base.meterRegistry = superBase.meterRegistry;
     }
 
-    public void setMeterRegistry(MeterRegistry registry) {
-        base.meterRegistry = registry;
+    public void removeMetrics(MeterRegistry meterRegistry) {
+        base.removeBulkheadMetrics(meterRegistry);
+        base.removeTimeLimiterMetrics(meterRegistry);
+        base.removeRateLimiterMetrics(meterRegistry);
+        base.removeCircuitBreakerMetrics(meterRegistry);
+        base.removeRetryMetrics(meterRegistry);
     }
 
-    public void removeMetrics() {
-        base.removeBulkheadMetrics();
-        base.removeTimeLimiterMetrics();
-        base.removeRateLimiterMetrics();
-        base.removeCircuitBreakerMetrics();
-        base.removeRetryMetrics();
-    }
-
-    public void publishMetrics() {
-        base.publishBulkheadMetrics();
-        base.publishTimeLimiterMetrics();
-        base.publishRateLimiterMetrics();
-        base.publishCircuitBreakerMetrics();
-        base.publishRetryMetrics();
+    public void publishMetrics(MeterRegistry meterRegistry) {
+        base.publishBulkheadMetrics(meterRegistry);
+        base.publishTimeLimiterMetrics(meterRegistry);
+        base.publishRateLimiterMetrics(meterRegistry);
+        base.publishCircuitBreakerMetrics(meterRegistry);
+        base.publishRetryMetrics(meterRegistry);
     }
 
     private Bulkhead buildBulkhead(AnnotatedElement element, Bulkhead defaultValue) {

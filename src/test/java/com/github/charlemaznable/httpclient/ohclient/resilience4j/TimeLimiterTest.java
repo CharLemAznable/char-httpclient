@@ -7,7 +7,7 @@ import com.github.charlemaznable.httpclient.common.resilience4j.CommonTimeLimite
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceTimeLimiter;
-import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
+import com.github.charlemaznable.httpclient.common.MeterBinder;
 import io.github.resilience4j.timelimiter.TimeLimiter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.SneakyThrows;
@@ -29,13 +29,13 @@ public class TimeLimiterTest extends CommonTimeLimiterTest {
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());
         val httpClient = ohLoader.getClient(TimeLimiterClient.class);
-        httpClient.resilienceBindTo(new SimpleMeterRegistry());
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         assertEquals("Timeout", httpClient.getWithConfig());
 
         assertEquals("OK", httpClient.getWithParam(null));
 
-        httpClient.resilienceBindTo(null);
+        httpClient.bindTo(null);
 
         assertEquals("Timeout", httpClient.getWithAnno().get());
 
@@ -48,7 +48,7 @@ public class TimeLimiterTest extends CommonTimeLimiterTest {
     @MappingMethodNameDisabled
     @OhClient
     @ConfigureWith(DefaultTimeLimiterConfig.class)
-    public interface TimeLimiterClient extends ResilienceMeterBinder {
+    public interface TimeLimiterClient extends MeterBinder {
 
         @ConfigureWith(CustomTimeLimiterConfig.class)
         String getWithConfig();

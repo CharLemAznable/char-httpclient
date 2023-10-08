@@ -3,7 +3,6 @@ package com.github.charlemaznable.httpclient.common;
 import com.github.charlemaznable.core.lang.Reloadable;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.configurer.MappingMethodNameDisabledConfigurer;
-import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
 import com.google.common.cache.LoadingCache;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.Getter;
@@ -23,7 +22,7 @@ import static org.springframework.core.annotation.AnnotatedElementUtils.isAnnota
 
 @Accessors(fluent = true)
 public abstract class CommonClass<T extends CommonBase<T>>
-        implements Reloadable, ResilienceMeterBinder {
+        implements Reloadable, MeterBinder {
 
     @Getter
     final CommonElement<T> element;
@@ -67,16 +66,18 @@ public abstract class CommonClass<T extends CommonBase<T>>
     public void reload() {
         synchronized (element.configLock) {
             initialize();
+            commonMethodCache.asMap().values().forEach(method ->
+                    method.element.setMeterRegistry(null));
             commonMethodCache.invalidateAll();
         }
     }
 
     @Override
-    public void resilienceBindTo(MeterRegistry registry) {
+    public void bindTo(MeterRegistry registry) {
         synchronized (element.configLock) {
-            element.setResilienceMeterRegistry(registry);
+            element.setMeterRegistry(registry);
             commonMethodCache.asMap().values().forEach(method ->
-                    method.element.setResilienceMeterRegistry(registry));
+                    method.element.setMeterRegistry(registry));
         }
     }
 
@@ -84,7 +85,7 @@ public abstract class CommonClass<T extends CommonBase<T>>
 
     protected Object execute(Method method, Object[] args) throws Exception {
         if (method.getDeclaringClass().equals(Reloadable.class) ||
-                method.getDeclaringClass().equals(ResilienceMeterBinder.class)) {
+                method.getDeclaringClass().equals(MeterBinder.class)) {
             return method.invoke(this, args);
         }
         return get(commonMethodCache, method).execute(args);

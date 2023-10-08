@@ -9,7 +9,7 @@ import com.github.charlemaznable.httpclient.common.StatusError;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonCircuitBreakerTest;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreaker;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreakerState;
-import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
+import com.github.charlemaznable.httpclient.common.MeterBinder;
 import com.github.charlemaznable.httpclient.vxclient.VxClient;
 import com.github.charlemaznable.httpclient.vxclient.VxFactory;
 import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
@@ -45,7 +45,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         val httpClient3 = vxLoader.getClient(CircuitBreakerClient3.class);
         val httpClient4 = vxLoader.getClient(CircuitBreakerClient4.class);
 
-        httpClient.resilienceBindTo(new SimpleMeterRegistry());
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         errorState.set(true);
         countSample.set(0);
@@ -105,7 +105,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         }).compose(result -> {
             test.verify(() -> assertEquals(15, countSample.get()));
 
-            httpClient.resilienceBindTo(null);
+            httpClient.bindTo(null);
 
             errorState.set(true);
             countSample.set(0);
@@ -288,7 +288,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
     @MappingMethodNameDisabled
     @VxClient
     @ConfigureWith(DefaultCircuitBreakerConfig.class)
-    public interface CircuitBreakerClient extends ResilienceMeterBinder {
+    public interface CircuitBreakerClient extends MeterBinder {
 
         @ConfigureWith(CustomCircuitBreakerConfig.class)
         Future<String> getWithConfig();

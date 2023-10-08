@@ -6,7 +6,7 @@ import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonBulkheadTest;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceBulkhead;
-import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
+import com.github.charlemaznable.httpclient.common.MeterBinder;
 import com.github.charlemaznable.httpclient.vxclient.VxClient;
 import com.github.charlemaznable.httpclient.vxclient.VxFactory;
 import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
@@ -35,7 +35,7 @@ public class BulkheadTest extends CommonBulkheadTest {
 
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));
         val httpClient = vxLoader.getClient(BulkheadClient.class);
-        httpClient.resilienceBindTo(new SimpleMeterRegistry());
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         val getWithConfigs = Listt.<Future<String>>newArrayList();
         for (int i = 0; i < 10; i++) {
@@ -54,7 +54,7 @@ public class BulkheadTest extends CommonBulkheadTest {
         }).compose(result -> {
             test.verify(() -> assertEquals(15, countSample.get()));
 
-            httpClient.resilienceBindTo(null);
+            httpClient.bindTo(null);
 
             val getWithAnno = Listt.<Future<String>>newArrayList();
             for (int i = 0; i < 10; i++) {
@@ -83,7 +83,7 @@ public class BulkheadTest extends CommonBulkheadTest {
     @MappingMethodNameDisabled
     @VxClient
     @ConfigureWith(DefaultBulkheadConfig.class)
-    public interface BulkheadClient extends ResilienceMeterBinder {
+    public interface BulkheadClient extends MeterBinder {
 
         @ConfigureWith(CustomBulkheadConfig.class)
         Future<String> getWithConfig();

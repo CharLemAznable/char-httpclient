@@ -4,7 +4,7 @@ import com.github.charlemaznable.core.context.FactoryContext;
 import com.github.charlemaznable.core.lang.BuddyEnhancer;
 import com.github.charlemaznable.core.lang.Factory;
 import com.github.charlemaznable.core.lang.Reloadable;
-import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
+import com.github.charlemaznable.httpclient.common.MeterBinder;
 import com.github.charlemaznable.httpclient.vxclient.enhancer.VxClientEnhancer;
 import com.github.charlemaznable.httpclient.vxclient.internal.VxClass;
 import com.github.charlemaznable.httpclient.vxclient.internal.VxDummy;
@@ -78,7 +78,7 @@ public final class VxFactory {
             return wrapWithEnhancer(vxClass,
                     BuddyEnhancer.create(VxDummy.class,
                             new Object[]{vxClass},
-                            new Class[]{vxClass, Reloadable.class, ResilienceMeterBinder.class},
+                            new Class[]{vxClass, Reloadable.class, MeterBinder.class},
                             invocation -> {
                                 if (invocation.getMethod().isDefault() ||
                                         invocation.getMethod().getDeclaringClass()

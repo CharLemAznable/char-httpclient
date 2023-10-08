@@ -54,8 +54,6 @@ public final class ResilienceBase {
 
     ResilienceRecover<?> recover;
 
-    MeterRegistry meterRegistry;
-
     public ResilienceBase(ResilienceBase other) {
         this.bulkhead = other.bulkhead;
         this.bulkheadRecover = other.bulkheadRecover;
@@ -68,55 +66,54 @@ public final class ResilienceBase {
         this.retry = other.retry;
         this.retryExecutor = other.retryExecutor;
         this.recover = other.recover;
-        this.meterRegistry = other.meterRegistry;
     }
 
-    void publishBulkheadMetrics() {
+    void publishBulkheadMetrics(MeterRegistry meterRegistry) {
         notNullThenBiRun(meterRegistry, bulkhead, (m, b) ->
                 new TaggedBulkheadMetricsPublisher(m).publishMetrics(b));
     }
 
-    void removeBulkheadMetrics() {
+    void removeBulkheadMetrics(MeterRegistry meterRegistry) {
         notNullThenBiRun(meterRegistry, bulkhead, (m, b) ->
                 new TaggedBulkheadMetricsPublisher(m).removeMetrics(b));
     }
 
-    void publishTimeLimiterMetrics() {
+    void publishTimeLimiterMetrics(MeterRegistry meterRegistry) {
         notNullThenBiRun(meterRegistry, timeLimiter, (m, t) ->
                 new TaggedTimeLimiterMetricsPublisher(m).publishMetrics(t));
     }
 
-    void removeTimeLimiterMetrics() {
+    void removeTimeLimiterMetrics(MeterRegistry meterRegistry) {
         notNullThenBiRun(meterRegistry, timeLimiter, (m, t) ->
                 new TaggedTimeLimiterMetricsPublisher(m).removeMetrics(t));
     }
 
-    void publishRateLimiterMetrics() {
+    void publishRateLimiterMetrics(MeterRegistry meterRegistry) {
         notNullThenBiRun(meterRegistry, rateLimiter, (m, r) ->
                 new TaggedRateLimiterMetricsPublisher(m).publishMetrics(r));
     }
 
-    void removeRateLimiterMetrics() {
+    void removeRateLimiterMetrics(MeterRegistry meterRegistry) {
         notNullThenBiRun(meterRegistry, rateLimiter, (m, r) ->
                 new TaggedRateLimiterMetricsPublisher(m).removeMetrics(r));
     }
 
-    void publishCircuitBreakerMetrics() {
+    void publishCircuitBreakerMetrics(MeterRegistry meterRegistry) {
         notNullThenBiRun(meterRegistry, circuitBreaker, (m, c) ->
                 new TaggedCircuitBreakerMetricsPublisher(m).publishMetrics(c));
     }
 
-    void removeCircuitBreakerMetrics() {
+    void removeCircuitBreakerMetrics(MeterRegistry meterRegistry) {
         notNullThenBiRun(meterRegistry, circuitBreaker, (m, c) ->
                 new TaggedCircuitBreakerMetricsPublisher(m).removeMetrics(c));
     }
 
-    void publishRetryMetrics() {
+    void publishRetryMetrics(MeterRegistry meterRegistry) {
         notNullThenBiRun(meterRegistry, retry, (m, r) ->
                 new TaggedRetryMetricsPublisher(m).publishMetrics(r));
     }
 
-    void removeRetryMetrics() {
+    void removeRetryMetrics(MeterRegistry meterRegistry) {
         notNullThenBiRun(meterRegistry, retry, (m, r) ->
                 new TaggedRetryMetricsPublisher(m).removeMetrics(r));
     }

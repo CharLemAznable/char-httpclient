@@ -8,7 +8,7 @@ import com.github.charlemaznable.httpclient.common.StatusError;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonCircuitBreakerTest;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreaker;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreakerState;
-import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
+import com.github.charlemaznable.httpclient.common.MeterBinder;
 import com.github.charlemaznable.httpclient.wfclient.WfClient;
 import com.github.charlemaznable.httpclient.wfclient.WfFactory;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
@@ -42,7 +42,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         val httpClient3 = wfLoader.getClient(CircuitBreakerClient3.class);
         val httpClient4 = wfLoader.getClient(CircuitBreakerClient4.class);
 
-        httpClient.resilienceBindTo(new SimpleMeterRegistry());
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         errorState.set(true);
         countSample.set(0);
@@ -107,7 +107,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         }
         assertEquals(15, countSample.get());
 
-        httpClient.resilienceBindTo(null);
+        httpClient.bindTo(null);
 
         errorState.set(true);
         countSample.set(0);
@@ -292,7 +292,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
     @MappingMethodNameDisabled
     @WfClient
     @ConfigureWith(DefaultCircuitBreakerConfig.class)
-    public interface CircuitBreakerClient extends ResilienceMeterBinder {
+    public interface CircuitBreakerClient extends MeterBinder {
 
         @ConfigureWith(CustomCircuitBreakerConfig.class)
         Mono<String> getWithConfig();

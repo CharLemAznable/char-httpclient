@@ -6,7 +6,7 @@ import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonRateLimiterTest;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceRateLimiter;
-import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
+import com.github.charlemaznable.httpclient.common.MeterBinder;
 import com.github.charlemaznable.httpclient.vxclient.VxClient;
 import com.github.charlemaznable.httpclient.vxclient.VxFactory;
 import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
@@ -31,7 +31,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
 
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));
         val httpClient = vxLoader.getClient(RateLimiterClient.class);
-        httpClient.resilienceBindTo(new SimpleMeterRegistry());
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         val getWithConfigs = Listt.<Future<String>>newArrayList();
         for (int i = 0; i < 4; i++) {
@@ -50,7 +50,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
         }).compose(result -> {
             test.verify(() -> assertEquals(6, countSample.get()));
 
-            httpClient.resilienceBindTo(null);
+            httpClient.bindTo(null);
 
             val getWithAnno = Listt.<Future<String>>newArrayList();
             for (int i = 0; i < 4; i++) {
@@ -79,7 +79,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
     @MappingMethodNameDisabled
     @VxClient
     @ConfigureWith(DefaultRateLimiterConfig.class)
-    public interface RateLimiterClient extends ResilienceMeterBinder {
+    public interface RateLimiterClient extends MeterBinder {
 
         @ConfigureWith(CustomRateLimiterConfig.class)
         Future<String> getWithConfig();

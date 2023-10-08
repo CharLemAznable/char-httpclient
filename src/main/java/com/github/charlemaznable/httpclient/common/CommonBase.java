@@ -6,6 +6,7 @@ import com.github.charlemaznable.httpclient.annotation.MappingBalance;
 import com.github.charlemaznable.httpclient.annotation.RequestExtend;
 import com.github.charlemaznable.httpclient.annotation.ResponseParse;
 import com.github.charlemaznable.httpclient.resilience.common.ResilienceBase;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
@@ -46,6 +47,8 @@ public abstract class CommonBase<T extends CommonBase<T>> {
     ExtraUrlQuery.ExtraUrlQueryBuilder extraUrlQueryBuilder;
     MappingBalance.MappingBalancer mappingBalancer = new MappingBalance.RandomBalancer();
 
+    MeterRegistry meterRegistry;
+
     ResilienceBase resilienceBase = new ResilienceBase();
 
     public CommonBase(CommonBase<?> other) {
@@ -64,6 +67,7 @@ public abstract class CommonBase<T extends CommonBase<T>> {
         this.responseParser = other.responseParser;
         this.extraUrlQueryBuilder = other.extraUrlQueryBuilder;
         this.mappingBalancer = other.mappingBalancer;
+        this.meterRegistry = other.meterRegistry;
         this.resilienceBase = new ResilienceBase(other.resilienceBase);
     }
 }

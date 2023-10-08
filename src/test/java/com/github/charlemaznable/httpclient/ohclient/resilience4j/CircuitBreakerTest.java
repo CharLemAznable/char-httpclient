@@ -10,7 +10,7 @@ import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreaker;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceCircuitBreakerState;
-import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
+import com.github.charlemaznable.httpclient.common.MeterBinder;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -41,7 +41,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         val httpClient3 = ohLoader.getClient(CircuitBreakerClient3.class);
         val httpClient4 = ohLoader.getClient(CircuitBreakerClient4.class);
 
-        httpClient.resilienceBindTo(new SimpleMeterRegistry());
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         errorState.set(true);
         countSample.set(0);
@@ -106,7 +106,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
         }
         assertEquals(15, countSample.get());
 
-        httpClient.resilienceBindTo(null);
+        httpClient.bindTo(null);
 
         errorState.set(true);
         countSample.set(0);
@@ -291,7 +291,7 @@ public class CircuitBreakerTest extends CommonCircuitBreakerTest {
     @MappingMethodNameDisabled
     @OhClient
     @ConfigureWith(DefaultCircuitBreakerConfig.class)
-    public interface CircuitBreakerClient extends ResilienceMeterBinder {
+    public interface CircuitBreakerClient extends MeterBinder {
 
         @ConfigureWith(CustomCircuitBreakerConfig.class)
         String getWithConfig();

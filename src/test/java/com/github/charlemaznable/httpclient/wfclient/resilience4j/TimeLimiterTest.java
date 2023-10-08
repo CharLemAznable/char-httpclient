@@ -5,7 +5,7 @@ import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonTimeLimiterTest;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceTimeLimiter;
-import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
+import com.github.charlemaznable.httpclient.common.MeterBinder;
 import com.github.charlemaznable.httpclient.wfclient.WfClient;
 import com.github.charlemaznable.httpclient.wfclient.WfFactory;
 import io.github.resilience4j.timelimiter.TimeLimiter;
@@ -30,13 +30,13 @@ public class TimeLimiterTest extends CommonTimeLimiterTest {
 
         val wfLoader = WfFactory.wfLoader(reflectFactory());
         val httpClient = wfLoader.getClient(TimeLimiterClient.class);
-        httpClient.resilienceBindTo(new SimpleMeterRegistry());
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         assertEquals("Timeout", httpClient.getWithConfig().block());
 
         assertEquals("OK", httpClient.getWithParam(null).block());
 
-        httpClient.resilienceBindTo(null);
+        httpClient.bindTo(null);
 
         assertEquals("Timeout", httpClient.getWithAnno().get());
 
@@ -49,7 +49,7 @@ public class TimeLimiterTest extends CommonTimeLimiterTest {
     @MappingMethodNameDisabled
     @WfClient
     @ConfigureWith(DefaultTimeLimiterConfig.class)
-    public interface TimeLimiterClient extends ResilienceMeterBinder {
+    public interface TimeLimiterClient extends MeterBinder {
 
         @ConfigureWith(CustomTimeLimiterConfig.class)
         Mono<String> getWithConfig();

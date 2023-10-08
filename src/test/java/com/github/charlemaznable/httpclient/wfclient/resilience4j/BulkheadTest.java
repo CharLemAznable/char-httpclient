@@ -5,7 +5,7 @@ import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonBulkheadTest;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceBulkhead;
-import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
+import com.github.charlemaznable.httpclient.common.MeterBinder;
 import com.github.charlemaznable.httpclient.wfclient.WfClient;
 import com.github.charlemaznable.httpclient.wfclient.WfFactory;
 import io.github.resilience4j.bulkhead.Bulkhead;
@@ -31,7 +31,7 @@ public class BulkheadTest extends CommonBulkheadTest {
 
         val wfLoader = WfFactory.wfLoader(reflectFactory());
         val httpClient = wfLoader.getClient(BulkheadClient.class);
-        httpClient.resilienceBindTo(new SimpleMeterRegistry());
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         val service = new Thread[10];
         for (int i = 0; i < 10; i++) {
@@ -55,7 +55,7 @@ public class BulkheadTest extends CommonBulkheadTest {
         }
         assertEquals(15, countSample.get());
 
-        httpClient.resilienceBindTo(null);
+        httpClient.bindTo(null);
 
         val service3 = new Thread[10];
         for (int i = 0; i < 10; i++) {
@@ -86,7 +86,7 @@ public class BulkheadTest extends CommonBulkheadTest {
     @MappingMethodNameDisabled
     @WfClient
     @ConfigureWith(DefaultBulkheadConfig.class)
-    public interface BulkheadClient extends ResilienceMeterBinder {
+    public interface BulkheadClient extends MeterBinder {
 
         @ConfigureWith(CustomBulkheadConfig.class)
         Mono<String> getWithConfig();

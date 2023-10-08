@@ -7,7 +7,7 @@ import com.github.charlemaznable.httpclient.common.resilience4j.CommonBulkheadTe
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceBulkhead;
-import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
+import com.github.charlemaznable.httpclient.common.MeterBinder;
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.SneakyThrows;
@@ -30,7 +30,7 @@ public class BulkheadTest extends CommonBulkheadTest {
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());
         val httpClient = ohLoader.getClient(BulkheadClient.class);
-        httpClient.resilienceBindTo(new SimpleMeterRegistry());
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         val service = new Thread[10];
         for (int i = 0; i < 10; i++) {
@@ -54,7 +54,7 @@ public class BulkheadTest extends CommonBulkheadTest {
         }
         assertEquals(15, countSample.get());
 
-        httpClient.resilienceBindTo(null);
+        httpClient.bindTo(null);
 
         val service3 = new Thread[10];
         for (int i = 0; i < 10; i++) {
@@ -85,7 +85,7 @@ public class BulkheadTest extends CommonBulkheadTest {
     @MappingMethodNameDisabled
     @OhClient
     @ConfigureWith(DefaultBulkheadConfig.class)
-    public interface BulkheadClient extends ResilienceMeterBinder {
+    public interface BulkheadClient extends MeterBinder {
 
         @ConfigureWith(CustomBulkheadConfig.class)
         String getWithConfig();

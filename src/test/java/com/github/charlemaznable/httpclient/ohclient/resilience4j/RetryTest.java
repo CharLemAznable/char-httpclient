@@ -9,7 +9,7 @@ import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceFallback;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceRetry;
-import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
+import com.github.charlemaznable.httpclient.common.MeterBinder;
 import io.github.resilience4j.retry.Retry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.SneakyThrows;
@@ -33,7 +33,7 @@ public class RetryTest extends CommonRetryTest {
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());
         val httpClient = ohLoader.getClient(RetryClient.class);
-        httpClient.resilienceBindTo(new SimpleMeterRegistry());
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         countSample.set(0);
         assertEquals("OK", httpClient.getWithConfig());
@@ -41,7 +41,7 @@ public class RetryTest extends CommonRetryTest {
         countSample.set(0);
         assertEquals("NotOK", httpClient.getWithParam(null));
 
-        httpClient.resilienceBindTo(null);
+        httpClient.bindTo(null);
 
         countSample.set(0);
         assertEquals("NotOK", httpClient.getWithAnno().get());
@@ -69,7 +69,7 @@ public class RetryTest extends CommonRetryTest {
     @MappingMethodNameDisabled
     @OhClient
     @ConfigureWith(DefaultRetryConfig.class)
-    public interface RetryClient extends ResilienceMeterBinder {
+    public interface RetryClient extends MeterBinder {
 
         @ConfigureWith(CustomRetryConfig.class)
         String getWithConfig();

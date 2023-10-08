@@ -5,7 +5,7 @@ import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.annotation.MappingMethodNameDisabled;
 import com.github.charlemaznable.httpclient.common.resilience4j.CommonTimeLimiterTest;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceTimeLimiter;
-import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
+import com.github.charlemaznable.httpclient.common.MeterBinder;
 import com.github.charlemaznable.httpclient.vxclient.VxClient;
 import com.github.charlemaznable.httpclient.vxclient.VxFactory;
 import com.github.charlemaznable.httpclient.vxclient.elf.VertxReflectFactory;
@@ -30,7 +30,7 @@ public class TimeLimiterTest extends CommonTimeLimiterTest {
 
         val vxLoader = VxFactory.vxLoader(new VertxReflectFactory(vertx));
         val httpClient = vxLoader.getClient(TimeLimiterClient.class);
-        httpClient.resilienceBindTo(new SimpleMeterRegistry());
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         httpClient.getWithConfig().compose(response -> {
             test.verify(() -> assertEquals("Timeout", response));
@@ -39,7 +39,7 @@ public class TimeLimiterTest extends CommonTimeLimiterTest {
         }).compose(response -> {
             test.verify(() -> assertEquals("OK", response));
 
-            httpClient.resilienceBindTo(null);
+            httpClient.bindTo(null);
 
             return httpClient.getWithAnno();
         }).compose(response -> {
@@ -58,7 +58,7 @@ public class TimeLimiterTest extends CommonTimeLimiterTest {
     @MappingMethodNameDisabled
     @VxClient
     @ConfigureWith(DefaultTimeLimiterConfig.class)
-    public interface TimeLimiterClient extends ResilienceMeterBinder {
+    public interface TimeLimiterClient extends MeterBinder {
 
         @ConfigureWith(CustomTimeLimiterConfig.class)
         Future<String> getWithConfig();

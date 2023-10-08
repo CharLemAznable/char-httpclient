@@ -7,7 +7,7 @@ import com.github.charlemaznable.httpclient.common.resilience4j.CommonRateLimite
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import com.github.charlemaznable.httpclient.ohclient.OhFactory;
 import com.github.charlemaznable.httpclient.resilience.annotation.ResilienceRateLimiter;
-import com.github.charlemaznable.httpclient.resilience.common.ResilienceMeterBinder;
+import com.github.charlemaznable.httpclient.common.MeterBinder;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import lombok.SneakyThrows;
@@ -30,7 +30,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
 
         val ohLoader = OhFactory.ohLoader(reflectFactory());
         val httpClient = ohLoader.getClient(RateLimiterClient.class);
-        httpClient.resilienceBindTo(new SimpleMeterRegistry());
+        httpClient.bindTo(new SimpleMeterRegistry());
 
         val service = new Thread[4];
         for (int i = 0; i < 4; i++) {
@@ -54,7 +54,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
         }
         assertEquals(6, countSample.get());
 
-        httpClient.resilienceBindTo(null);
+        httpClient.bindTo(null);
 
         val service3 = new Thread[4];
         for (int i = 0; i < 4; i++) {
@@ -85,7 +85,7 @@ public class RateLimiterTest extends CommonRateLimiterTest {
     @MappingMethodNameDisabled
     @OhClient
     @ConfigureWith(DefaultRateLimiterConfig.class)
-    public interface RateLimiterClient extends ResilienceMeterBinder {
+    public interface RateLimiterClient extends MeterBinder {
 
         @ConfigureWith(CustomRateLimiterConfig.class)
         String getWithConfig();
