@@ -97,7 +97,7 @@ public final class LoggingWfInterceptor implements ExchangeFilterFunction {
                 if (nonNull(responseBody)) builder.body(responseBody);
                 return builder.build();
             });
-        });
+        }).doOnError(throwable -> log(logger, "<-- HTTP FAILED: " + throwable));
     }
 
     private void logHeader(Logger logger, HttpHeaders headers, String name) {
