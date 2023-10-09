@@ -54,7 +54,6 @@ public final class LoggingVxInterceptor implements Handler<HttpContext<?>> {
         if (nonNull(httpContext.get(START_NS))) {
             val startNs = System.nanoTime();
             httpContext.set(START_NS, startNs);
-            httpContext.next();
             return;
         }
         val executeRequest = httpContext.<VxExecuteRequest>get(VxExecuteRequest.class.getName());

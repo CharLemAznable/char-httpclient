@@ -3,12 +3,12 @@ package com.github.charlemaznable.httpclient.vxclient.westcache;
 import com.github.bingoohuang.westcache.spring.WestCacheableEnabled;
 import com.github.bingoohuang.westcache.spring.WestCacheableScan;
 import com.github.charlemaznable.core.vertx.spring.VertxImport;
+import com.github.charlemaznable.httpclient.micrometer.AutoBindMeterRegistryEnabled;
 import com.github.charlemaznable.httpclient.vxclient.VxScan;
 import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
 import io.micrometer.core.instrument.logging.LoggingRegistryConfig;
-import io.vertx.core.VertxOptions;
-import io.vertx.micrometer.MicrometerMetricsOptions;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.val;
@@ -31,6 +31,7 @@ import static org.joor.Reflect.on;
 @WestCacheableEnabled
 @WestCacheableScan
 @VxScan
+@AutoBindMeterRegistryEnabled
 @VertxImport
 public class WestCacheConfiguration {
 
@@ -66,17 +67,14 @@ public class WestCacheConfiguration {
     }
 
     @Bean
-    public VertxOptions vertxOptions() {
-        return new VertxOptions().setMetricsOptions(
-                new MicrometerMetricsOptions()
-                        .setMicrometerRegistry(this.meterRegistry)
-                        .setEnabled(true));
-    }
-
-    @Bean
     public DefaultAdvisorAutoProxyCreator defaultAdvisorAutoProxyCreator() {
         val creator = new DefaultAdvisorAutoProxyCreator();
         creator.setProxyTargetClass(true);
         return creator;
+    }
+
+    @Bean
+    public MeterRegistry meterRegistry() {
+        return this.meterRegistry;
     }
 }

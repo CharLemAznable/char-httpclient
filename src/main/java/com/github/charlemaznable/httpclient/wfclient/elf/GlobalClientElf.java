@@ -1,6 +1,7 @@
 package com.github.charlemaznable.httpclient.wfclient.elf;
 
 import com.github.charlemaznable.httpclient.logging.LoggingWfInterceptor;
+import com.github.charlemaznable.httpclient.micrometer.TimingWfInterceptor;
 import com.github.charlemaznable.httpclient.westcache.WestCacheWfInterceptor;
 import lombok.NoArgsConstructor;
 import lombok.val;
@@ -42,6 +43,7 @@ public final class GlobalClientElf {
             val builder = WebClient.builder();
             builder.clientConnector(new ReactorClientHttpConnector());
             builder.filter(new LoggingWfInterceptor());
+            builder.filter(new TimingWfInterceptor());
             if (HAS_WESTCACHE) builder.filter(new WestCacheWfInterceptor());
             return builder.build();
         }

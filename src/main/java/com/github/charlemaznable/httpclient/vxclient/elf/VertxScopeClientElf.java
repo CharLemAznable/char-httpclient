@@ -1,6 +1,7 @@
 package com.github.charlemaznable.httpclient.vxclient.elf;
 
 import com.github.charlemaznable.httpclient.logging.LoggingVxInterceptor;
+import com.github.charlemaznable.httpclient.micrometer.TimingVxInterceptor;
 import com.github.charlemaznable.httpclient.westcache.WestCacheVxInterceptor;
 import com.google.common.cache.LoadingCache;
 import io.vertx.core.Vertx;
@@ -52,6 +53,7 @@ public final class VertxScopeClientElf {
         public WebClientInternal build(Vertx vertx) {
             val client = new VxWebClient(vertx, new WebClientOptions());
             client.addInterceptor(new LoggingVxInterceptor());
+            client.addInterceptor(new TimingVxInterceptor());
             if (HAS_WESTCACHE) client.addInterceptor(new WestCacheVxInterceptor(vertx));
             return client;
         }

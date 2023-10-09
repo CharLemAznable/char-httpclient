@@ -6,9 +6,7 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.binder.http.Outcome;
 import lombok.AllArgsConstructor;
-import lombok.Lombok;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.val;
 import okhttp3.Interceptor;
 import okhttp3.Request;
@@ -32,28 +30,28 @@ public final class TimingOhInterceptor implements Interceptor {
     @Override
     public Response intercept(@Nonnull Interceptor.Chain chain) throws IOException {
         val request = chain.request();
-        val meterRegistry = request.tag(MeterRegistry.class);
-        if (isNull(meterRegistry)) return chain.proceed(request);
+        val registry = request.tag(MeterRegistry.class);
+        if (isNull(registry)) return chain.proceed(request);
 
-        val startTime = meterRegistry.config().clock().monotonicTime();
-        val callState = new CallState(startTime, request);
+        val startTime = registry.config().clock().monotonicTime();
+        Response response = null;
+        IOException exception = null;
         try {
-            callState.response = chain.proceed(request);
-        } catch (Exception e) {
-            callState.exception = e;
+            response = chain.proceed(request);
+        } catch (IOException e) {
+            exception = e;
         }
-        timing(callState, meterRegistry);
-        return callState.proceed();
-    }
 
-    private void timing(CallState state, MeterRegistry registry) {
         Timer.builder(this.metricName).description("Timer of OhClient operation")
-                .tags(Tags.of(generateTagsForRequest(state.request))
-                        .and(generateTagsForRoute(state.request))
-                        .and(generateStatusTags(state))
-                        .and(getStatusOutcomeTag(state.response))
-                        .and(getRequestTags(state.request))).register(registry)
-                .record(registry.config().clock().monotonicTime() - state.startTime, TimeUnit.NANOSECONDS);
+                .tags(Tags.of(generateTagsForRequest(request))
+                        .and(generateTagsForRoute(request))
+                        .and(generateStatusTags(response, exception))
+                        .and(getStatusOutcomeTag(response))
+                        .and(getRequestTags(request))).register(registry)
+                .record(registry.config().clock().monotonicTime() - startTime, TimeUnit.NANOSECONDS);
+
+        if (nonNull(exception)) throw exception;
+        return response;
     }
 
     private Tags generateTagsForRequest(Request request) {
@@ -70,14 +68,14 @@ public final class TimingOhInterceptor implements Interceptor {
                 "target.port", Integer.toString(request.url().port()));
     }
 
-    private Tags generateStatusTags(CallState state) {
-        return Tags.of("status", getStatusMessage(state));
+    private Tags generateStatusTags(Response response, Throwable throwable) {
+        return Tags.of("status", getStatusMessage(response, throwable));
     }
 
-    private String getStatusMessage(CallState state) {
-        if (nonNull(state.exception)) return "IO_ERROR";
-        if (isNull(state.response)) return "CLIENT_ERROR";
-        return Integer.toString(state.response.code());
+    private String getStatusMessage(Response response, Throwable throwable) {
+        if (nonNull(throwable)) return "IO_ERROR";
+        if (isNull(response)) return "CLIENT_ERROR";
+        return Integer.toString(response.code());
     }
 
     private Tag getStatusOutcomeTag(Response response) {
@@ -86,24 +84,6 @@ public final class TimingOhInterceptor implements Interceptor {
     }
 
     private Tags getRequestTags(Request request) {
-        val requestTag = request.tag(Tags.class);
-        return requireNonNullElse(requestTag, Tags.empty());
-    }
-
-    @RequiredArgsConstructor
-    private static class CallState {
-
-        final long startTime;
-        final Request request;
-        Response response;
-        Exception exception;
-
-        @Nonnull
-        Response proceed() {
-            if (nonNull(exception)) {
-                throw Lombok.sneakyThrow(exception);
-            }
-            return response;
-        }
+        return requireNonNullElse(request.tag(Tags.class), Tags.empty());
     }
 }

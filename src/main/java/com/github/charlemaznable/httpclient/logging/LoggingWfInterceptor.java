@@ -62,9 +62,9 @@ public final class LoggingWfInterceptor implements ExchangeFilterFunction {
         }
 
         val startNs = System.nanoTime();
-        return next.exchange(request).flatMap(clientResponse -> {
-            val builder = clientResponse.mutate();
-            return clientResponse.toEntity(String.class).map(responseEntity -> {
+        return next.exchange(request).flatMap(response -> {
+            val builder = response.mutate();
+            return response.toEntity(String.class).map(responseEntity -> {
                 val tookMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs);
 
                 val statusCode = responseEntity.getStatusCode().value();
