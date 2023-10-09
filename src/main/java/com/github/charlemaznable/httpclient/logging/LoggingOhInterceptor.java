@@ -105,9 +105,10 @@ public final class LoggingOhInterceptor implements Interceptor {
             Long gzippedLength = null;
             if ("gzip".equalsIgnoreCase(responseHeaders.get("Content-Encoding"))) {
                 gzippedLength = buffer.size();
-                val gzippedResponseBody = new GzipSource(buffer.clone());
-                buffer = new Buffer();
-                buffer.writeAll(gzippedResponseBody);
+                try (val gzippedResponseBody = new GzipSource(buffer.clone())) {
+                    buffer = new Buffer();
+                    buffer.writeAll(gzippedResponseBody);
+                }
             }
 
             val contentType = responseBody.contentType();
