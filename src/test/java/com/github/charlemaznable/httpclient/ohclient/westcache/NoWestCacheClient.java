@@ -1,6 +1,5 @@
 package com.github.charlemaznable.httpclient.ohclient.westcache;
 
-import com.github.charlemaznable.httpclient.annotation.ConfigureWith;
 import com.github.charlemaznable.httpclient.annotation.Mapping;
 import com.github.charlemaznable.httpclient.ohclient.OhClient;
 import io.smallrye.mutiny.Uni;
@@ -10,7 +9,6 @@ import java.util.concurrent.Future;
 
 @Mapping("${root}:41260")
 @OhClient
-@ConfigureWith(WestCacheConfiguration.LoggingMetricsClientConfigurer.class)
 public interface NoWestCacheClient {
 
     String sampleSync();

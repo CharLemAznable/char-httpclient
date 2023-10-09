@@ -12,13 +12,13 @@ import io.vertx.micrometer.MicrometerMetricsOptions;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.val;
-import org.jetbrains.annotations.NotNull;
 import org.n3r.diamond.client.impl.MockDiamondServer;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.concurrent.Executors;
 
@@ -40,12 +40,12 @@ public class WestCacheConfiguration {
         val meterLogger = LoggerFactory.getLogger(this.getClass().getPackageName() + ".meter");
         this.meterRegistry = new LoggingMeterRegistry(new LoggingRegistryConfig() {
             @Override
-            public String get(@NotNull String key) {
+            public String get(@Nonnull String key) {
                 return null;
             }
 
             @Override
-            public @NotNull Duration step() {
+            public @Nonnull Duration step() {
                 return Duration.ofSeconds(1);
             }
         }, Clock.SYSTEM, meterLogger::debug);

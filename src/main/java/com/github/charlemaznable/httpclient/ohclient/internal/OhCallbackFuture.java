@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -18,12 +17,12 @@ public final class OhCallbackFuture<T> extends CompletableFuture<T> implements C
     private Function<Response, T> function;
 
     @Override
-    public void onFailure(@NotNull Call call, @NotNull IOException e) {
+    public void onFailure(@Nonnull Call call, @Nonnull IOException e) {
         super.completeExceptionally(e);
     }
 
     @Override
-    public void onResponse(@NotNull Call call, @NotNull Response response) {
+    public void onResponse(@Nonnull Call call, @Nonnull Response response) {
         try {
             super.complete(function.apply(response));
         } catch (Exception e) {

@@ -12,7 +12,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
 import lombok.val;
-import org.jetbrains.annotations.NotNull;
 import org.n3r.diamond.client.impl.MockDiamondServer;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
@@ -48,12 +47,12 @@ public class WestCacheConfiguration {
         val meterLogger = LoggerFactory.getLogger(this.getClass().getPackageName() + ".meter");
         this.meterRegistry = new LoggingMeterRegistry(new LoggingRegistryConfig() {
             @Override
-            public String get(@NotNull String key) {
+            public String get(@Nonnull String key) {
                 return null;
             }
 
             @Override
-            public @NotNull Duration step() {
+            public @Nonnull Duration step() {
                 return Duration.ofSeconds(1);
             }
         }, Clock.SYSTEM, meterLogger::debug);

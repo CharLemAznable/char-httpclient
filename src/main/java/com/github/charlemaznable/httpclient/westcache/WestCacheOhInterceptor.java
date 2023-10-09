@@ -13,8 +13,8 @@ import okhttp3.Protocol;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.internal.http.RealResponseBody;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
@@ -51,9 +51,9 @@ public final class WestCacheOhInterceptor implements Interceptor {
                 .build();
     }
 
-    @NotNull
+    @Nonnull
     @Override
-    public Response intercept(@NotNull Interceptor.Chain chain) throws IOException {
+    public Response intercept(@Nonnull Interceptor.Chain chain) throws IOException {
         val request = chain.request();
         val context = request.tag(WestCacheContext.class);
         if (isNull(context)) return chain.proceed(request);

@@ -2,25 +2,22 @@ package com.github.charlemaznable.httpclient.ohclient.westcache;
 
 import com.github.bingoohuang.westcache.spring.WestCacheableEnabled;
 import com.github.bingoohuang.westcache.spring.WestCacheableScan;
+import com.github.charlemaznable.httpclient.micrometer.AutoBindMeterRegistryEnabled;
 import com.github.charlemaznable.httpclient.ohclient.OhScan;
-import com.github.charlemaznable.httpclient.ohclient.configurer.OkHttpClientBuilderConfigurer;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.binder.okhttp3.OkHttpMetricsEventListener;
 import io.micrometer.core.instrument.logging.LoggingMeterRegistry;
 import io.micrometer.core.instrument.logging.LoggingRegistryConfig;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import lombok.AllArgsConstructor;
 import lombok.val;
-import okhttp3.OkHttpClient;
-import org.jetbrains.annotations.NotNull;
 import org.n3r.diamond.client.impl.MockDiamondServer;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.concurrent.Executors;
 
@@ -33,6 +30,7 @@ import static org.joor.Reflect.on;
 @WestCacheableEnabled
 @WestCacheableScan
 @OhScan
+@AutoBindMeterRegistryEnabled
 public class WestCacheConfiguration {
 
     private final LoggingMeterRegistry meterRegistry;
@@ -41,12 +39,12 @@ public class WestCacheConfiguration {
         val meterLogger = LoggerFactory.getLogger(this.getClass().getPackageName() + ".meter");
         this.meterRegistry = new LoggingMeterRegistry(new LoggingRegistryConfig() {
             @Override
-            public String get(@NotNull String key) {
+            public String get(@Nonnull String key) {
                 return null;
             }
 
             @Override
-            public @NotNull Duration step() {
+            public @Nonnull Duration step() {
                 return Duration.ofSeconds(1);
             }
         }, Clock.SYSTEM, meterLogger::debug);
@@ -74,20 +72,7 @@ public class WestCacheConfiguration {
     }
 
     @Bean
-    public LoggingMetricsClientConfigurer loggingMetricsClientConfigurer() {
-        return new LoggingMetricsClientConfigurer(this.meterRegistry);
-    }
-
-    @AllArgsConstructor
-    public static class LoggingMetricsClientConfigurer implements OkHttpClientBuilderConfigurer {
-
-        private MeterRegistry meterRegistry;
-
-        @Override
-        public OkHttpClient.Builder configBuilder(OkHttpClient.Builder builder) {
-            return builder.eventListener(OkHttpMetricsEventListener
-                    .builder(meterRegistry, "default")
-                    .uriMapper(request -> request.url().encodedPath()).build());
-        }
+    public MeterRegistry meterRegistry() {
+        return this.meterRegistry;
     }
 }
