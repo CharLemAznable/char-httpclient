@@ -100,27 +100,33 @@ public final class LoggingOhInterceptor implements Interceptor {
         } else {
             val source = responseBody.source();
             source.request(Long.MAX_VALUE); // Buffer the entire body.
-            Buffer buffer = source.getBuffer();
-
-            Long gzippedLength = null;
-            if ("gzip".equalsIgnoreCase(responseHeaders.get("Content-Encoding"))) {
-                gzippedLength = buffer.size();
-                try (val gzippedResponseBody = new GzipSource(buffer.clone())) {
-                    buffer = new Buffer();
-                    buffer.writeAll(gzippedResponseBody);
-                }
-            }
-
+            val buffer = source.getBuffer();
             val contentType = responseBody.contentType();
             val charset = checkNull(contentType, () -> UTF_8, t -> t.charset(UTF_8));
 
-            if (responseBody.contentLength() != 0L) {
-                log(logger, "");
-                log(logger, buffer.clone().readString(charset));
+            Long unGzippedLength = null;
+            String bufferContent;
+            if ("gzip".equalsIgnoreCase(responseHeaders.get("Content-Encoding"))) {
+                // okhttp默认透明处理服务端返回的gzip编码响应, 所以此分支在默认情况下不会生效
+                // 在客户端明确声明请求头[Accept-Encoding: gzip]时, 此分支才会生效
+                // okhttp默认的透明gzip处理过程见: okhttp3.internal.http.BridgeInterceptor
+                try (val gzippedResponseBody = new GzipSource(buffer.clone());
+                     val unGzippedBuffer = new Buffer()) {
+                    unGzippedBuffer.writeAll(gzippedResponseBody);
+                    unGzippedLength = unGzippedBuffer.size();
+                    bufferContent = unGzippedBuffer.readString(charset);
+                }
+            } else {
+                bufferContent = buffer.clone().readString(charset);
             }
 
-            if (nonNull(gzippedLength)) {
-                log(logger, "<-- END HTTP (" + buffer.size() + "-byte, " + gzippedLength + "-gzipped-byte body)");
+            if (responseBody.contentLength() != 0L) {
+                log(logger, "");
+                log(logger, bufferContent);
+            }
+
+            if (nonNull(unGzippedLength)) {
+                log(logger, "<-- END HTTP (" + buffer.size() + "-byte, " + unGzippedLength + "-ungzipped-byte body)");
             } else {
                 log(logger, "<-- END HTTP (" + buffer.size() + "-byte body)");
             }
