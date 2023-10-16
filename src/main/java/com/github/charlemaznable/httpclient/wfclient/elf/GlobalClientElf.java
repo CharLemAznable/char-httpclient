@@ -5,7 +5,6 @@ import com.github.charlemaznable.httpclient.micrometer.TimingWfInterceptor;
 import com.github.charlemaznable.httpclient.westcache.WestCacheWfInterceptor;
 import lombok.NoArgsConstructor;
 import lombok.val;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ServiceLoader;
@@ -41,7 +40,6 @@ public final class GlobalClientElf {
         @Override
         public WebClient supply() {
             val builder = WebClient.builder();
-            builder.clientConnector(new ReactorClientHttpConnector());
             builder.filter(new LoggingWfInterceptor());
             builder.filter(new TimingWfInterceptor());
             if (HAS_WESTCACHE) builder.filter(new WestCacheWfInterceptor());
