@@ -116,6 +116,8 @@ public class VxGuiceTest extends CommonGuiceTest {
         startMockWebServerNaked();
 
         val emptyInjector = Guice.createInjector(vxModular.createModule() /* required for provision */);
+        assertThrows(ConfigurationException.class, () ->
+                emptyInjector.getInstance(TestHttpClientMocked.class));
 
         assertThrows(VxException.class,
                 () -> vxModular.getClient(TestHttpClientConcrete.class));

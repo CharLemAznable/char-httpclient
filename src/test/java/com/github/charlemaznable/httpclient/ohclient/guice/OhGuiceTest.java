@@ -82,6 +82,8 @@ public class OhGuiceTest extends CommonGuiceTest {
         startMockWebServerNaked();
 
         val emptyInjector = Guice.createInjector(ohModular.createModule() /* required for provision */);
+        assertThrows(ConfigurationException.class, () ->
+                emptyInjector.getInstance(TestHttpClientMocked.class));
 
         val testHttpClient2 = ohModular.getClient(TestHttpClientMocked.class);
         assertEquals(SAMPLE_ERROR_RESULT, testHttpClient2.ohSample());

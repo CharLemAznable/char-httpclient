@@ -82,6 +82,8 @@ public class WfGuiceTest extends CommonGuiceTest {
         startMockWebServerNaked();
 
         val emptyInjector = Guice.createInjector(wfModular.createModule() /* required for provision */);
+        assertThrows(ConfigurationException.class, () ->
+                emptyInjector.getInstance(TestHttpClientMocked.class));
 
         val testHttpClient2 = wfModular.getClient(TestHttpClientMocked.class);
         assertEquals(SAMPLE_ERROR_RESULT, testHttpClient2.wfSample().block());
